@@ -43,11 +43,11 @@ await host.waitForSelector("canvas.stage", { timeout: 10000 });
 await guest.waitForSelector("canvas.stage", { timeout: 10000 });
 console.log("both in battle");
 
-// 持ち物は持っているが、使えない
+// アイテムはなし（持ち物＝装備は名札に出る）
 const itemLabel = await guest.textContent(".bottom3d .c-br .clabel");
-if (!itemLabel.includes("禁止")) fail(`item corner should be disabled: ${itemLabel}`);
+if (!itemLabel.includes("アイテムなし")) fail(`item corner should be disabled: ${itemLabel}`);
 const bags = await host.evaluate(() => { const s = __yokaiDebug.ga().state; return [s.noItems, s.players[0].bag.length, s.players[1].bag.length]; });
-if (!bags[0] || !bags[1] || !bags[2]) fail(`items should be carried but off: ${bags}`);
+if (!bags[0] || bags[1] || bags[2]) fail(`pvp should have no items: ${bags}`);
 await guest.keyboard.press("i");
 if (await guest.$(".it-grid")) fail("item menu opened in pvp");
 

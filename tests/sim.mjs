@@ -67,7 +67,7 @@ for (const e of E.equips) cats[e.cat] = (cats[e.cat] ?? 0) + 1;
 console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSON.stringify(cats)}), allowed pairs ${equipPairs}, battle items: ${E.battleItems.length}`);
 
 // 対人戦の前提：同じ種・同じ入力なら、JSON で送った状態からでも同じ結果になる（ゲストの再現）。
-// 持ち物は持てるがアイテムは使えない。「あわせろ！」の at は過去 1 秒まで・構えより前には戻れない。
+// アイテムはなし。持ち物（装備）はそのまま効く。「あわせろ！」の at は過去 1 秒まで・構えより前には戻れない。
 {
   let pvp = 0;
   for (let g = 0; g < 20; g++) {
@@ -76,7 +76,7 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
     const bags = [["ikuraonigiri"], ["ikuraonigiri"]];
     const host = E.newBattle(seed, teams[0], teams[1], { noItems: true, bags });
     let guest = E.newBattle(seed, teams[0], teams[1], { noItems: true, bags });
-    if (host.players[0].bag.length !== 1 || host.players[1].bag.length !== 1) throw new Error("pvp bag should be kept");
+    if (host.players[0].bag.length || host.players[1].bag.length) throw new Error("pvp has no items");
     const cpus = [E.newCpu(0, seed ^ 1, levels[2]), E.newCpu(1, seed ^ 2, levels[1])];
     while (!host.outcome) {
       const inputs = [];
@@ -88,9 +88,18 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
       E.step(guest, JSON.parse(JSON.stringify(inputs)), []);
       if (host.tick % 97 === 0) guest = JSON.parse(JSON.stringify(guest)); // 送られた状態に置きかえても同じ
     }
-    if (host.players[0].bag.length !== 1 || host.players[1].bag.length !== 1) throw new Error("pvp bag was consumed");
     if (JSON.stringify(host) !== JSON.stringify(guest)) throw new Error(`pvp replay diverged in game ${g}`);
     pvp++;
+  }
+  // 持ち物（装備）は対人戦でも効く
+  {
+    const t = E.randomTeam(E.seedRng(1, 1)), foe = E.randomTeam(E.seedRng(2, 1));
+    const d = E.units.find(x => x.id === t[0].unit);
+    const eqId = E.equipChoices(d).find(q => q.id === "jugon_katana") ? "jugon_katana" : E.equipChoices(d)[0].id;
+    const withEq = t.map((m, i) => i ? m : { ...m, equipment: eqId });
+    const a = E.newBattle(3, t.map((m, i) => i ? m : { ...m, equipment: undefined }), foe, { noItems: true }), b = E.newBattle(3, withEq, foe, { noItems: true });
+    const ua = a.players[0].units[0], ub = b.players[0].units[0];
+    if (ub.equipment !== eqId || ["atk", "spa", "def", "spd", "maxHp"].every(k => ua[k] === ub[k]) && JSON.stringify(ua.eq) === JSON.stringify(ub.eq)) throw new Error("equipment not applied in pvp");
   }
   // at の範囲
   const seed = 99, teams = [E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2))];
@@ -102,5 +111,5 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (p.stance && p.stance.lastPress !== 40) throw new Error(`at before stance should fall back to now: ${p.stance.lastPress}`);
   E.step(st, [{ player: 0, input: { t: "ultRelease", at: 38 } }], []);
   if (p.stance && p.stance.lastPress !== 40) throw new Error("press within 4 ticks should be ignored");
-  console.log(`pvp replay: ${pvp} games identical, items kept but blocked`);
+  console.log(`pvp replay: ${pvp} games identical, no items, equipment applied`);
 }

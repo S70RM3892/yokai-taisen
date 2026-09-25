@@ -617,6 +617,49 @@ body { margin: 0; }
 @keyframes dmg-pop { 0% { opacity: 0; transform: translate(-50%, 0) scale(2); } 15% { opacity: 1; transform: translate(-50%, -8px) scale(1); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -44px) scale(.9); } }
 @media (prefers-reduced-motion: reduce) { .mg-rune, .mg-gauge i::after { animation: none; } .mg-wave, .mg-spark { display: none; } }
 
+/* ===== ダメージの数字・会心・連続ヒット ===== */
+.dnum { position: absolute; transform: translate(-50%, -100%); pointer-events: none; z-index: 4; display: grid; justify-items: center; font-family: var(--display); line-height: 1; white-space: nowrap; animation: dn-pop 1s cubic-bezier(.2,1.6,.4,1) forwards; }
+.dnum .dval { font-size: 24px; color: #fff; -webkit-text-stroke: 1.5px #1a1020; paint-order: stroke fill; text-shadow: 0 3px 0 #000a, 0 0 10px #fff6; letter-spacing: .02em; }
+.dnum.big .dval { font-size: 30px; } .dnum.huge .dval { font-size: 38px; }
+.dnum.weak .dval { color: #ffd84a; }
+.dnum.taken .dval { color: #ff8a7a; text-shadow: 0 3px 0 #000a, 0 0 10px #e0655a88; }
+.dnum.ult .dval { font-size: 40px; }
+.dnum.crit { animation: dn-crit 1.5s cubic-bezier(.15,1.8,.35,1) forwards; }
+.dnum.crit .dval { font-size: 46px; background: linear-gradient(180deg, #fffbe0 0%, #ffe066 45%, #ff9a1a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 2px #4a1a00; filter: drop-shadow(0 3px 0 #000) drop-shadow(0 0 12px #ffb020); }
+.dnum.crit.huge .dval { font-size: 58px; }
+.dnum.crit.taken .dval { background: linear-gradient(180deg, #fff0f0, #ff7a6a 50%, #c01a2a); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 3px 0 #000) drop-shadow(0 0 12px #ff3a3a); }
+.dnum .dlab { font-size: 15px; color: #fff; letter-spacing: .12em; margin-bottom: 2px; text-shadow: 0 2px 0 #000, 0 0 10px #ff9a1a; animation: dn-lab .5s ease-out; }
+.dnum .drays { position: absolute; left: 50%; top: 62%; width: 170px; height: 170px; margin: -85px 0 0 -85px; border-radius: 50%; z-index: -1; background: repeating-conic-gradient(#fff6c000 0 9deg, #ffe07acc 9deg 12deg); -webkit-mask: radial-gradient(circle, transparent 18%, #000 30%, transparent 70%); mask: radial-gradient(circle, transparent 18%, #000 30%, transparent 70%); animation: dn-rays .7s ease-out forwards; }
+@keyframes dn-pop { 0% { opacity: 0; transform: translate(-50%, -60%) scale(2.2); } 12% { opacity: 1; transform: translate(-50%, -100%) scale(.9); } 22% { transform: translate(-50%, -100%) scale(1.06); } 30% { transform: translate(-50%, -100%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -150%) scale(.92); } }
+@keyframes dn-crit { 0% { opacity: 0; transform: translate(-50%, -80%) scale(3.2) rotate(-12deg); } 10% { opacity: 1; transform: translate(-50%, -100%) scale(.85) rotate(3deg); } 18% { transform: translate(-50%, -100%) scale(1.15) rotate(-2deg); } 26% { transform: translate(-50%, -100%) scale(1) rotate(0); } 80% { opacity: 1; transform: translate(-50%, -110%) scale(1.02); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1.1); } }
+@keyframes dn-lab { from { letter-spacing: .8em; opacity: 0; } }
+@keyframes dn-rays { from { transform: scale(.2) rotate(0); opacity: 1; } to { transform: scale(1.5) rotate(40deg); opacity: 0; } }
+.critflash { position: absolute; inset: 0; pointer-events: none; z-index: 3; background: radial-gradient(circle at var(--x) var(--y), #fff8d0cc 0%, #ffcf4a66 14%, transparent 42%), repeating-conic-gradient(from 0deg at var(--x) var(--y), #fff0 0 5deg, #ffe7a044 5deg 6.5deg); animation: cf-flash .5s ease-out forwards; mix-blend-mode: screen; }
+.critflash.taken { background: radial-gradient(circle at var(--x) var(--y), #ffd0d0aa 0%, #ff3a3a55 16%, transparent 45%), repeating-conic-gradient(from 0deg at var(--x) var(--y), #fff0 0 5deg, #ff8a7a33 5deg 6.5deg); }
+@keyframes cf-flash { 0% { opacity: 1; } 100% { opacity: 0; transform: scale(1.08); } }
+.combo { position: absolute; right: 10px; top: 42px; z-index: 5; pointer-events: none; display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 4px; font-family: var(--display); color: #fff; text-shadow: 0 3px 0 #000, 0 0 12px #5fb3d9; animation: cb-pop .3s cubic-bezier(.2,1.8,.4,1); }
+.combo b { font-size: 40px; font-weight: 400; -webkit-text-stroke: 1.5px #0a1a2a; }
+.combo .hit { font-size: 16px; color: #9ad0ff; letter-spacing: .1em; }
+.combo .tot { grid-column: 1 / -1; justify-self: end; font-size: 15px; color: #dfe; }
+.combo .tot::before { content: "計 "; font-size: .8em; }
+.combo .word { grid-column: 1 / -1; justify-self: end; font-size: 14px; color: #ffd84a; }
+.combo.gold b { background: linear-gradient(180deg, #fffbe0, #ffcf3a 50%, #ff8a1a); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 8px #ffb020); }
+.combo.hot { text-shadow: 0 3px 0 #000, 0 0 18px #ff7a3d; }
+.combo.out { opacity: 0; transform: translateX(20px); transition: .35s; }
+@keyframes cb-pop { 0% { transform: scale(1.8); } 100% { transform: scale(1); } }
+.peq { display: block; font-size: 10px; color: #f2d15c; font-weight: 700; line-height: 1.1; min-height: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.peq:empty { display: none; }
+.pvp-team { flex-wrap: wrap; }
+.pvp-mem { display: grid; justify-items: center; gap: 2px; width: 76px; text-align: center; font-size: 11px; }
+.pvp-mem b { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pvp-mem .eq { color: #f2d15c; font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pvp-mem .eq.none { color: var(--muted); font-weight: 400; }
+.pvp-note b.ok { color: #f2d15c; }
+@media (prefers-reduced-motion: reduce) { .dnum, .dnum.crit, .combo { animation-duration: .01s; } .drays, .critflash { display: none; } }
+
+.plate .peq { position: absolute; right: 8px; top: 3px; max-width: 48%; text-align: right; }
+.plate .pn { padding-right: 4px; }
+.foebar .peq { margin-top: -2px; }
 </style>
 </head>
 <body>

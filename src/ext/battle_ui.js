@@ -3,6 +3,12 @@
 // e: 対戦の画面状態（Ga）。入力は zt(e, input) でエンジンへ送る。
 // ============================================================================
 
+// 名札に出す持ち物（装備）の名前
+function eqLabel(u) {
+  const eq = equipById(u.equipment ?? null);
+  return eq ? eq.name : "";
+}
+
 // ---- 右下「アイテム」 ----
 function itemMenu(e, a) {
   const p = e.state.players[0];
@@ -321,6 +327,13 @@ function debugHook() {
   if (!location.hash.includes("debug")) return;
   window.__yokaiDebug = {
     ga: () => Ga, send: (i) => zt(Ga, i), lobby: () => openPvpLobby(),
+    // 演出の確認用：出来事を 1 つ画面に流す（dst:-1 は敵の前衛 i 番目、-2 はこちらの前衛 0 番目）
+    play(ev) {
+      const p = Ga.state.players, uidOf = (pl, i) => p[pl].units[p[pl].wheel[i]].uid;
+      if (ev.dst === -1) ev = { ...ev, dst: uidOf(1, ev.i ?? 0), src: uidOf(0, 0) };
+      if (ev.dst === -2) ev = { ...ev, dst: uidOf(0, 0), src: uidOf(1, 0) };
+      Od(Ga, ev);
+    },
     // 自分の側を CPU に操作させる（対人戦の通しテスト用）
     autoplay(params = or[3].params) {
       let cpu = null, g = null;
