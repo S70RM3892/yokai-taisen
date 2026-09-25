@@ -32,12 +32,14 @@ function chargeInput(p, amount) {
 }
 
 // あわせろ！：光る目もり（tick を 16 で割ったあまりが perfect / good の窓）で押す
-function awaseroPress(state, p) {
+// at：押した瞬間に画面で見えていた tick（対人戦で通信の遅れの分を戻す。1 秒より古いものは使わない）
+function awaseroPress(state, p, at) {
   const s = p.stance;
   if (!s || s.game !== "awasero") return false;
-  if (state.tick - (s.lastPress ?? -99) < 4) return false;
-  s.lastPress = state.tick;
-  const n = (state.tick - s.startTick) % Di;
+  const when = Number.isInteger(at) && at <= state.tick && at >= state.tick - 20 && at >= s.startTick ? at : state.tick;
+  if (when - (s.lastPress ?? -99) < 4) return false;
+  s.lastPress = when;
+  const n = (when - s.startTick) % Di;
   const add = iu.includes(n) ? 340 : nu.includes(n) ? 260 : 0;
   s.power = Math.min(CHARGE_FULL, s.power + add);
   s.lastJudge = add >= 340 ? "perfect" : add > 0 ? "good" : "miss";

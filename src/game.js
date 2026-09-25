@@ -10999,7 +10999,7 @@
         poke: null,
         pokeCooldown: 0,
         pokeRng: ni(e, Eh + n),
-        bag: validBag(opts.bags?.[n]),
+        bag: opts.noItems ? [] : validBag(opts.bags?.[n]),
         itemCooldown: 0,
         mgRng: ni(e, 30 + n)
       }
@@ -11017,7 +11017,8 @@
       players: r,
       outcome: null,
       busyUntil: 0,
-      lastActor: null
+      lastActor: null,
+      noItems: !!opts.noItems
     }
   }
 
@@ -11517,7 +11518,7 @@
         }), !0
       }
       case "ultRelease":
-        return s || !i.stance ? !1 : awaseroPress(e, i);
+        return s || !i.stance ? !1 : awaseroPress(e, i, a.at);
       case "ultCharge":
         return s ? !1 : chargeInput(i, a.amount);
       case "purifyTap":
@@ -11554,7 +11555,7 @@
       case "pokeStop":
         return i.poke ? (Oi(i, t, n, "stopped", r), !0) : !1;
       case "item":
-        return useItem(e, t, a, r);
+        return e.noItems ? !1 : useItem(e, t, a, r);
       default:
         return !1
     }
@@ -15586,6 +15587,9 @@
   };
 
   function da(e, t, a = "#888") {
+    // 3D モデルを撮った絵を使う（アイコンと 3D の姿をそろえる）
+    let m = typeof modelIconSvg == "function" ? modelIconSvg(e) : null;
+    if (m) return m;
     let r = l0[e] ?? u0(e, a);
     return r ? `<svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true" overflow="visible">${r}</svg>` : `<span>${t}</span>`
   }
@@ -32277,6 +32281,7 @@ void main() {
       }
     };
 
+  /*@@include ext/fx3d.js@@*/
   function t2(e) {
     return 1 - (1 - e) * (1 - e)
   }
@@ -32660,7 +32665,7 @@ void main() {
   function Sd() {
     Kr.replaceChildren();
     let e = q("h1", "", "妖怪大戦");
-    e.append(q("small", "", "人 vs CPU")), Kr.append(e, Md());
+    e.append(q("small", "", "人 vs CPU・人 vs 人")), Kr.append(e, Md());
     let t = bt.findIndex(X => X === null);
     t < 0 && (t = 0);
     let a = null,
@@ -32962,7 +32967,7 @@ void main() {
         });
         let r = Rd(Ri),
           i = q("div", "b-rec");
-        i.innerHTML = `戦績 <b>${r.w}</b>勝 <b>${r.l}</b>敗${r.d?` ${r.d}分`:""}　連勝 <b>${r.streak}</b>（最高 ${r.best}）`, e.append(a, i)
+        i.innerHTML = `戦績 <b>${r.w}</b>勝 <b>${r.l}</b>敗${r.d?` ${r.d}分`:""}　連勝 <b>${r.streak}</b>（最高 ${r.best}）`, e.append(a, i, pvpEntryButton())
       };
     return t(), e
   }
@@ -33078,7 +33083,7 @@ void main() {
   }
 
   function zt(e, t) {
-    e.pending.push(t)
+    e.net?.role === "guest" ? netGuestSend(e, t) : e.pending.push(t)
   }
 
   function jl(e, t) {
@@ -33092,7 +33097,7 @@ void main() {
 
   function O2(e, t) {
     let a = q("h1", "", "妖怪大戦");
-    a.append(q("small", "", `vs CPU（${or[e.diff].name}）`)), Kr.append(a, Md());
+    a.append(q("small", "", e.net ? `vs ${e.net.peerName}（対人戦・${e.net.role === "host" ? "部屋を作った側" : "入った側"}）` : `vs CPU（${or[e.diff].name}）`)), Kr.append(a, Md());
     let r = q("section", "game"),
       i = q("div", "top3d"),
       n = q("div", "hud3d"),
@@ -33150,6 +33155,7 @@ void main() {
     }, h[2].onclick = () => {
       e.mode = e.mode === "purify" ? "none" : "purify"
     }, h[3].onclick = () => {
+      if (e.state.noItems) return Jr(e, "対人戦ではアイテムを使えない", "miss", "", 900);
       e.mode = e.mode === "item" || e.mode === "itemTarget" ? "none" : "item", e.fleeArm = null
     };
     let f = q("div", "wheelbox"),
@@ -33429,7 +33435,7 @@ void main() {
     if (a === "q") Un(t, -1);
     else if (a === "e") Un(t, 1);
     else if (a === "z") Bd(t);
-    else if (a === "i") t.mode = t.mode === "item" || t.mode === "itemTarget" ? "none" : "item";
+    else if (a === "i") t.state.noItems || (t.mode = t.mode === "item" || t.mode === "itemTarget" ? "none" : "item");
     else if (a === " ") e.preventDefault(), zt(t, {
       t: "ultRelease"
     });
@@ -33466,7 +33472,13 @@ void main() {
     let a = Math.min(e - t.lastFrame, 250);
     t.acc += a, t.lastFrame = e, e < t.introUntil && (t.acc = 0, W2(t, e));
     let r = 0;
-    for (; t.acc >= 50 && r < 5 && !t.state.outcome;) X2(t), t.acc -= 50, r++;
+    if (t.net?.role === "guest") netGuestPump(t);
+    else
+      for (; t.acc >= 50 && r < 5 && !t.state.outcome;) X2(t), t.acc -= 50, r++;
+    if (t.net?.closed && !t.state.outcome) {
+      netLost(t);
+      return
+    }
     if (q2(t, a / 1e3), t.state.outcome) {
       let i = t.state.outcome.winner;
       Jr(t, i === 0 ? "勝利！" : i === 1 ? "敗北…" : "引き分け", i === 0 ? "win" : i === 1 ? "sudden" : "miss", "", 1500), t.running = !1, zl(), setTimeout(() => K2(t), 1500);
@@ -33477,7 +33489,7 @@ void main() {
 
   function W2(e, t) {
     let a = t < e.introUntil - 1100 ? 0 : 1;
-    a !== e.introStep && (e.introStep = a, a === 0 ? (Jr(e, "妖怪大戦", "win", `相手：${or[e.diff].name}`, 1150), Ed(!1)) : (Jr(e, "いざ、勝負！", "win", "", 1150), yd()))
+    a !== e.introStep && (e.introStep = a, a === 0 ? (Jr(e, "妖怪大戦", "win", e.net ? `相手：${e.net.peerName}（対人戦）` : `相手：${or[e.diff].name}`, 1150), Ed(!1)) : (Jr(e, "いざ、勝負！", "win", "", 1150), yd()))
   }
 
   function X2(e) {
@@ -33486,14 +33498,21 @@ void main() {
       input: n
     }));
     e.pending = [];
-    let a = e.cpu.params.lag ?? 0;
-    if (a === 0 || e.state.tick % (a + 1) === 0)
-      for (let n of Bh(e.cpu, e.state)) t.push({
-        player: 1,
-        input: n
-      });
+    if (e.net) netHostInputs(e, t);
+    else {
+      let a = e.cpu.params.lag ?? 0;
+      if (a === 0 || e.state.tick % (a + 1) === 0)
+        for (let n of Bh(e.cpu, e.state)) t.push({
+          player: 1,
+          input: n
+        });
+    }
     let r = [];
-    Uh(e.state, t, r);
+    Uh(e.state, t, r), e.net && netHostSend(e, t), playEvents(e, r)
+  }
+
+  // エンジンから出た出来事を画面へ（攻撃のあとのダメージは少し遅らせて見せる）
+  function playEvents(e, r) {
     let i = 0;
     for (let n of r) {
       n.t === "action" && (n.action === "attack" || n.action === "skill") && (i = 480), n.t === "ult" && (i = 1700);
@@ -33535,13 +33554,13 @@ void main() {
       r.hit(t.dst, t.crit, t.source === "attack" ? 16777215 : 16765562), ma(e, t.dst, String(t.amount), (t.crit ? "crit" : "dmg") + (t.amount >= 160 ? " huge" : t.amount >= 90 ? " big" : "")), t.crit ? (d2(), Rt(e, `${la(e,t.src??t.dst)} のクリティカル！ ${t.amount}`, a(t.src ?? t.dst))) : Ot(e, t.dst).guarding && (t.source === "attack" || t.source === "skill") && p2(), t.source === "trait" && Rt(e, `${la(e,t.dst)} に特性のダメージ ${t.amount}`, a(t.dst));
       break;
       case "heal":
-        ma(e, t.dst, "+" + t.amount, "heal"), t.amount >= 20 && f2();
+        ma(e, t.dst, "+" + t.amount, "heal"), t.amount >= 20 && (f2(), r.healFx(t.dst));
         break;
       case "curse":
-        t.result === "hit" ? (r.cast(t.src, 11566304), ma(e, t.dst, Wl[t.kind] + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${Wl[t.kind]}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "呪付 失敗" : t.result === "resisted" ? "ふせいだ" : "呪付 無効", "info");
+        t.result === "hit" ? (r.cast(t.src, 11566304), r.curseFx(t.dst), ma(e, t.dst, Wl[t.kind] + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${Wl[t.kind]}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "呪付 失敗" : t.result === "resisted" ? "ふせいだ" : "呪付 無効", "info");
         break;
       case "bless":
-        r.cast(t.src, 5030564), ma(e, t.dst, Ad[t.kind] + Bn[t.tier], "info"), g2();
+        r.cast(t.src, 5030564), r.blessFx(t.dst), ma(e, t.dst, Ad[t.kind] + Bn[t.tier], "info"), g2();
         break;
       case "ko":
         e.stats.ko[t.uid < 6 ? 1 : 0]++, ql(e), r.ko(t.uid), w2(), Rt(e, `${la(e,t.uid)} が倒れた`, a(t.uid));
@@ -33553,7 +33572,7 @@ void main() {
           l = n.kind === "heal" || n.kind === "blessAll",
           u = s ? s.uid : null;
         e.stats.ult[i.owner]++, t.quality === "perfect" && e.stats.perfect[i.owner]++, L2(e, i, t.grand, t.grand ? e.partners[i.owner] : []), T2(t.grand), setTimeout(() => {
-          r.action(t.uid, l ? null : u, t.grand ? "grand" : "ult", Id("element" in n ? n.element : null)), v2(t.grand), ql(e)
+          r.action(t.uid, l ? null : u, t.grand ? "grand" : "ult", Id("element" in n ? n.element : null)), t.quality === "perfect" && r.perfectFx(t.uid), v2(t.grand), ql(e)
         }, 1100), i.owner === 0 && !t.auto && setTimeout(() => Jr(e, t.quality === "perfect" ? "PERFECT!!" : t.quality === "good" ? "GOOD!" : "MISS…", t.quality, t.quality === "perfect" ? "威力 ×1.15" : "", 800), 1150);
         let o = t.quality === "perfect" ? "Perfect" : t.quality === "good" ? "Good" : "Miss";
         Rt(e, `${la(e,t.uid)} の${t.grand?"大奥義":"奥義"}「${Ze(i).ultName}」 ${o}`, a(t.uid));
@@ -33660,13 +33679,14 @@ void main() {
         let g = h.stance;
         s.setStance(f.uid, !!g && (g.unit === f.index || g.partners.includes(f.index)), !!g && g.grand)
       }
+    for (let h of a.players) h.stance && s.chargeAura(h.units[h.stance.unit].uid, h.stance.power / CHARGE_FULL, h.stance.grand);
     s.update(t), $2(e);
     let l = a.tick < fr ? fr - a.tick : mu - a.tick,
       u = Math.max(0, Math.ceil(l / 20));
     r.clock.textContent = `${a.tick>=fr?"サドンデス ":""}${Math.floor(u/60)}:${String(u%60).padStart(2,"0")}`, r.clock.classList.toggle("sudden", a.tick >= fr);
     let o = Vd(e),
       d = '<span class="olabel">次</span>' + o.map(h => `<span class="oitem ${h.owner===0?"a":"f"}"><span class="oart">${da(Ze(h).id,Ze(h).name.slice(0,1))}</span></span>`).join("");
-    r.order.innerHTML !== d && (r.order.innerHTML = d), dr(e, 0).forEach((h, f) => {
+    r.order.dataset.k !== d && (r.order.dataset.k = d, r.order.innerHTML = d), dr(e, 0).forEach((h, f) => {
       let g = Ot(e, h),
         k = e.plates[f];
       k.querySelector(".pn").textContent = Ze(g).name, k.querySelector(".hp i").style.width = jl(g.hp, g.maxHp), k.querySelector(".hp").classList.toggle("low", mr(g) <= 250), k.querySelector(".soul-clip").setAttribute("y", String(24 - 24 * g.sg / Nt)), k.classList.toggle("full", g.sg >= Nt && Se(g)), k.classList.toggle("dead", !Se(g)), k.classList.toggle("pick", e.mode === "ult" && g.sg >= Nt && Se(g));
@@ -33743,7 +33763,7 @@ void main() {
     });
     let i = t.rotateCooldown / cu,
       n = 2 * Math.PI * 152;
-    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
+    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? "アイテム禁止" : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
   }
 
   function Z2(e) {
@@ -33752,6 +33772,7 @@ void main() {
   }
 
   /*@@include ext/battle_ui.js@@*/
+  /*@@include ext/pvp.js@@*/
   function Q2(e) {
     let t = e.state.players[0],
       a = e.refs.overlay;
@@ -33800,8 +33821,10 @@ void main() {
       r = q("div", "box"),
       i = t.winner === 0 ? "勝ち" : t.winner === 1 ? "負け" : "引き分け";
     y2(t.winner === 0);
-    let n = Rd(e.diff);
-    t.winner === 0 ? (n.w++, n.streak++, n.best = Math.max(n.best, n.streak)) : (t.winner === 1 ? n.l++ : n.d++, n.streak = 0), Td("rec:" + e.diff, n), r.append(q("div", "big" + (t.winner === 1 ? " lose" : t.winner === 0 ? "" : " draw"), i)), r.append(q("div", "muted", `${or[e.diff].name}・${t.reason==="ko"?"全滅":t.reason==="flee"?(t.by===0?"逃げた":"相手が逃げた"):"時間切れ（残り HP の割合）"}・${Math.floor(e.state.tick/20)} 秒`));
+    let recKey = e.net ? "pvp" : e.diff,
+      recName = e.net ? `対人戦（vs ${e.net.peerName}）` : or[e.diff].name,
+      n = Rd(recKey);
+    t.winner === 0 ? (n.w++, n.streak++, n.best = Math.max(n.best, n.streak)) : (t.winner === 1 ? n.l++ : n.d++, n.streak = 0), Td("rec:" + recKey, n), r.append(q("div", "big" + (t.winner === 1 ? " lose" : t.winner === 0 ? "" : " draw"), i)), r.append(q("div", "muted", `${recName}・${t.reason==="ko"?"全滅":t.reason==="flee"?(t.by===0?"逃げた":"相手が逃げた"):"時間切れ（残り HP の割合）"}・${Math.floor(e.state.tick/20)} 秒`));
     let s = null,
       l = 0;
     for (let [g, k] of e.stats.dealt) g < 6 && k > l && (s = g, l = k);
@@ -33824,7 +33847,7 @@ void main() {
       ["Perfect", u.perfect]
     ].map(([g, k]) => `<span>${g}</span><span class="a">${k[0]}</span><span class="f">${k[1]}</span>`).join(""), r.append(o);
     let d = q("div", "rs-rec");
-    d.innerHTML = `${or[e.diff].name}：<b>${n.w}</b>勝 ${n.l}敗${n.d?` ${n.d}分`:""}　連勝 <b>${n.streak}</b>（最高 ${n.best}）`, r.append(d);
+    d.innerHTML = `${e.net ? "対人戦" : or[e.diff].name}：<b>${n.w}</b>勝 ${n.l}敗${n.d?` ${n.d}分`:""}　連勝 <b>${n.streak}</b>（最高 ${n.best}）`, r.append(d);
     let c = q("div", "row"),
       h = q("button", "btn primary", "同じチームでもう一度");
     h.onclick = () => {
@@ -33833,8 +33856,8 @@ void main() {
     let f = q("button", "btn", "編成に戻る");
     f.onclick = () => {
       a.remove(), Ga = null, Sd()
-    }, c.append(h, f), c.style.justifyContent = "center", r.append(c), a.append(r), document.body.append(a)
+    }, e.net && pvpResultButtons(e, a, h, f), c.append(h, f), c.style.justifyContent = "center", r.append(c), a.append(r), document.body.append(a)
   }
   /*@@include ext/gallery.js@@*/
-  debugHook(), location.hash.startsWith("#gallery") ? showGallery() : Sd()
+  debugHook(), location.hash.startsWith("#gallery") ? showGallery() : (Sd(), pvpFromHash())
 })();

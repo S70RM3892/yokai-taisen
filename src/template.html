@@ -542,6 +542,81 @@ body { margin: 0; }
 .it-btn.arm { border-color: var(--foe); }
 .it-btn.arm small { color: var(--foe); }
 
+/* ===== 対人戦 ===== */
+.pvp-entry { width: 100%; margin-top: 8px; border-color: var(--ally); color: #cfeaff; background: linear-gradient(180deg, #24406a, #1b2c4a); }
+.pvp-entry:hover { filter: brightness(1.15); }
+.pvp-lobby .box { max-width: 560px; text-align: left; max-height: calc(100vh - 40px); overflow-y: auto; }
+.pvp-lobby .big { text-align: center; font-size: 28px; }
+.pvp-note { font-size: 13px; line-height: 1.7; }
+.pvp-note b { color: var(--foe); }
+.pvp-team { display: flex; gap: 6px; justify-content: center; }
+.pvp-team .cf-pic { width: 46px; height: 46px; }
+.pvp-name { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.pvp-name input, .pvp-room { background: #10131f; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; min-width: 0; flex: 1; }
+.pvp-room { flex: none; width: 7em; font-size: 20px; text-align: center; letter-spacing: .2em; }
+.pvp-tabs { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.pvp-tabs .b-chip { font-size: 13px; padding: 5px 12px; }
+.pvp-body { display: grid; gap: 8px; }
+.pvp-code { width: 100%; min-height: 70px; resize: vertical; background: #0b0e18; color: #cfe; border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: 11px/1.4 ui-monospace, Menlo, Consolas, monospace; word-break: break-all; }
+.pvp-codebox { display: grid; gap: 4px; }
+.pvp-status { min-height: 1.4em; font-size: 13px; text-align: center; color: var(--muted); }
+.pvp-status.ok { color: var(--good); } .pvp-status.bad { color: var(--foe); }
+.bottom3d .corner.off { filter: grayscale(1) brightness(.6); }
+.bottom3d .corner.off .clabel { font-size: 15px; }
+
+/* ===== スキルチェック（パワーチャージ・おはらい）のエフェクト ===== */
+.mg-stage { --pw: 0; box-shadow: 0 0 calc(6px + var(--pw) * 26px) calc(var(--pw) * 6px) color-mix(in srgb, var(--lantern) calc(var(--pw) * 80%), transparent); transition: box-shadow .15s; }
+.mg-stage.grand { border-color: #f2a541; }
+.mg-rune { position: absolute; inset: 3%; border-radius: 50%; pointer-events: none; opacity: calc(.25 + var(--pw) * .75);
+  background: repeating-conic-gradient(from 0deg, #f2a54100 0 8deg, #f2a54155 8deg 10deg), radial-gradient(circle, transparent 58%, #f2a54133 60%, transparent 62%, transparent 76%, #f2a54144 78%, transparent 80%);
+  animation: mg-spin calc(6s - var(--pw) * 4.5s) linear infinite; }
+.mg-stage.purify .mg-rune { display: none; }
+.mg-stage.charged { animation: mg-charged .5s ease-out; border-color: #fff; }
+.mg-stage.charged .mg-rune { background: repeating-conic-gradient(from 0deg, #fff0 0 8deg, #fff6c8aa 8deg 10deg); }
+@keyframes mg-spin { to { transform: rotate(360deg); } }
+@keyframes mg-charged { 0% { transform: scale(1); filter: brightness(2.2); } 40% { transform: scale(1.06); } 100% { transform: scale(1); filter: brightness(1); } }
+.mg-stage.flash-perfect { animation: mg-fl-p .45s ease-out; }
+.mg-stage.flash-good { animation: mg-fl-g .35s ease-out; }
+.mg-stage.flash-miss { animation: mg-fl-m .35s ease-out; }
+@keyframes mg-fl-p { 0% { box-shadow: 0 0 0 4px #fff, 0 0 60px 20px #f2d15c; filter: brightness(1.8); transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes mg-fl-g { 0% { box-shadow: 0 0 0 3px #d8ffc8, 0 0 36px 10px #7fd46b; filter: brightness(1.4); } }
+@keyframes mg-fl-m { 20% { transform: translateX(-6px); filter: saturate(.2); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } }
+.mg-wave, .mg-spark { position: absolute; pointer-events: none; border-radius: 50%; z-index: 3; }
+.mg-wave { width: 20px; height: 20px; margin: -10px 0 0 -10px; border: 3px solid var(--mc, #fff); box-shadow: 0 0 12px var(--mc, #fff), inset 0 0 8px var(--mc, #fff); animation: mg-wave .6s ease-out forwards; }
+.mg-spark { width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; background: #fff; box-shadow: 0 0 6px 2px var(--mc, #fff); animation: mg-spark .6s cubic-bezier(.1,.8,.3,1) forwards; }
+.mg-wave.perfect, .mg-spark.perfect { --mc: #f2d15c; }
+.mg-wave.good, .mg-spark.good { --mc: #7fd46b; }
+.mg-wave.miss, .mg-spark.miss { --mc: #8890a8; }
+.mg-wave.trail, .mg-spark.trail { --mc: #f2a541; }
+.mg-wave.trail { display: none; }
+.mg-wave.purify, .mg-spark.purify { --mc: #4cc2a4; }
+.mg-wave.perfect { border-width: 4px; animation-duration: .65s; }
+@keyframes mg-wave { from { transform: scale(.3); opacity: 1; } to { transform: scale(5); opacity: 0; } }
+@keyframes mg-spark { from { transform: translate(0, 0) scale(1.3); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; } }
+.mg-judge { font-size: 30px; z-index: 4; text-shadow: 0 3px 0 #000, 0 0 16px currentColor; animation: mg-judge .7s cubic-bezier(.2,1.5,.4,1) forwards; }
+.mg-judge.perfect { font-size: 36px; }
+@keyframes mg-judge { 0% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 75% { opacity: 1; } 100% { transform: translate(-50%, -110%) scale(1.05); opacity: 0; } }
+.mg-gauge { position: relative; overflow: visible; }
+.mg-gauge i { box-shadow: 0 0 10px var(--lantern); position: relative; border-radius: 4px; }
+.mg-gauge i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, #fff8, transparent); background-size: 40px 100%; animation: mg-shine .8s linear infinite; }
+@keyframes mg-shine { from { background-position: -40px 0; } to { background-position: 400px 0; } }
+.mg-gauge.pulse { animation: mg-pulse .3s ease-out; }
+@keyframes mg-pulse { 0% { transform: scaleY(1.9); filter: brightness(2); } }
+.mg-time.perfect { color: var(--sg); font-weight: 700; text-shadow: 0 0 8px #f2d15c88; }
+.mg-time.good { color: var(--good); }
+.mg-done { fill: none; stroke: #fff6c8; stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 4px #f2a541); }
+.mg-cut { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+.mg-cut line { stroke: #fff; stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 4px #4cc2a4); animation: mg-cut .4s ease-out forwards; }
+@keyframes mg-cut { from { opacity: 1; stroke-width: 5; } to { opacity: 0; stroke-width: 1; } }
+.mg-ball { transition: transform .1s; }
+.mg-ball.hit { transform: scale(1.8); opacity: 0; transition: transform .2s, opacity .2s; }
+/* 対戦画面の数字と演出をもう一段にぎやかに */
+.fx3d .float.dmg, .fx3d .float.crit { animation: dmg-pop .95s cubic-bezier(.2,1.4,.4,1) forwards; -webkit-text-stroke: 1px #0008; }
+.fx3d .float.crit { text-shadow: 0 2px 0 #000, 0 0 14px #f2a541; }
+.fx3d .float.heal { text-shadow: 0 2px 0 #000, 0 0 10px #7fd46b; }
+@keyframes dmg-pop { 0% { opacity: 0; transform: translate(-50%, 0) scale(2); } 15% { opacity: 1; transform: translate(-50%, -8px) scale(1); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -44px) scale(.9); } }
+@media (prefers-reduced-motion: reduce) { .mg-rune, .mg-gauge i::after { animation: none; } .mg-wave, .mg-spark { display: none; } }
+
 </style>
 </head>
 <body>

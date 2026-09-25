@@ -42,13 +42,13 @@ function chargeOverlay(e, a) {
   if (a.dataset.key !== key) {
     a.dataset.key = key;
     a.replaceChildren();
-    e.mg = { kind: s.game, acc: 0, balls: [], spawn: 0, lap: 0, next: 0, last: null };
+    e.mg = { kind: s.game, acc: 0, balls: [], spawn: 0, lap: 0, next: 0, last: null, step: 0, full: !1 };
     const head = q("div", "mg-head");
     head.append(q("div", "mg-name", g.name), q("div", "title", `${Ze(u).name} の${s.grand ? "大奥義" : "奥義"}「${Ze(u).ultName}」`), q("div", "help", g.help));
-    const stage = q("div", "mg-stage " + s.game);
+    const stage = q("div", "mg-stage " + s.game + (s.grand ? " grand" : ""));
     const face = q("div", "mg-face");
     face.innerHTML = da(Ze(u).id, "");
-    stage.append(face);
+    stage.append(q("div", "mg-rune"), face);
     const gauge = q("div", "gauge mg-gauge");
     gauge.append(q("i"));
     const row = q("div", "row");
@@ -59,10 +59,21 @@ function chargeOverlay(e, a) {
     setupCharge(e, stage, s.game);
   }
   const t = e.state.tick - s.startTick;
-  a.querySelector(".mg-gauge i").style.width = jl(s.power, CHARGE_FULL);
-  a.querySelector(".mg-gauge").classList.toggle("fast", t <= g.perfect);
-  a.querySelector(".mg-time").textContent = t <= g.perfect ? "今なら PERFECT" : t <= g.good ? "GOOD まで" : `残り ${Ti(Math.max(0, g.limit - t))} 秒`;
-  tickCharge(e, a.querySelector(".mg-stage"), s);
+  const pw = Math.min(1, s.power / CHARGE_FULL), st = a.querySelector(".mg-stage"), gg = a.querySelector(".mg-gauge");
+  gg.querySelector("i").style.width = jl(s.power, CHARGE_FULL);
+  gg.classList.toggle("fast", t <= g.perfect);
+  st.style.setProperty("--pw", pw.toFixed(3));
+  // ゲージが 1/4 たまるごとに光る。満タンでひときわ大きく
+  const step = Math.floor(pw * 4);
+  if (step > e.mg.step) {
+    e.mg.step = step;
+    if (pw >= 1 && !e.mg.full) { e.mg.full = !0; st.classList.add("charged"); mgBurst(st, 50, 50, "perfect", 26); sfxCharged(); }
+    else if (step < 4) { mgBurst(gg, pw * 100, 50, "good", 6); gg.classList.remove("pulse"), gg.offsetWidth, gg.classList.add("pulse"); }
+  }
+  const tm = a.querySelector(".mg-time");
+  tm.textContent = t <= g.perfect ? "今なら PERFECT" : t <= g.good ? "GOOD まで" : `残り ${Ti(Math.max(0, g.limit - t))} 秒`;
+  tm.className = "mg-time num " + (t <= g.perfect ? "perfect" : t <= g.good ? "good" : "late");
+  tickCharge(e, st, s);
 }
 
 function sendCharge(e, amount) {
@@ -95,18 +106,26 @@ var STAR = Array.from({ length: 10 }, (_, i) => { const r = i % 2 ? 36 : 88, t =
 function setupCharge(e, stage, kind) {
   if (kind === "mawase") {
     stage.insertAdjacentHTML("beforeend", '<div class="mg-ring"></div><div class="mg-arrow">⟳</div>');
-    spinHandler(stage, (turn, a) => { sendCharge(e, turn * 300); stage.querySelector(".mg-arrow").style.transform = `rotate(${a * 180 / Math.PI + 90}deg)`; });
+    spinHandler(stage, (turn, a) => {
+      sendCharge(e, turn * 300);
+      stage.querySelector(".mg-arrow").style.transform = `rotate(${a * 180 / Math.PI + 90}deg)`;
+      const now = performance.now();
+      if (now - (e.mg.trail ?? 0) > 45) e.mg.trail = now, mgBurst(stage, 50 + Math.cos(a) * 40, 50 + Math.sin(a) * 40, "trail", 2);
+    });
   } else if (kind === "nazore") {
     const svg = Ke("svg", { viewBox: "0 0 200 200", class: "mg-svg" });
-    svg.innerHTML = `<path d="M${STAR.map(p => p.join(" ")).join(" L")} Z" class="mg-path"/>` + STAR.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="9" class="mg-pt" data-i="${i}"/>`).join("");
+    svg.innerHTML = `<path d="M${STAR.map(p => p.join(" ")).join(" L")} Z" class="mg-path"/><polyline class="mg-done" points=""/>` + STAR.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="9" class="mg-pt" data-i="${i}"/>`).join("");
     stage.append(svg);
     const hit = ev => {
       const r = stage.getBoundingClientRect();
       const x = (ev.clientX - r.left) * 200 / r.width, y = (ev.clientY - r.top) * 200 / r.height;
       const [nx, ny] = STAR[e.mg.next];
       if (Math.hypot(nx - x, ny - y) < 24) {
+        const done = e.mg.next;
         e.mg.next = (e.mg.next + 1) % STAR.length;
-        if (e.mg.next === 0) { e.mg.lap++; sendCharge(e, 334); E2(!0); } else E2(!1);
+        if (e.mg.next === 0) { e.mg.lap++; sendCharge(e, 334); E2(!0); mgBurst(stage, nx / 2, ny / 2, "perfect", 18); }
+        else { E2(!1); mgBurst(stage, nx / 2, ny / 2, "good", 5); }
+        stage.querySelector(".mg-done")?.setAttribute("points", STAR.slice(0, e.mg.next ? done + 1 : 0).map(p => p.join(",")).join(" "));
       }
     };
     let down = !1;
@@ -140,7 +159,12 @@ function tickCharge(e, stage, s) {
       e.mg.last = s.lastPress;
       const j = q("div", "mg-judge " + s.lastJudge, s.lastJudge === "perfect" ? "ぴったり！" : s.lastJudge === "good" ? "おしい" : "ずれた");
       stage.append(j);
-      setTimeout(() => j.remove(), 600);
+      setTimeout(() => j.remove(), 700);
+      // 押したときの針の先で光を散らす
+      const th = ((s.lastPress - s.startTick) % Di) * 2 * Math.PI / Di;
+      mgBurst(stage, 50 + Math.sin(th) * 36, 50 - Math.cos(th) * 36, s.lastJudge, s.lastJudge === "perfect" ? 20 : s.lastJudge === "good" ? 10 : 4);
+      stage.classList.remove("flash-perfect", "flash-good", "flash-miss"), stage.offsetWidth, stage.classList.add("flash-" + s.lastJudge);
+      sfxJudge(s.lastJudge);
     }
   } else if (s.game === "ute") {
     const now = performance.now();
@@ -149,7 +173,7 @@ function tickCharge(e, stage, s) {
       const b = q("button", "mg-ball");
       const fromLeft = Math.random() < 0.5;
       const ball = { el: b, x: fromLeft ? -10 : 110, y: 15 + Math.random() * 70, vx: (fromLeft ? 1 : -1) * (30 + Math.random() * 25), vy: (Math.random() - 0.5) * 20, hit: !1 };
-      b.onpointerdown = ev => { ev.preventDefault(); ev.stopPropagation(); if (ball.hit) return; ball.hit = !0; b.classList.add("hit"); sendCharge(e, 125); E2(!0); };
+      b.onpointerdown = ev => { ev.preventDefault(); ev.stopPropagation(); if (ball.hit) return; ball.hit = !0; b.classList.add("hit"); sendCharge(e, 125); E2(!0); mgBurst(stage, ball.x, ball.y, "good", 8); };
       stage.append(b);
       e.mg.balls.push(ball);
     }
@@ -203,7 +227,12 @@ function sendPurify(e, amount) {
 function setupPurify(e, stage, kind) {
   if (kind === "mawase") {
     stage.insertAdjacentHTML("beforeend", '<div class="mg-ring"></div><div class="mg-arrow">⟳</div>');
-    spinHandler(stage, (turn, a) => { sendPurify(e, turn * 200); stage.querySelector(".mg-arrow").style.transform = `rotate(${a * 180 / Math.PI + 90}deg)`; });
+    spinHandler(stage, (turn, a) => {
+      sendPurify(e, turn * 200);
+      stage.querySelector(".mg-arrow").style.transform = `rotate(${a * 180 / Math.PI + 90}deg)`;
+      const now = performance.now();
+      if (now - (e.pg.trail ?? 0) > 60) e.pg.trail = now, mgBurst(stage, 50 + Math.cos(a) * 40, 50 + Math.sin(a) * 40, "purify", 2);
+    });
   } else if (kind === "kosure") {
     let last = null;
     stage.onpointerdown = ev => { ev.preventDefault(); stage.setPointerCapture(ev.pointerId); last = [ev.clientX, ev.clientY]; };
@@ -212,6 +241,7 @@ function setupPurify(e, stage, kind) {
       const d = Math.hypot(ev.clientX - last[0], ev.clientY - last[1]);
       last = [ev.clientX, ev.clientY];
       sendPurify(e, d * 0.4);
+      if (d > 6 && Math.random() < 0.3) { const [x, y] = pctPoint(stage, ev); mgBurst(stage, x, y, "purify", 2); }
       stage.style.setProperty("--rub", String((parseFloat(stage.style.getPropertyValue("--rub") || "0") + d) % 360));
     };
     stage.onpointerup = stage.onpointercancel = () => { last = null; };
@@ -221,7 +251,13 @@ function setupPurify(e, stage, kind) {
     stage.onpointerup = ev => {
       if (!start || !e.pg.crack) return;
       const end = pctPoint(stage, ev), c = e.pg.crack;
-      if (segCross(start, end, c.a, c.b)) { sendPurify(e, 250); E2(!0); e.pg.crack.el.remove(); e.pg.crack = null; }
+      if (segCross(start, end, c.a, c.b)) {
+        sendPurify(e, 250); E2(!0); e.pg.crack.el.remove(); e.pg.crack = null;
+        mgBurst(stage, (start[0] + end[0]) / 2, (start[1] + end[1]) / 2, "perfect", 14);
+        const cut = Ke("svg", { viewBox: "0 0 100 100", class: "mg-cut", preserveAspectRatio: "none" });
+        cut.innerHTML = `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}"/>`;
+        stage.append(cut), setTimeout(() => cut.remove(), 400);
+      }
       start = null;
     };
   } else {
@@ -247,8 +283,9 @@ function tickPurify(e, stage, kind) {
       const spot = { el: b, until: now + (kind === "renda" ? 1600 : 2400), hits: 0 };
       b.onpointerdown = ev => {
         ev.preventDefault(); ev.stopPropagation();
-        if (kind === "tsubuse") { sendPurify(e, 80); b.classList.add("pop"); spot.until = now; E2(!0); }
-        else { sendPurify(e, 60); spot.hits++; b.classList.remove("tap"); b.offsetWidth; b.classList.add("tap"); E2(!1); }
+        const [px, py] = [parseFloat(b.style.left), parseFloat(b.style.top)];
+        if (kind === "tsubuse") { sendPurify(e, 80); b.classList.add("pop"); spot.until = now; E2(!0); mgBurst(stage, px, py, "purify", 8); }
+        else { sendPurify(e, 60); spot.hits++; b.classList.remove("tap"); b.offsetWidth; b.classList.add("tap"); E2(!1); mgBurst(stage, px, py, "purify", 3); }
       };
       stage.append(b);
       e.pg.spots.push(spot);
@@ -281,5 +318,19 @@ function bottomOverlay(e) {
 
 // テスト用（URL に #debug を付けたときだけ）
 function debugHook() {
-  if (location.hash.includes("debug")) window.__yokaiDebug = { ga: () => Ga, send: (i) => zt(Ga, i) };
+  if (!location.hash.includes("debug")) return;
+  window.__yokaiDebug = {
+    ga: () => Ga, send: (i) => zt(Ga, i), lobby: () => openPvpLobby(),
+    // 自分の側を CPU に操作させる（対人戦の通しテスト用）
+    autoplay(params = or[3].params) {
+      let cpu = null, g = null;
+      return setInterval(() => {
+        if (!Ga || !Ga.running) return;
+        if (g !== Ga) g = Ga, cpu = null;
+        const me = Ga.net?.role === "guest" ? 1 : 0, st = me ? Ga.canon : Ga.state;
+        cpu ??= Nh(me, 12345 + me, params);
+        for (const i of Bh(cpu, st)) zt(Ga, i);
+      }, 50);
+    },
+  };
 }

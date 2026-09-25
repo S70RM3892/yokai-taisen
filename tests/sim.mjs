@@ -65,3 +65,40 @@ for (const d of E.units) {
 const cats = {};
 for (const e of E.equips) cats[e.cat] = (cats[e.cat] ?? 0) + 1;
 console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSON.stringify(cats)}), allowed pairs ${equipPairs}, battle items: ${E.battleItems.length}`);
+
+// 対人戦の前提：同じ種・同じ入力なら、JSON で送った状態からでも同じ結果になる（ゲストの再現）。
+// アイテムは使えない。「あわせろ！」の at は過去 1 秒まで・構えより前には戻れない。
+{
+  let pvp = 0;
+  for (let g = 0; g < 20; g++) {
+    const seed = (g * 40503 + 7) >>> 0;
+    const teams = [E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2))];
+    const host = E.newBattle(seed, teams[0], teams[1], { noItems: true, bags: [["ikuraonigiri"], ["ikuraonigiri"]] });
+    let guest = E.newBattle(seed, teams[0], teams[1], { noItems: true });
+    if (host.players[0].bag.length || host.players[1].bag.length) throw new Error("pvp bag should be empty");
+    const cpus = [E.newCpu(0, seed ^ 1, levels[2]), E.newCpu(1, seed ^ 2, levels[1])];
+    while (!host.outcome) {
+      const inputs = [];
+      for (const p of [0, 1]) for (const input of E.cpuInputs(cpus[p], host)) inputs.push({ player: p, input });
+      inputs.push({ player: 1, input: { t: "item", slot: 0, allySlot: 0 } });
+      const ev = [];
+      E.step(host, inputs, ev);
+      if (ev.some(e => e.t === "item")) throw new Error("item used in pvp");
+      E.step(guest, JSON.parse(JSON.stringify(inputs)), []);
+      if (host.tick % 97 === 0) guest = JSON.parse(JSON.stringify(guest)); // 送られた状態に置きかえても同じ
+    }
+    if (JSON.stringify(host) !== JSON.stringify(guest)) throw new Error(`pvp replay diverged in game ${g}`);
+    pvp++;
+  }
+  // at の範囲
+  const seed = 99, teams = [E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2))];
+  const st = E.newBattle(seed, teams[0], teams[1], { noItems: true });
+  for (let i = 0; i < 40; i++) E.step(st, [], []);
+  const p = st.players[0];
+  p.stance = { unit: p.wheel[0], startTick: 30, grand: false, partners: [], releaseRequested: false, game: "awasero", power: 0 };
+  E.step(st, [{ player: 0, input: { t: "ultRelease", at: 5 } }], []);
+  if (p.stance && p.stance.lastPress !== 40) throw new Error(`at before stance should fall back to now: ${p.stance.lastPress}`);
+  E.step(st, [{ player: 0, input: { t: "ultRelease", at: 38 } }], []);
+  if (p.stance && p.stance.lastPress !== 40) throw new Error("press within 4 ticks should be ignored");
+  console.log(`pvp replay: ${pvp} games identical, items blocked`);
+}

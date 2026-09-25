@@ -1056,3 +1056,104 @@ function showPreview(host, def) {
     P.raf = requestAnimationFrame(loop);
   }
 }
+
+// ---- アイコン：3D モデルをその場で撮って、2D のアイコンにも同じ姿を使う ----
+// 以前のアイコンは「役割」ごとの共通の絵に一族名から色を付けただけで、3D モデルとは別物だった。
+// 1 体ずつ小さなキャンバスでモデルを撮り、その画像（blob URL）をどのアイコンにも使う。
+var ICON_PX = 160;
+var ICON = { r: null, url: new Map(), queue: [], fresh: [], shot: new Set(), timer: 0, defs: null };
+
+function iconRenderer() {
+  if (ICON.r) return ICON.r;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = ICON_PX;
+  let renderer;
+  try {
+    renderer = new v1({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  } catch {
+    return ICON.r = { fail: true };
+  }
+  renderer.setPixelRatio(1);
+  renderer.setSize(ICON_PX, ICON_PX, false);
+  renderer.setClearColor(0, 0);
+  const scene = new E1();
+  scene.add(new V1(0xc8c0e0, 2.0));
+  const sun = new z1(0xfff0d0, 1.7);
+  sun.position.set(2, 4, 5);
+  scene.add(sun);
+  const rim = new z1(0x9ad0ff, 1.2);
+  rim.position.set(-3, 2, -3);
+  scene.add(rim);
+  const camera = new qt(28, 1, 0.1, 80);
+  return ICON.r = { canvas, renderer, scene, camera };
+}
+
+// 顔が見えるように上の方へ寄せ、少し斜めから撮る
+function snapIcon(def, done) {
+  const R = iconRenderer();
+  if (R.fail) return;
+  const m = buildYokaiModel(def);
+  for (const c of m.children.slice(1)) c.visible = !1; // 足もとの光の輪は写さない
+  m.rotation.y = -0.4;
+  R.scene.add(m);
+  m.updateMatrixWorld(true);
+  const box = new gi().setFromObject(m.children[0]);
+  const size = box.getSize(new D()), c = box.getCenter(new D());
+  const span = Math.max(size.y * 0.84, Math.max(size.x, size.z * 0.85) * 1.02, 0.4);
+  const cy = Math.max(c.y, box.max.y + span * 0.05 - span / 2);
+  const dist = span / 2 / Math.tan(14 * Math.PI / 180) * 1.05 + size.z * 0.3;
+  R.camera.position.set(c.x, cy + dist * 0.16, c.z + dist);
+  R.camera.lookAt(c.x, cy, c.z);
+  R.renderer.render(R.scene, R.camera);
+  R.scene.remove(m);
+  for (const mat of m.userData.mats) mat.dispose();
+  R.canvas.toBlob(b => { if (b) done(URL.createObjectURL(b)); }, "image/png");
+}
+
+// あとから頼まれたもの（いま画面に出ているもの）を先に撮る。同じときに頼まれたものは頼まれた順
+function queueIcon(id) {
+  if (ICON.shot.has(id) || ICON.fresh.includes(id)) return;
+  ICON.fresh.push(id);
+  clearTimeout(ICON.timer);
+  ICON.timer = setTimeout(pumpIcons, 0);
+}
+
+// 対戦中は、いま画面に要るもの（新しく頼まれたもの）だけを撮る。編成画面の残りは対戦のあとで
+function pumpIcons() {
+  ICON.timer = 0;
+  const battle = !!(typeof Ga !== "undefined" && Ga?.running);
+  let now = [];
+  if (battle) now = ICON.fresh.splice(0);
+  else {
+    const f = new Set(ICON.fresh);
+    ICON.queue = ICON.fresh.concat(ICON.queue.filter(id => !f.has(id)));
+    ICON.fresh = [];
+    now = ICON.queue;
+  }
+  const t0 = performance.now();
+  while (now.length && performance.now() - t0 < 12) {
+    const id = now.shift(), def = ICON.defs.get(id);
+    if (!def || ICON.shot.has(id)) continue;
+    ICON.shot.add(id);
+    try {
+      snapIcon(def, url => {
+        ICON.url.set(id, url);
+        for (const im of document.querySelectorAll(`image[data-yk="${id}"]`)) im.setAttribute("href", url);
+      });
+    } catch (err) {
+      console.warn("icon", id, err);
+    }
+  }
+  if (battle && now.length) ICON.fresh.unshift(...now);
+  if (ICON.fresh.length) ICON.timer = setTimeout(pumpIcons, 16);
+  else if (ICON.queue.length) ICON.timer = setTimeout(pumpIcons, battle ? 1000 : 16);
+}
+
+// アイコンの SVG。WebGL が使えないときは null（もとの 2D の絵を使う）
+function modelIconSvg(id) {
+  if (!ICON.defs) ICON.defs = new Map(ct.map(d => [d.id, d]));
+  if (!ICON.defs.has(id) || iconRenderer().fail) return null;
+  const url = ICON.url.get(id);
+  if (!url) queueIcon(id);
+  return `<svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true" overflow="visible"><image data-yk="${id}" ${url ? `href="${url}" ` : ""}x="-3" y="-3" width="70" height="70"></image></svg>`;
+}
