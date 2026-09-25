@@ -50,7 +50,9 @@
   .slot .pos { font-size: 11px; color: var(--muted); }
   .slot b { font-size: 13px; }
   .roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; text-align: left; display: grid; gap: 3px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; text-align: left; display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 10px; row-gap: 3px; }
+  .card > :not(.pic) { grid-column: 2; }
+  .card .pic { grid-row: 1 / span 4; width: 56px; height: 56px; align-self: center; border-radius: 50%; background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--tribe, #555) 45%, transparent) 0%, transparent 70%); }
   .card:hover { border-color: var(--lantern); }
   .card .head { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
   .card .name { font-weight: 700; font-size: 15px; }
@@ -92,8 +94,8 @@
   .unit.pick { box-shadow: 0 0 0 2px var(--sg); cursor: pointer; }
   .unit.hit { transform: translateX(3px); }
   .unit .nm { font-weight: 700; font-size: 14px; display: flex; gap: 6px; align-items: center; }
-  .fig { width: 30px; height: 30px; flex: none; border-radius: 45% 45% 40% 40%; display: grid; place-items: center; font-family: var(--display); font-size: 15px; color: #10131f; box-shadow: 0 0 0 0 transparent; will-change: transform; }
-  .unit.foe .fig { border-radius: 40% 40% 45% 45%; }
+  .fig { width: 48px; height: 48px; flex: none; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-size: 18px; color: var(--text); background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--tribe, #555) 45%, transparent) 0%, transparent 70%); will-change: transform; padding: 2px; }
+  .unit.foe .fig svg { transform: scaleX(-1); }
   .unit.dead .fig { transform: rotate(-90deg) translateY(10px); }
   .unit .nm .st { font-size: 11px; color: var(--muted); font-weight: 400; }
   .bar { height: 6px; background: #0c0f19; border-radius: 3px; overflow: hidden; }
@@ -128,6 +130,8 @@
   .wheel .half { position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dashed var(--line); }
   .wslot { position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; background: var(--panel-2); border: 2px solid var(--line); display: grid; place-items: center; text-align: center; font-size: 11px; line-height: 1.1; padding: 2px; transition: left .25s, top .25s; }
   .wslot b { font-size: 13px; }
+  .wslot .wart { width: 34px; height: 34px; display: block; margin-bottom: -4px; }
+  .wslot .num { font-size: 10px; }
   .wslot.front { border-color: var(--ally); }
   .wslot.dead { opacity: .3; }
   .wslot.cursed { box-shadow: 0 0 0 2px var(--curse); }
@@ -170,6 +174,8 @@
     .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .wheel { width: 190px; height: 190px; }
     .wslot { width: 50px; height: 50px; margin: -25px 0 0 -25px; font-size: 10px; }
+    .wslot .wart { width: 26px; height: 26px; }
+    .fig { width: 38px; height: 38px; }
     .corner { font-size: 13px; }
     .unit { padding: 6px; min-height: 96px; }
     .unit .nm { font-size: 12px; }

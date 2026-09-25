@@ -26,6 +26,7 @@ import {
 import * as C from "../core/constants.js";
 import { createStream, nextU32 } from "../core/rng.js";
 import { randomTeam } from "../sim/teamgen.js";
+import { artSvg } from "./art.js";
 import * as M from "./motion.js";
 import * as S from "./sound.js";
 
@@ -150,6 +151,10 @@ function showSetup(): void {
   const roster = h("div", "roster");
   for (const d of UNITS) {
     const card = h("button", "card");
+    const pic = h("div", "pic");
+    pic.innerHTML = artSvg(d.id, d.name.slice(0, 1));
+    pic.style.setProperty("--tribe", TRIBE_COLOR[d.tribe]);
+    card.append(pic);
     const head = h("div", "head");
     head.append(h("span", "name", d.name), h("span", "rank " + d.rank, d.group ? `${d.rank}・大物` : d.rank));
     head.append(h("span", "tag", `${TRIBE[d.tribe]}・${natureById(d.defaultNature).name}`));
@@ -315,8 +320,8 @@ function buildBattle(v: View): void {
         '<div class="fx"></div><div class="eta num"></div>';
       el.onclick = () => onUnitClick(v, u);
       const fig = el.querySelector(".fig") as HTMLElement;
-      fig.textContent = def(u).name.slice(0, 1);
-      fig.style.background = TRIBE_COLOR[def(u).tribe];
+      fig.innerHTML = artSvg(def(u).id, def(u).name.slice(0, 1));
+      fig.style.setProperty("--tribe", TRIBE_COLOR[def(u).tribe]);
       v.unitEl.set(u.uid, el);
     }
   }
@@ -779,7 +784,7 @@ function render(v: View): void {
     const ang = ((-150 + shown * 60) * Math.PI) / 180;
     el.style.left = `${rad + R * Math.cos(ang)}px`;
     el.style.top = `${rad + R * Math.sin(ang)}px`;
-    const label = `<b>${def(u).name.slice(0, 3)}</b><br><span class="num">${Math.round((u.sg * 100) / C.SG_FULL)}%</span>`;
+    const label = `<span class="wart">${artSvg(def(u).id, def(u).name.slice(0, 1))}</span><span class="num">${Math.round((u.sg * 100) / C.SG_FULL)}%</span>`;
     if (el.innerHTML !== label) el.innerHTML = label;
     el.classList.toggle("front", shown < 3);
     el.classList.toggle("dead", !isAlive(u));
