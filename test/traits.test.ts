@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  agNeeded,
+  apAfterAction,
   type BattleEvent,
   type BattleState,
   effectiveStat,
@@ -13,7 +13,7 @@ import {
   unitIndexById,
   validateTeam,
 } from "../src/core/index.js";
-import { battle, freezeAg, ftick, TEAM_A, TEAM_B, tick } from "./helpers.js";
+import { battle, freezeAg, ftick, readyUnit, TEAM_A, TEAM_B, tick } from "./helpers.js";
 
 const ofType = <T extends BattleEvent["t"]>(events: BattleEvent[], t: T) =>
   events.filter((e): e is Extract<BattleEvent, { t: T }> => e.t === t);
@@ -22,7 +22,7 @@ const ofType = <T extends BattleEvent["t"]>(events: BattleEvent[], t: T) =>
 function actOnce(s: BattleState, pid: PlayerId, index: number): BattleEvent[] {
   freezeAg(s);
   const p = s.players[pid];
-  p.units[index].ag = agNeeded(p, p.units[index]);
+  readyUnit(s, pid, index);
   return tick(s);
 }
 
@@ -251,7 +251,7 @@ describe("特性（§8.5）", () => {
   it("先駆け：開始時に前衛ならすぐ行動できる。後衛からは初めて前に出たとき", () => {
     const front = battle(1, [{ unit: "rokurokubi" }, ...TEAM_A.slice(1)], TEAM_B);
     const p = front.players[0];
-    expect(p.units[0].ag).toBe(agNeeded(p, p.units[0]));
+    expect(p.units[0].ap).toBe(0);
     // TEAM_B は位置 5 がろくろ首
     const s = battle(1, TEAM_A, TEAM_B);
     const ev = ftick(s, [1, { t: "rotate", dir: "cw" }]); // 5 → 0

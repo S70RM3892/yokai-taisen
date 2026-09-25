@@ -16,7 +16,7 @@ import {
 import type { BattleEvent, DamageSource, Quality } from "./events.js";
 import { type Input, inputCategory, type PlayerInput } from "./input.js";
 import { randInt, randRange } from "./rng.js";
-import { agNeeded, backHasTrait, effectiveStat, formationPermil, hasTrait, wheelNeighbors } from "./stats.js";
+import { apAfterAction, backHasTrait, effectiveStat, formationPermil, hasTrait, wheelNeighbors } from "./stats.js";
 import {
   aliveFront,
   type BattleState,
@@ -60,11 +60,9 @@ export function stepInPlace(s: BattleState, inputs: readonly PlayerInput[], even
   // 2. 構えの進行
   for (const pid of [0, 1] as const) progressStance(s, pid, events);
 
-  // 3. AG の加算
-  for (const pid of [0, 1] as const) addAg(s, pid);
-
-  // 4. 行動の解決（1体行動するたびに前衛全員の SG が増える）
-  resolveActions(s, events);
+  // 3.（v0.20 で廃止）
+  // 4. 行動の解決：演出が終わっていれば、行動ポイントが一番少ない1体が行動する
+  resolveNextAction(s, events);
 
   // 5. 継続効果
   for (const pid of [0, 1] as const) tickEffects(s, pid, events);
@@ -293,7 +291,7 @@ function heal(events: BattleEvent[], u: UnitState, amount: number, src: number |
 
 function knockOut(s: BattleState, events: BattleEvent[], p: PlayerState, u: UnitState): void {
   u.hp = 0;
-  u.ag = 0;
+  u.ap = 0;
   u.sg = 0;
   u.curse = null;
   u.blessing = null;
@@ -486,7 +484,7 @@ function triggerFirstStrike(p: PlayerState, events: BattleEvent[]): void {
     const u = p.units[p.wheel[pos]];
     if (hasTrait(u, "firstStrike") && !u.firstStrikeUsed) {
       u.firstStrikeUsed = true;
-      u.ag = Math.max(u.ag, agNeeded(p, u));
+      u.ap = 0;
       events.push({ t: "firstStrike", uid: u.uid });
     }
   }
@@ -535,6 +533,8 @@ function progressStance(s: BattleState, pid: PlayerId, events: BattleEvent[]): v
   for (const i of st.partners) p.units[i].sg = 0;
   p.stance = null;
   events.push({ t: "ult", player: pid, uid: u.uid, grand: st.grand, quality, charge, auto });
+  // 奥義の演出の間は、次の自動の行動が起きない（§4.1）
+  s.busyUntil = Math.max(s.busyUntil, s.tick) + C.ULT_TICKS;
   fireUlt(s, pid, u, st.grand, chargeMult, qualityMult, events);
 }
 
@@ -624,17 +624,6 @@ function frozenUnits(p: PlayerState): number[] {
   return [st.unit, ...st.partners];
 }
 
-function addAg(s: BattleState, pid: PlayerId): void {
-  const p = s.players[pid];
-  const frozen = frozenUnits(p);
-  for (let pos = 0; pos < 3; pos++) {
-    const u = p.units[p.wheel[pos]];
-    if (!isAlive(u) || frozen.includes(u.index)) continue;
-    u.ag += C.AG_PER_TICK;
-    if (u.pendingAction !== null) u.ag = Math.min(u.ag, agNeeded(p, u));
-  }
-}
-
 /** 特性「祈り」「後見」：行動した味方の HP を回復する（§8.5） */
 function afterOwnAction(p: PlayerState, u: UnitState, events: BattleEvent[]): void {
   if (!isAlive(u) || !isFront(p, u.index)) return;
@@ -661,30 +650,38 @@ function passTurn(s: BattleState): void {
 // 4. 行動（§4）
 // =====================================================================
 
-function resolveActions(s: BattleState, events: BattleEvent[]): void {
-  const ready: { u: UnitState; pid: PlayerId; over: number; spd: number; pos: number }[] = [];
+/** 【原作】行動ポイントが一番少ない前衛の1体が行動し、ほかの前衛はその分だけ減る（§4.1） */
+function resolveNextAction(s: BattleState, events: BattleEvent[]): void {
+  if (s.tick < s.busyUntil) return;
+  if (s.players.some((p) => p.units.every((u) => !isAlive(u)))) return;
+  const cands: { u: UnitState; pid: PlayerId; spd: number; pos: number }[] = [];
   for (const pid of [0, 1] as const) {
     const p = s.players[pid];
     const frozen = frozenUnits(p);
     for (let pos = 0; pos < 3; pos++) {
       const u = p.units[p.wheel[pos]];
       if (!isAlive(u) || frozen.includes(u.index)) continue;
-      const need = agNeeded(p, u);
-      if (u.ag >= need) ready.push({ u, pid, over: u.ag - need, spd: effectiveStat(p, u, "spd"), pos });
+      cands.push({ u, pid, spd: effectiveStat(p, u, "spd"), pos });
     }
   }
-  // 超えた分が大きい順 → SPD が高い順 → P1 が先 → 位置が小さい順
-  ready.sort((a, b) => b.over - a.over || b.spd - a.spd || a.pid - b.pid || a.pos - b.pos);
-  for (const r of ready) {
-    if (s.players[0].units.every((u) => !isAlive(u)) || s.players[1].units.every((u) => !isAlive(u))) return;
-    const p = s.players[r.pid];
-    if (!isAlive(r.u) || !isFront(p, r.u.index) || r.u.ag < agNeeded(p, r.u)) continue;
-    if (frozenUnits(p).includes(r.u.index)) continue;
-    if (act(s, r.pid, r.u, events)) {
-      afterOwnAction(p, r.u, events);
-      passTurn(s);
-    }
+  if (cands.length === 0) return;
+  // 行動ポイントが少ない順 → SPD が高い順 → P1 が先 → 左（位置が小さい）が先
+  cands.sort((a, b) => a.u.ap - b.u.ap || b.spd - a.spd || a.pid - b.pid || a.pos - b.pos);
+  const next = cands[0];
+  const d = next.u.ap;
+  for (const c of cands) c.u.ap = Math.max(0, c.u.ap - d);
+  const p = s.players[next.pid];
+  const done = act(s, next.pid, next.u, events);
+  if (done === null) {
+    // 敵の前衛がいなくて待つ（§12.2）
+    s.busyUntil = s.tick + 1;
+    return;
   }
+  s.lastActor = next.u.uid;
+  if (isAlive(next.u)) next.u.ap = apAfterAction(p, next.u);
+  afterOwnAction(p, next.u, events);
+  passTurn(s);
+  s.busyUntil = s.tick + C.ACTION_TICKS[done];
 }
 
 /** 性格の確率で行動を1つ引く（§4.2） */
@@ -699,12 +696,11 @@ export function rollAction(u: Pick<UnitState, "nature" | "rng">): ActionKind {
   return "attack";
 }
 
-/** 行動したら true（敵がいなくて待つときは false） */
-function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[]): boolean {
+/** 行動したら、その行動の種類（なまけも含む）。敵がいなくて待つときは null */
+function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[]): ActionKind | "loaf" | null {
   const p = s.players[pid];
   const e = s.players[1 - pid];
   const def = UNITS[u.defIndex];
-  const need = agNeeded(p, u);
 
   let action = u.pendingAction;
   if (action === null) {
@@ -713,9 +709,8 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
     // なまけの判定は行動を選ぶ前（§4.6）
     if (u.equipment !== "diligence_band" && randInt(u.rng, 1000) < def.loafPermil) {
       u.loafing = true;
-      u.ag -= need;
       events.push({ t: "action", uid: u.uid, action: "loaf" });
-      return true;
+      return "loaf";
     }
     action = rollAction(u);
   }
@@ -730,11 +725,9 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
   // 敵の前衛に生きているユニットがいなければ、AG を 1000 で止めて待つ（§12.2）
   if ((action === "attack" || action === "skill" || action === "curse") && !enemyTarget) {
     u.pendingAction = action;
-    u.ag = need;
-    return false;
+    return null;
   }
   u.pendingAction = null;
-  u.ag -= need;
   events.push({ t: "action", uid: u.uid, action });
 
   switch (action) {
@@ -753,7 +746,7 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
       })
       )
         addSg(u, sgPerTurn(p, u));
-      return true;
+      return "attack";
     case "skill":
       if (
         hit(s, events, p, u, e, enemyTarget!, {
@@ -769,16 +762,16 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
       })
       )
         addSg(u, sgPerTurn(p, u));
-      return true;
+      return "skill";
     case "guard":
       u.guarding = true;
-      return true;
+      return "guard";
     case "curse":
       applyCurse(events, p, u, e, enemyTarget!, def.curse, 0, true);
-      return true;
+      return "curse";
     case "bless":
       applyBlessing(events, u, blessTarget!, def.blessing, 0);
-      return true;
+      return "bless";
   }
 }
 

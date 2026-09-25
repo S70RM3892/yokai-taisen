@@ -4,13 +4,14 @@
 /** 1秒あたりの tick 数（§0） */
 export const TICKS_PER_SEC = 20;
 
-// ---- 行動ゲージ（§4.1） ----
-/** 1 tick あたりの AG 増加（全員同じ）。行動に必要な AG = 行動ポイント × AG_PER_ACTION_POINT */
-export const AG_PER_TICK = 9;
-export const AG_PER_ACTION_POINT = 10;
-/** 開始時の前衛の AG = 必要な量 × この範囲（‰）。原作の初期前衛補正 0.4〜0.6 倍 */
-export const AG_START_FRONT_MIN = 400;
-export const AG_START_FRONT_MAX = 600;
+// ---- 行動順（§4.1） ----
+/** 開始時の前衛の行動ポイント = 式の値 × この範囲（‰）。原作の初期前衛補正 0.4〜0.6 倍 */
+export const AP_START_FRONT_MIN = 400;
+export const AP_START_FRONT_MAX = 600;
+/** 行動の演出の長さ（tick）。この間は次の自動の行動が起きない */
+export const ACTION_TICKS = { attack: 48, skill: 48, curse: 48, bless: 48, guard: 32, loaf: 32 } as const;
+/** 奥義を解放したときの演出の長さ */
+export const ULT_TICKS = 64;
 
 /** 【原作】行動後に入る行動ポイント（たくトンボ「育成の知識」） */
 export function actionPoints(spd: number): number {

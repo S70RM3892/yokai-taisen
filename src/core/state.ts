@@ -1,10 +1,10 @@
 // 戦闘の状態（BATTLE_SPEC §3〜§12）。
 // 状態は数値・配列・プレーンなオブジェクトだけで持つ（そのまま複製・比較・保存できるように）。
 
-import { AG_START_FRONT_MAX, AG_START_FRONT_MIN, SG_START, TEAM_SIZE } from "./constants.js";
+import { AP_START_FRONT_MAX, AP_START_FRONT_MIN, SG_START, TEAM_SIZE } from "./constants.js";
 import type { ActionKind, BlessingKind, CurseKind, EquipmentId, NatureId } from "./data.js";
 import { createStream, randRange, type RngState } from "./rng.js";
-import { agNeeded, hasTrait } from "./stats.js";
+import { apAfterAction, hasTrait } from "./stats.js";
 import { RNG_STREAM_POKE_BASE } from "./constants.js";
 import { buildMember, type TeamSpec, validateTeam } from "./team.js";
 
@@ -43,7 +43,8 @@ export interface UnitState {
   def: number;
   spd: number;
   hp: number;
-  ag: number;
+  /** 行動ポイントの残り。前衛で一番少ないユニットが次に行動する（§4.1） */
+  ap: number;
   sg: number;
   guarding: boolean;
   loafing: boolean;
@@ -104,6 +105,10 @@ export interface BattleState {
   seed: number;
   players: [PlayerState, PlayerState];
   outcome: Outcome | null;
+  /** この tick までは行動の演出中で、次の自動の行動は起きない（§4.1） */
+  busyUntil: number;
+  /** 最後に自動の行動をしたユニットの uid（画面用） */
+  lastActor: number | null;
 }
 
 /** 試合を始める。編成が正しくなければ例外を投げる */
@@ -128,7 +133,7 @@ export function createBattle(seed: number, team0: TeamSpec, team1: TeamSpec): Ba
         def: b.def,
         spd: b.spd,
         hp: b.maxHp,
-        ag: 0,
+        ap: 0,
         sg: SG_START,
         guarding: false,
         loafing: false,
@@ -157,19 +162,27 @@ export function createBattle(seed: number, team0: TeamSpec, team1: TeamSpec): Ba
     };
     return ps;
   });
-  // 【原作】初期前衛補正：開始時の前衛は、必要な AG の 400〜600‰ から始まる（§4.1）
+  // 【原作】初期前衛補正：開始時の前衛は、行動ポイントが式の値の 400〜600‰（§4.1）。後衛は式の値のまま
   for (const p of players) {
+    for (const u of p.units) u.ap = apAfterAction(p, u);
     for (let pos = 0; pos < 3; pos++) {
       const u = p.units[p.wheel[pos]];
-      u.ag = Math.floor((agNeeded(p, u) * randRange(u.rng, AG_START_FRONT_MIN, AG_START_FRONT_MAX)) / 1000);
+      u.ap = Math.floor((u.ap * randRange(u.rng, AP_START_FRONT_MIN, AP_START_FRONT_MAX)) / 1000);
       // 特性「先駆け」：すぐに行動できる（§8.5）
       if (hasTrait(u, "firstStrike")) {
-        u.ag = agNeeded(p, u);
+        u.ap = 0;
         u.firstStrikeUsed = true;
       }
     }
   }
-  return { tick: 0, seed: seed >>> 0, players: players as [PlayerState, PlayerState], outcome: null };
+  return {
+    tick: 0,
+    seed: seed >>> 0,
+    players: players as [PlayerState, PlayerState],
+    outcome: null,
+    busyUntil: 0,
+    lastActor: null,
+  };
 }
 
 // ---- 状態を読むための小さな関数 ----

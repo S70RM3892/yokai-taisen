@@ -31,9 +31,16 @@ export function battle(seed = 1, a: TeamSpec = TEAM_A, b: TeamSpec = TEAM_B): Ba
   return createBattle(seed, a, b);
 }
 
-/** 全員の行動を止める（AG を増やさないように SPD を 0 にはできないので、毎 tick AG を 0 に戻す用） */
+/** 自動の行動を起こさない（ずっと「行動中」にする） */
 export function freezeAg(s: BattleState): void {
-  for (const p of s.players) for (const u of p.units) u.ag = 0;
+  s.busyUntil = 1_000_000_000;
+}
+
+/** 指定したユニットだけが次の tick に行動するようにする */
+export function readyUnit(s: BattleState, pid: 0 | 1, index: number): void {
+  for (const p of s.players) for (const u of p.units) u.ap = 1_000_000;
+  s.players[pid].units[index].ap = 0;
+  s.busyUntil = s.tick;
 }
 
 /** 1 tick 進める。inputs は [player, input] の組 */

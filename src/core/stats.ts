@@ -94,7 +94,7 @@ export function effectiveStat(p: PlayerState, u: UnitState, stat: StatName): num
   return Math.floor((u[stat] * permil) / 1000);
 }
 
-/** 次に行動するのに必要な AG（§4.1） */
-export function agNeeded(p: PlayerState, u: UnitState): number {
-  return C.actionPoints(effectiveStat(p, u, "spd")) * C.AG_PER_ACTION_POINT;
+/** 行動したあとに入る行動ポイント（§4.1。素早さは陣・呪付・加護込み） */
+export function apAfterAction(p: PlayerState, u: UnitState): number {
+  return C.actionPoints(effectiveStat(p, u, "spd"));
 }

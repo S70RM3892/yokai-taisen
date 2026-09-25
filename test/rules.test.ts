@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   actionPoints,
-  agNeeded,
+  apAfterAction,
   baseDamage,
   chainLength,
   formationPermil,
@@ -16,7 +16,7 @@ import {
   rollAction,
   validateTeam,
 } from "../src/core/index.js";
-import { battle, freezeAg, ftick, idle, TEAM_A, TEAM_B, tick } from "./helpers.js";
+import { battle, freezeAg, ftick, readyUnit, idle, TEAM_A, TEAM_B, tick } from "./helpers.js";
 
 const ofType = <T extends BattleEvent["t"]>(events: BattleEvent[], t: T) =>
   events.filter((e): e is Extract<BattleEvent, { t: T }> => e.t === t);
@@ -64,7 +64,7 @@ describe("編成（§2）", () => {
   });
 });
 
-describe("行動ポイントと AG（§4.1）", () => {
+describe("行動ポイント（§4.1）", () => {
   it("原作の行動ポイントの式", () => {
     expect(actionPoints(100)).toBe(270);
     expect(actionPoints(171)).toBe(198);
@@ -76,38 +76,55 @@ describe("行動ポイントと AG（§4.1）", () => {
     expect(actionPoints(102)).toBe(actionPoints(99) - 3);
   });
 
-  it("開始時：前衛の AG は必要な量の 40〜60%、後衛は 0。SG は全員 0", () => {
+  it("開始時：前衛の行動ポイントは式の値の 40〜60%、後衛は式の値。SG は全員 0", () => {
     for (const seed of [1, 2, 3, 4, 5]) {
       const s = battle(seed);
       const p = s.players[0];
       for (const u of p.units.slice(0, 3)) {
-        const need = agNeeded(p, u);
-        expect(u.ag).toBeGreaterThanOrEqual(Math.floor(need * 0.4));
-        expect(u.ag).toBeLessThanOrEqual(Math.floor(need * 0.6));
+        const full = apAfterAction(p, u);
+        expect(u.ap).toBeGreaterThanOrEqual(Math.floor(full * 0.4));
+        expect(u.ap).toBeLessThanOrEqual(Math.floor(full * 0.6));
       }
-      expect(p.units.slice(3).map((u) => u.ag)).toEqual([0, 0, 0]);
+      for (const u of p.units.slice(3)) expect(u.ap).toBe(apAfterAction(p, u));
       expect(s.players.every((q) => q.units.every((u) => u.sg === 0))).toBe(true);
     }
   });
 
-  it("AG は前衛だけ 1 tick に 9 増える", () => {
+  it("行動ポイントが一番少ない1体だけが動き、前衛のほかの全員もその分だけ減る", () => {
     const s = battle();
-    const before = s.players[0].units.map((u) => u.ag);
-    tick(s);
-    const after = s.players[0].units.map((u) => u.ag);
-    expect(after.map((a, i) => a - before[i])).toEqual([9, 9, 9, 0, 0, 0]);
+    const [me, foe] = s.players;
+    me.units[0].ap = 50;
+    me.units[1].ap = 80;
+    me.units[2].ap = 200;
+    foe.units[0].ap = 60;
+    foe.units[1].ap = 120;
+    foe.units[2].ap = 30; // 一番少ない
+    me.units[3].ap = 10; // 後衛は関係ない
+    const ev = tick(s);
+    expect(ofType(ev, "action").map((e) => e.uid)).toEqual([8]);
+    expect([me.units[0].ap, me.units[1].ap, me.units[2].ap]).toEqual([20, 50, 170]);
+    expect([foe.units[0].ap, foe.units[1].ap]).toEqual([30, 90]);
+    expect(foe.units[2].ap).toBe(apAfterAction(foe, foe.units[2])); // 行動したら式の値が入る
+    expect(me.units[3].ap).toBe(10); // 後衛は凍結
   });
 
-  it("必要な量に届いたら行動し、余りを持ち越す", () => {
+  it("行動の演出が終わるまで次の行動は起きない", () => {
     const s = battle();
-    freezeAg(s);
-    const p = s.players[0];
-    const need = agNeeded(p, p.units[0]); // 鬼：SPD 60 → 行動ポイント 309
-    expect(need).toBe(3090);
-    p.units[0].ag = need - 5;
+    for (const p of s.players) for (const u of p.units) u.ap = 0;
+    const actions: number[] = [];
+    for (let i = 0; i < 60; i++) for (const e of tick(s)) if (e.t === "action") actions.push(s.tick - 1);
+    // 1 tick に1体まで。間隔は 20 tick 以上
+    for (let i = 1; i < actions.length; i++) expect(actions[i] - actions[i - 1]).toBeGreaterThanOrEqual(20);
+    expect(actions.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("同じ行動ポイントなら SPD が高い方、次に左が先", () => {
+    const s = battle();
+    for (const p of s.players) for (const u of p.units) u.ap = 100;
+    s.players[1].units[1].ap = 5; // 鎌鼬 SPD 140
+    s.players[1].units[0].ap = 5; // 天狗 SPD 135
     const ev = tick(s);
-    expect(ofType(ev, "action").map((e) => e.uid)).toEqual([0]);
-    expect(p.units[0].ag).toBe(4);
+    expect(ofType(ev, "action")[0].uid).toBe(7);
   });
 });
 
@@ -116,7 +133,7 @@ describe("妖気（§6.1）", () => {
     const s = battle();
     freezeAg(s);
     const p = s.players[0];
-    p.units[0].ag = agNeeded(p, p.units[0]);
+    readyUnit(s, 0, 0);
     tick(s);
     // 鬼 ランク2 → 33、雪女 ランク3 → 40、河童 ランク3 → 40
     expect(p.units.map((u) => u.sg)).toEqual([33, 40, 40, 0, 0, 0]);
@@ -135,7 +152,7 @@ describe("妖気（§6.1）", () => {
     freezeAg(s);
     const p = s.players[0];
     p.units[1].curse = { kind: "seal", tier: 0, remaining: 300, elapsed: 0 };
-    p.units[0].ag = agNeeded(p, p.units[0]);
+    readyUnit(s, 0, 0);
     tick(s);
     expect(p.units[1].sg).toBe(0);
     expect(sgPerTurn(p, p.units[1])).toBe(0);
@@ -157,7 +174,7 @@ describe("妖気（§6.1）", () => {
       freezeAg(s);
       if (cursed) for (const u of s.players[1].units) u.curse = { kind: "slow", tier: 0, remaining: 300, elapsed: 0 };
       const p = s.players[0];
-      p.units[0].ag = agNeeded(p, p.units[0]);
+      readyUnit(s, 0, 0);
       const ev = tick(s);
       expect(ofType(ev, "damage").length).toBe(1);
       return p.units[0].sg;
@@ -198,7 +215,7 @@ describe("なまけ（§4.6）", () => {
     let acts = 0;
     for (let i = 0; i < 4000; i++) {
       freezeAg(s);
-      s.players[0].units[0].ag = agNeeded(s.players[0], s.players[0].units[0]);
+      readyUnit(s, 0, 0);
       for (const e of tick(s)) {
         if (e.t === "action" && e.uid === 0) {
           acts++;
@@ -235,7 +252,7 @@ describe("ダメージ（§5）", () => {
     let total = 0;
     for (let i = 0; i < 4000; i++) {
       freezeAg(s);
-      s.players[0].units[0].ag = agNeeded(s.players[0], s.players[0].units[0]);
+      readyUnit(s, 0, 0);
       for (const e of tick(s)) {
         // 天狗（uid 6、DEF 70）への通常攻撃だけ数える
         if (e.t === "damage" && e.src === 0 && e.source === "attack" && e.dst === 6) {
@@ -351,14 +368,14 @@ describe("奥義（§6）", () => {
     expect(ofType(ev, "ult")[0]).toMatchObject({ auto: true, quality: "miss", charge: 41 });
   });
 
-  it("構えている間は AG が凍結する", () => {
+  it("構えている間は行動ポイントが凍結して、行動しない", () => {
     const s = battle();
     s.players[0].units[1].sg = 1000;
+    s.players[0].units[1].ap = 0;
     tick(s, [0, { t: "ultStart", allySlot: 1, grand: false }]);
-    const ag = s.players[0].units[1].ag;
-    tick(s);
-    tick(s);
-    expect(s.players[0].units[1].ag).toBe(ag);
+    const ev = [...tick(s), ...tick(s)];
+    expect(ofType(ev, "action").some((e) => e.uid === 1)).toBe(false);
+    expect(s.players[0].units[1].ap).toBe(0);
   });
 
   it("キャンセルすると SG は 1000 のまま、3 秒構えられない", () => {
@@ -636,7 +653,7 @@ describe("勝敗（§10）", () => {
     expect(ofType(tick(s), "suddenDeath").length).toBe(1);
     freezeAg(s);
     const p = s.players[0];
-    p.units[0].ag = agNeeded(p, p.units[0]);
+    readyUnit(s, 0, 0);
     p.units[0].nature = "fierce";
     const dmg = ofType(tick(s), "damage");
     expect(dmg.length).toBe(1);
