@@ -14,7 +14,6 @@ import {
   isAlive,
   natureById,
   pickEnemyTarget,
-  agNeeded,
   type PlayerInput,
   stepInPlace,
   type TeamSpec,
@@ -28,6 +27,7 @@ import { createStream, nextU32 } from "../core/rng.js";
 import { randomTeam } from "../sim/teamgen.js";
 import { artSvg } from "./art.js";
 import * as M from "./motion.js";
+import { BattleScene } from "./scene.js";
 import * as S from "./sound.js";
 
 const TRIBE_COLOR: Record<string, string> = {
@@ -210,7 +210,7 @@ function showSetup(): void {
 }
 
 // =====================================================================
-// バトル
+// バトル画面：上は 3D の戦闘、下はホイール（配置は本家と同じ。見た目はオリジナル）
 // =====================================================================
 
 interface View {
@@ -219,61 +219,76 @@ interface View {
   pending: Input[];
   zero: boolean;
   mode: "none" | "ult" | "purify";
-  unitEl: Map<number, HTMLElement>;
-  wheelEl: Map<number, HTMLElement>;
-  logEl: HTMLElement;
   running: boolean;
-  /** 回転のプレビュー（+ が時計回り）。指を離す・少し待つと、まとめて1回の回転として送る */
   preview: number;
   previewTimer: number | null;
-  arrows: SVGSVGElement | null;
-  /** この行動のためのセリフをもう出したか（uid ごと） */
-  called: Set<number>;
   lastFrame: number;
   acc: number;
+  scene: BattleScene;
   refs: Record<string, HTMLElement>;
+  svg: Record<string, SVGElement>;
+  plates: HTMLElement[];
+  foeBars: Map<number, HTMLElement>;
+  logEl: HTMLElement;
+  called: string;
+  wheelKey: string;
 }
 
 let view: View | null = null;
 /** ドラッグで回した直後のクリックは無視する（奥義や浄化が誤って出ないように） */
 let lastDragAt = 0;
 
+const NS = "http://www.w3.org/2000/svg";
+const svgEl = <K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number> = {}): SVGElementTagNameMap[K] => {
+  const el = document.createElementNS(NS, tag);
+  for (const [k, val] of Object.entries(attrs)) el.setAttribute(k, String(val));
+  return el;
+};
+const hex = (c: string) => parseInt(c.replace("#", ""), 16);
+
 function startBattle(team: TeamSpec): void {
   const seed = randomSeed();
   const gen = createStream(seed, 5);
   const cpuTeam: TeamSpec = randomUnitIds(nextU32(gen)).map((unit) => ({ unit }));
   const state = createBattle(seed, team, cpuTeam);
+  app.replaceChildren();
+  const canvas = h("canvas", "stage");
+  const scene = new BattleScene(canvas);
   view = {
     state,
     cpu: createCpu(1, nextU32(gen)),
     pending: [],
     zero: false,
     mode: "none",
-    unitEl: new Map(),
-    wheelEl: new Map(),
-    logEl: h("div", "log"),
     running: true,
     preview: 0,
     previewTimer: null,
-    arrows: null,
-    called: new Set(),
     lastFrame: performance.now(),
     acc: 0,
+    scene,
     refs: {},
+    svg: {},
+    plates: [],
+    foeBars: new Map(),
+    logEl: h("div", "log"),
+    called: "",
+    wheelKey: "",
   };
-  buildBattle(view);
+  buildBattle(view, canvas);
   log(view, `相手：${cpuTeam.map((m) => UNITS.find((u) => u.id === m.unit)!.name).join("・")}`, "f");
   requestAnimationFrame(frame);
 }
 
+function unitOf(v: View, uid: number): UnitState {
+  return v.state.players[uid < 6 ? 0 : 1].units[uid % 6];
+}
+
 function unitName(v: View, uid: number): string {
-  const p = v.state.players[uid < 6 ? 0 : 1];
-  return (uid < 6 ? "" : "敵の") + def(p.units[uid % 6]).name;
+  return (uid < 6 ? "" : "敵の") + def(unitOf(v, uid)).name;
 }
 
 function log(v: View, text: string, cls = ""): void {
-  const p = h("p", cls, text);
-  v.logEl.prepend(p);
+  v.logEl.prepend(h("p", cls, text));
   while (v.logEl.childElementCount > 120) v.logEl.lastElementChild!.remove();
 }
 
@@ -281,129 +296,202 @@ function send(v: View, input: Input): void {
   v.pending.push(input);
 }
 
-function buildBattle(v: View): void {
-  app.replaceChildren();
+function pct(n: number, d: number): string {
+  return `${Math.max(0, Math.min(100, (n * 100) / d))}%`;
+}
+
+function frontUids(v: View, pid: 0 | 1): number[] {
+  const p = v.state.players[pid];
+  return [0, 1, 2].map((pos) => p.units[p.wheel[pos]].uid);
+}
+
+// ---- 画面を組み立てる ----
+
+function buildBattle(v: View, canvas: HTMLCanvasElement): void {
   const title = h("h1", "", "妖怪大戦");
   title.append(h("small", "", "試作版"));
   app.append(title, audioBar());
+  const game = h("section", "game");
 
-  const battle = h("section", "battle");
-  const screens = h("div", "screens");
-
-  // ---- 上画面 ----
-  const top = h("div", "top");
-  const hud = h("div", "hud");
-  const foeRes = h("div", "reserve");
+  // 上画面
+  const top = h("div", "top3d");
+  const hud = h("div", "hud3d");
   const clock = h("div", "clock num");
-  const allyRes = h("div", "reserve");
-  hud.append(foeRes, clock, allyRes);
-  const foeLine = h("div", "line foe-line");
-  const allyLine = h("div", "line");
-  const formation = h("div", "formation");
   const order = h("div", "order");
-  top.append(hud, order, foeLine, allyLine, formation);
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("class", "arrows");
-  svg.innerHTML =
-    '<defs>' +
-    '<marker id="ah-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#5fb3d9"/></marker>' +
-    '<marker id="ah-f" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#e0655a"/></marker>' +
-    '<marker id="ah-u" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#f2a541"/></marker>' +
-    "</defs>";
-  top.append(svg);
-  v.arrows = svg;
-  v.refs = { clock, foeRes, allyRes, foeLine, allyLine, formation, top, order };
-
-  for (const pid of [1, 0] as const) {
+  const arrows = svgEl("svg", { class: "arrows" });
+  const plates = h("div", "plates");
+  const fx = h("div", "fx3d");
+  hud.append(arrows, clock, order, fx, plates);
+  top.append(canvas, hud);
+  v.refs = { top, hud, clock, order, plates, fx };
+  v.svg = { arrows };
+  for (const pid of [0, 1] as const) {
     for (const u of v.state.players[pid].units) {
-      const el = h("button", "unit " + (pid === 0 ? "ally" : "foe"));
-      el.dataset.uid = String(u.uid);
-      el.innerHTML =
-        '<div class="bubble" hidden></div>' +
-        '<div class="nm"><span class="fig"></span><span class="n"></span><span class="st"></span></div>' +
-        '<div class="bar hp"><i></i></div><div class="bar ag"><i></i></div><div class="bar sg"><i></i></div>' +
-        '<div class="fx"></div><div class="eta num"></div>';
-      el.onclick = () => onUnitClick(v, u);
-      const fig = el.querySelector(".fig") as HTMLElement;
-      const motion = M.UNIT_MOTION[def(u).id] ?? "dash";
-      fig.innerHTML = `<div class="idle ${M.IDLE_STYLE[motion]}" style="animation-delay:-${(u.uid * 0.37) % 2}s">${artSvg(def(u).id, def(u).name.slice(0, 1))}</div>`;
-      fig.style.setProperty("--tribe", TRIBE_COLOR[def(u).tribe]);
-      v.unitEl.set(u.uid, el);
+      v.scene.addFigure(u.uid, pid === 0, artSvg(def(u).id, def(u).name.slice(0, 1)), TRIBE_COLOR[def(u).tribe], M.UNIT_MOTION[def(u).id] ?? "dash");
+      if (pid === 1) {
+        const bar = h("div", "foebar");
+        bar.innerHTML = '<span class="n"></span><div class="bar hp"><i></i></div><div class="fxs"></div>';
+        v.foeBars.set(u.uid, bar);
+        hud.append(bar);
+      }
     }
   }
-
-  // ---- 下画面 ----
-  const bottom = h("div", "bottom");
-  const controls = h("div", "controls");
-  const bUlt = h("button", "corner");
-  const bTarget = h("button", "corner");
-  const bPurify = h("button", "corner", "浄化");
-  const bEmpty = h("button", "corner", "―");
-  bEmpty.disabled = true;
-  bEmpty.style.opacity = ".3";
-  const wheel = h("div", "wheel");
-  wheel.append(h("div", "cool"), h("div", "ring"), h("div", "half"));
-  const z = h("button", "zbtn", "ゼロ");
-  z.onclick = () => toggleZero(v);
-  const rl = h("button", "rot l", "⟲");
-  rl.title = "反時計回り（Q）";
-  rl.onclick = () => queueRotate(v, -1);
-  const rr = h("button", "rot r", "⟳");
-  rr.title = "時計回り（E）";
-  rr.onclick = () => queueRotate(v, 1);
-  for (const u of v.state.players[0].units) {
-    const s = h("button", "wslot");
-    s.onclick = () => onWheelClick(v, u);
-    v.wheelEl.set(u.index, s);
-    wheel.append(s);
+  for (let i = 0; i < 3; i++) {
+    const plate = h("div", "plate");
+    plate.innerHTML =
+      '<span class="soul"><svg viewBox="0 0 20 24"><path class="soul-bg" d="M10 1 C14 7 19 11 19 16 A9 8 0 0 1 1 16 C1 11 6 7 10 1Z"/><clipPath id="sc' + i + '"><rect class="soul-clip" x="0" y="24" width="20" height="24"/></clipPath><path class="soul-fill" clip-path="url(#sc' + i + ')" d="M10 1 C14 7 19 11 19 16 A9 8 0 0 1 1 16 C1 11 6 7 10 1Z"/></svg></span>' +
+      '<span class="pn"></span><div class="bar hp"><i></i></div><div class="fxs"></div>';
+    v.plates.push(plate);
+    plates.append(plate);
   }
-  wheel.append(z, rl, rr);
-  bindWheelDrag(v, wheel);
-  bUlt.onclick = () => {
+  canvas.addEventListener("click", (e) => onStageClick(v, e));
+
+  // 下画面
+  const bottom = h("div", "bottom3d");
+  const corners = [
+    { cls: "c-tl", key: "bUlt" },
+    { cls: "c-tr", key: "bTarget" },
+    { cls: "c-bl", key: "bPurify" },
+    { cls: "c-br", key: "bEmpty" },
+  ].map(({ cls, key }) => {
+    const b = h("button", "corner " + cls);
+    b.append(h("span", "clabel"));
+    v.refs[key] = b;
+    bottom.append(b);
+    return b;
+  });
+  corners[0].onclick = () => {
     v.mode = v.mode === "ult" ? "none" : "ult";
   };
-  bTarget.onclick = () => {
+  corners[1].onclick = () => {
     v.mode = "none";
   };
-  bPurify.onclick = () => {
+  corners[2].onclick = () => {
     v.mode = v.mode === "purify" ? "none" : "purify";
   };
-  controls.append(bUlt, wheel, bTarget, bPurify, bEmpty);
-  // 位置：左上・右上・左下・右下
-  bUlt.style.gridArea = "1 / 1";
-  bTarget.style.gridArea = "1 / 3";
-  bPurify.style.gridArea = "2 / 1";
-  bEmpty.style.gridArea = "2 / 3";
-  const hint = h("div", "hint");
+  corners[3].disabled = true;
+  const wheelBox = h("div", "wheelbox");
+  const wheel = svgEl("svg", { class: "wheel3d", viewBox: "-160 -160 320 320" });
+  const defs = svgEl("defs");
+  defs.innerHTML =
+    '<radialGradient id="dial" cx="40%" cy="35%"><stop offset="0" stop-color="#3b4468"/><stop offset="1" stop-color="#151a2c"/></radialGradient>' +
+    '<linearGradient id="wfront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9d9a8"/><stop offset="1" stop-color="#c7a96a"/></linearGradient>' +
+    '<linearGradient id="wback" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3f5e"/><stop offset="1" stop-color="#262a42"/></linearGradient>';
+  wheel.append(defs);
+  wheel.append(svgEl("circle", { r: 156, fill: "#0d1020", stroke: "#39405e", "stroke-width": 3 }));
+  const cool = svgEl("circle", { r: 152, fill: "none", stroke: "#f2a541", "stroke-width": 5, transform: "rotate(-90)", "stroke-dasharray": "0 1000" });
+  wheel.append(cool);
+  const rotor = svgEl("g", { class: "rotor" });
+  wheel.append(rotor);
+  for (let pos = 0; pos < 6; pos++) {
+    const g = svgEl("g", { class: "wedge", "data-pos": pos });
+    g.append(svgEl("path", { d: wedgePath(pos, 66, 146), class: "wbase" }));
+    g.append(svgEl("g", { class: "wart" }));
+    const [sx, sy] = polar(-150 + pos * 60 + 22, 132);
+    g.append(svgEl("circle", { cx: sx, cy: sy, r: 10, class: "wsoul-bg" }));
+    g.append(svgEl("circle", { cx: sx, cy: sy, r: 10, class: "wsoul", transform: `rotate(-90 ${sx} ${sy})` }));
+    g.addEventListener("click", () => onWedgeClick(v, pos));
+    rotor.append(g);
+  }
+  const dial = svgEl("g", { class: "dial" });
+  dial.append(svgEl("circle", { r: 58, fill: "url(#dial)", stroke: "#5b6690", "stroke-width": 3 }));
+  const zero = svgEl("text", { y: 7, "text-anchor": "middle", class: "zero-t" });
+  zero.textContent = "ゼロ";
+  const zhit = svgEl("circle", { r: 26, class: "zhit" });
+  zhit.addEventListener("click", () => toggleZero(v));
+  const lBtn = svgEl("g", { class: "dialbtn" });
+  lBtn.append(svgEl("circle", { cx: -38, cy: 0, r: 15 }));
+  const lt = svgEl("text", { x: -38, y: 6, "text-anchor": "middle" });
+  lt.textContent = "⟲";
+  lBtn.append(lt);
+  lBtn.addEventListener("click", () => queueRotate(v, -1));
+  const rBtn = svgEl("g", { class: "dialbtn" });
+  rBtn.append(svgEl("circle", { cx: 38, cy: 0, r: 15 }));
+  const rt = svgEl("text", { x: 38, y: 6, "text-anchor": "middle" });
+  rt.textContent = "⟳";
+  rBtn.append(rt);
+  rBtn.addEventListener("click", () => queueRotate(v, 1));
+  dial.append(zhit, zero, lBtn, rBtn);
+  wheel.append(dial);
+  wheelBox.append(wheel);
+  bindWheelDrag(v, wheel);
+  const hint = h("div", "hint3d");
   const overlay = h("div", "overlay");
   overlay.hidden = true;
-  bottom.append(controls, hint, overlay);
-  v.refs = { ...v.refs, bottom, controls, bUlt, bTarget, hint, overlay, wheel };
+  bottom.append(wheelBox, hint, overlay);
+  v.refs = { ...v.refs, bottom, hint, overlay, wheelBox };
+  v.svg = { ...v.svg, wheel, rotor, cool, zero };
 
-  screens.append(top, bottom);
-  battle.append(screens, v.logEl);
-  app.append(battle);
+  game.append(top, bottom);
+  const details = h("details", "logbox");
+  details.append(h("summary", "", "対戦ログ"), v.logEl);
+  details.open = true;
+  const layout = h("div", "layout3d");
+  layout.append(game, details);
+  app.append(layout);
+
+  const resize = () => {
+    const w = top.clientWidth;
+    const hgt = top.clientHeight;
+    v.scene.resize(w, hgt);
+    layoutCorners(v);
+  };
+  new ResizeObserver(resize).observe(top);
+  new ResizeObserver(() => layoutCorners(v)).observe(bottom);
+  resize();
 }
+
+function polar(deg: number, r: number): [number, number] {
+  const a = (deg * Math.PI) / 180;
+  return [r * Math.cos(a), r * Math.sin(a)];
+}
+
+/** 位置 pos の扇形（位置 1 が真上。0→1→2→3→4→5 と時計回り） */
+function wedgePath(pos: number, r0: number, r1: number): string {
+  const a0 = -150 + pos * 60 - 29;
+  const a1 = -150 + pos * 60 + 29;
+  const [x0, y0] = polar(a0, r1);
+  const [x1, y1] = polar(a1, r1);
+  const [x2, y2] = polar(a1, r0);
+  const [x3, y3] = polar(a0, r0);
+  return `M${x0} ${y0} A${r1} ${r1} 0 0 1 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 0 0 ${x3} ${y3}Z`;
+}
+
+/** 四隅のボタンを、ホイールの円に沿ってくり抜く */
+function layoutCorners(v: View): void {
+  const bottom = v.refs.bottom;
+  const wb = v.refs.wheelBox.getBoundingClientRect();
+  const bb = bottom.getBoundingClientRect();
+  const cx = wb.left + wb.width / 2;
+  const cy = wb.top + wb.height / 2;
+  const r = (wb.width / 2) * (158 / 160) + 6;
+  for (const key of ["bUlt", "bTarget", "bPurify", "bEmpty"]) {
+    const el = v.refs[key];
+    const eb = el.getBoundingClientRect();
+    const x = cx - eb.left;
+    const y = cy - eb.top;
+    const mask = `radial-gradient(circle at ${x}px ${y}px, transparent ${r}px, #000 ${r + 1}px)`;
+    el.style.maskImage = mask;
+    el.style.webkitMaskImage = mask;
+  }
+  void bb;
+}
+
+// ---- 入力 ----
 
 function toggleZero(v: View): void {
   v.zero = !v.zero;
   v.mode = "none";
 }
 
-function onUnitClick(v: View, u: UnitState): void {
-  const me = v.state.players[0];
-  if (u.owner === 1) {
-    if (v.zero) send(v, { t: "pokeStart", enemyUnit: u.index });
-    else send(v, { t: "target", enemyUnit: u.index });
-    return;
-  }
-  const pos = me.wheel.indexOf(u.index);
-  if (pos < 3) tryUlt(v, pos);
+function tryUlt(v: View, pos: number): void {
+  send(v, { t: "ultStart", allySlot: pos, grand: v.zero });
+  v.mode = "none";
+  if (v.zero) v.zero = false;
 }
 
-function onWheelClick(v: View, u: UnitState): void {
+function onWedgeClick(v: View, pos: number): void {
   if (performance.now() - lastDragAt < 300) return;
-  const pos = v.state.players[0].wheel.indexOf(u.index);
   if (pos >= 3) {
     send(v, { t: "purify", allySlot: pos });
     v.mode = "none";
@@ -412,10 +500,27 @@ function onWheelClick(v: View, u: UnitState): void {
   }
 }
 
-function tryUlt(v: View, pos: number): void {
-  send(v, { t: "ultStart", allySlot: pos, grand: v.zero });
-  v.mode = "none";
-  if (v.zero) v.zero = false;
+/** 上画面のクリック：敵なら標的（ゼロ中はつつき）、味方なら奥義 */
+function onStageClick(v: View, e: MouseEvent): void {
+  const r = (e.target as HTMLElement).getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+  let best: { uid: number; d: number } | null = null;
+  for (const pid of [0, 1] as const) {
+    for (const uid of frontUids(v, pid)) {
+      const p = v.scene.project(uid, 1.0);
+      if (!p.visible) continue;
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < 70 && (!best || d < best.d)) best = { uid, d };
+    }
+  }
+  if (!best) return;
+  const u = unitOf(v, best.uid);
+  if (u.owner === 1) {
+    send(v, v.zero ? { t: "pokeStart", enemyUnit: u.index } : { t: "target", enemyUnit: u.index });
+  } else {
+    tryUlt(v, v.state.players[0].wheel.indexOf(u.index));
+  }
 }
 
 /** 回転の操作をためる。3秒の待ち時間ごとに、1回で好きなだけ回せる（BATTLE_SPEC §8.1） */
@@ -435,24 +540,27 @@ function commitRotate(v: View): void {
   send(v, net <= 3 ? { t: "rotate", dir: "cw", steps: net } : { t: "rotate", dir: "ccw", steps: 6 - net });
 }
 
-function bindWheelDrag(v: View, wheel: HTMLElement): void {
-  let startAngle: number | null = null;
+function bindWheelDrag(v: View, wheel: SVGElement): void {
+  let dragging = false;
+  let prev = 0;
+  let total = 0;
   const angle = (e: PointerEvent) => {
     const r = wheel.getBoundingClientRect();
     return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
   };
-  let total = 0;
-  let prev = 0;
   wheel.addEventListener("pointerdown", (e) => {
-    if ((e.target as HTMLElement).closest(".zbtn, .rot")) return;
+    const r = wheel.getBoundingClientRect();
+    const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+    if (d < (r.width / 2) * (60 / 160)) return; // 真ん中のダイヤルは押すだけ
     if (v.state.players[0].rotateCooldown > 0) return;
-    startAngle = angle(e);
-    prev = startAngle;
+    dragging = true;
+    v.svg.rotor.setAttribute("data-drag", "1");
+    prev = angle(e);
     total = 0;
     wheel.setPointerCapture(e.pointerId);
   });
   wheel.addEventListener("pointermove", (e) => {
-    if (startAngle === null) return;
+    if (!dragging) return;
     const a = angle(e);
     let d = a - prev;
     if (d > Math.PI) d -= 2 * Math.PI;
@@ -460,10 +568,12 @@ function bindWheelDrag(v: View, wheel: HTMLElement): void {
     total += d;
     prev = a;
     v.preview = Math.max(-5, Math.min(5, Math.round(total / (Math.PI / 3))));
+    v.svg.rotor.setAttribute("transform", `rotate(${(total * 180) / Math.PI})`);
   });
   const end = () => {
-    if (startAngle === null) return;
-    startAngle = null;
+    if (!dragging) return;
+    dragging = false;
+    v.svg.rotor.removeAttribute("data-drag");
     if (Math.abs(total) > 0.2) lastDragAt = performance.now();
     commitRotate(v);
   };
@@ -499,12 +609,13 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// ---- ゲームの進行（1 tick = 50ms） ----
+// ---- 進行 ----
 
 function frame(now: number): void {
   const v = view;
   if (!v || !v.running) return;
-  v.acc += Math.min(now - v.lastFrame, 250);
+  const dtMs = Math.min(now - v.lastFrame, 250);
+  v.acc += dtMs;
   v.lastFrame = now;
   let steps = 0;
   while (v.acc >= 50 && steps < 5 && !v.state.outcome) {
@@ -512,10 +623,10 @@ function frame(now: number): void {
     v.acc -= 50;
     steps++;
   }
-  render(v);
+  render(v, dtMs / 1000);
   if (v.state.outcome) {
     v.running = false;
-    showResult(v);
+    setTimeout(() => showResult(v), 900);
     return;
   }
   requestAnimationFrame(frame);
@@ -527,160 +638,131 @@ function stepOnce(v: View): void {
   for (const input of cpuThink(v.cpu, v.state)) inputs.push({ player: 1, input });
   const events: BattleEvent[] = [];
   stepInPlace(v.state, inputs, events);
-  for (const e of events) onEvent(v, e);
-}
-
-function float(v: View, uid: number, text: string, cls: string): void {
-  const el = v.unitEl.get(uid);
-  if (!el) return;
-  const f = h("span", "float " + cls, text);
-  el.append(f);
-  setTimeout(() => f.remove(), 950);
-
-}
-
-function figOf(v: View, uid: number): HTMLElement | null {
-  return (v.unitEl.get(uid)?.querySelector(".fig") as HTMLElement) ?? null;
-}
-
-/** モーションと効果音（画面だけのもの。戦闘は待たない） */
-function present(v: View, e: BattleEvent): void {
-  switch (e.t) {
-    case "action": {
-      v.called.delete(e.uid);
-      const u = unitOf(v, e.uid);
-      const fig = figOf(v, e.uid);
-      if (!fig) return;
-      const kind = M.UNIT_MOTION[def(u).id] ?? "dash";
-      if (e.action === "attack") {
-        M.playAction(fig, kind, u.owner === 0, "attack");
-        S.sfxAttack(Math.min(1, def(u).attackPower / 150));
-      } else if (e.action === "skill") {
-        const color = M.ELEMENT_COLOR[def(u).skillElement];
-        M.playAction(fig, kind, u.owner === 0, "skill", color);
-        S.sfxSkill(def(u).skillElement);
-      } else if (e.action === "guard") {
-        M.playGuard(fig);
-        S.sfxGuard();
-      } else if (e.action === "loaf") {
-        M.playLoaf(fig);
-        S.sfxLoaf();
-      }
-      break;
+  // 攻撃が当たる瞬間に合わせて、ダメージの表示を少し遅らせる
+  let delay = 0;
+  for (const e of events) {
+    if (e.t === "action" && (e.action === "attack" || e.action === "skill")) delay = 480;
+    if (e.t === "ult") delay = 650;
+    const d = delay;
+    if (d > 0 && (e.t === "damage" || e.t === "heal" || e.t === "ko" || e.t === "curse" || e.t === "doll" || e.t === "endure")) {
+      setTimeout(() => onEvent(v, e), d);
+    } else {
+      onEvent(v, e);
     }
-    case "curse": {
-      const fig = figOf(v, e.src);
-      if (fig) M.playCast(fig, "#b07ce0");
-      if (e.result === "hit") S.sfxCurse();
-      break;
-    }
-    case "bless": {
-      const fig = figOf(v, e.src);
-      if (fig) M.playCast(fig, "#4cc2a4");
-      S.sfxBless();
-      break;
-    }
-    case "ult": {
-      const u = unitOf(v, e.uid);
-      const fig = figOf(v, e.uid);
-      const ult = def(u).ult;
-      const color = "element" in ult && ult.element ? M.ELEMENT_COLOR[ult.element] : "#f2a541";
-      if (fig) M.playAction(fig, M.UNIT_MOTION[def(u).id] ?? "dash", u.owner === 0, e.grand ? "grand" : "ult", color);
-      M.flash(v.refs.top, color, e.grand);
-      S.sfxUlt(e.grand);
-      break;
-    }
-    case "damage": {
-      const fig = figOf(v, e.dst);
-      if (fig) M.playHit(fig, e.crit);
-      if (e.crit) S.sfxCrit();
-      else if (unitOf(v, e.dst).guarding && (e.source === "attack" || e.source === "skill")) S.sfxGuardedHit();
-      break;
-    }
-    case "heal":
-      if (e.amount >= 20) S.sfxHeal();
-      break;
-    case "ko": {
-      const fig = figOf(v, e.uid);
-      if (fig) M.playKo(fig);
-      S.sfxKo();
-      break;
-    }
-    case "rotate":
-    case "forcedRotate":
-      S.sfxRotate();
-      break;
-    case "stance": {
-      S.sfxStance(e.player === 1);
-      const u = unitOf(v, e.uid);
-      say(v, u, `${e.grand ? "大奥義" : "奥義"}「${def(u).ultName}」`, true);
-      break;
-    }
-    case "suddenDeath":
-      S.sfxAlarm();
-      break;
-    default:
-      break;
   }
 }
 
+// ---- 演出（モーション・効果音・ログ） ----
+
+function floatText(v: View, uid: number, text: string, cls: string): void {
+  const p = v.scene.project(uid, 2.0);
+  if (!p.visible) return;
+  const f = h("span", "float " + cls, text);
+  f.style.left = `${p.x}px`;
+  f.style.top = `${p.y}px`;
+  v.refs.fx.append(f);
+  setTimeout(() => f.remove(), 950);
+}
+
+function elementColor(el: string | null | undefined): number {
+  return hex(el ? M.ELEMENT_COLOR[el] : "#f2a541");
+}
+
 function onEvent(v: View, e: BattleEvent): void {
-  present(v, e);
   const side = (uid: number) => (uid < 6 ? "a" : "f");
+  const sc = v.scene;
   switch (e.t) {
+    case "action": {
+      const u = unitOf(v, e.uid);
+      const t = pickEnemyTarget(v.state.players[u.owner], v.state.players[1 - u.owner]);
+      if (e.action === "attack") {
+        sc.action(e.uid, t ? t.uid : null, "attack", 0xffffff);
+        S.sfxAttack(Math.min(1, def(u).attackPower / 150));
+      } else if (e.action === "skill") {
+        sc.action(e.uid, t ? t.uid : null, "skill", elementColor(def(u).skillElement));
+        S.sfxSkill(def(u).skillElement);
+      } else if (e.action === "guard") {
+        sc.guard(e.uid);
+        S.sfxGuard();
+        floatText(v, e.uid, "守り", "info");
+      } else if (e.action === "loaf") {
+        sc.loaf(e.uid);
+        S.sfxLoaf();
+        floatText(v, e.uid, "なまけ", "info");
+        log(v, `${unitName(v, e.uid)} はなまけている`, side(e.uid));
+      }
+      break;
+    }
     case "damage":
-      float(v, e.dst, String(e.amount), e.crit ? "crit" : "dmg");
-      if (e.crit) log(v, `${unitName(v, e.src ?? e.dst)} のクリティカル！ ${e.amount}`, side(e.src ?? e.dst));
+      sc.hit(e.dst, e.crit, e.source === "attack" ? 0xffffff : 0xffd27a);
+      floatText(v, e.dst, String(e.amount), e.crit ? "crit" : "dmg");
+      if (e.crit) {
+        S.sfxCrit();
+        log(v, `${unitName(v, e.src ?? e.dst)} のクリティカル！ ${e.amount}`, side(e.src ?? e.dst));
+      } else if (unitOf(v, e.dst).guarding && (e.source === "attack" || e.source === "skill")) S.sfxGuardedHit();
       if (e.source === "trait") log(v, `${unitName(v, e.dst)} に特性のダメージ ${e.amount}`, side(e.dst));
       break;
     case "heal":
-      if (e.amount > 0) float(v, e.dst, "+" + e.amount, "heal");
-      break;
-    case "action":
-      if (e.action === "loaf") {
-        float(v, e.uid, "なまけ", "info");
-        log(v, `${unitName(v, e.uid)} はなまけている`, side(e.uid));
-      } else if (e.action === "guard") float(v, e.uid, "守り", "info");
+      floatText(v, e.dst, "+" + e.amount, "heal");
+      if (e.amount >= 20) S.sfxHeal();
       break;
     case "curse":
       if (e.result === "hit") {
-        float(v, e.dst, CURSE[e.kind] + TIER[e.tier], "info");
+        sc.cast(e.src, 0xb07ce0);
+        floatText(v, e.dst, CURSE[e.kind] + TIER[e.tier], "info");
+        S.sfxCurse();
         log(v, `${unitName(v, e.src)} → ${unitName(v, e.dst)} に ${CURSE[e.kind]}${TIER[e.tier]}`, side(e.src));
       } else {
-        float(v, e.dst, e.result === "miss" ? "呪付 失敗" : "呪付 無効", "info");
+        floatText(v, e.dst, e.result === "miss" ? "呪付 失敗" : "呪付 無効", "info");
       }
       break;
     case "bless":
-      float(v, e.dst, BLESS[e.kind] + TIER[e.tier], "info");
+      sc.cast(e.src, 0x4cc2a4);
+      floatText(v, e.dst, BLESS[e.kind] + TIER[e.tier], "info");
+      S.sfxBless();
       break;
     case "ko":
+      sc.ko(e.uid);
+      S.sfxKo();
       log(v, `${unitName(v, e.uid)} が倒れた`, side(e.uid));
       break;
     case "ult": {
+      const u = unitOf(v, e.uid);
+      const ult = def(u).ult;
+      const t = pickEnemyTarget(v.state.players[u.owner], v.state.players[1 - u.owner]);
+      const heal = ult.kind === "heal" || ult.kind === "blessAll";
+      sc.action(e.uid, heal ? null : t ? t.uid : null, e.grand ? "grand" : "ult", elementColor("element" in ult ? ult.element : null));
+      S.sfxUlt(e.grand);
       const q = e.quality === "perfect" ? "Perfect" : e.quality === "good" ? "Good" : "Miss";
-      log(v, `${unitName(v, e.uid)} の${e.grand ? "大奥義" : "奥義"}「${def(unitOf(v, e.uid)).ultName}」 ${q}`, side(e.uid));
+      log(v, `${unitName(v, e.uid)} の${e.grand ? "大奥義" : "奥義"}「${def(u).ultName}」 ${q}`, side(e.uid));
       break;
     }
-    case "stance":
+    case "stance": {
+      S.sfxStance(e.player === 1);
+      say(v, e.uid, `${e.grand ? "大奥義" : "奥義"}「${def(unitOf(v, e.uid)).ultName}」`, true);
       if (e.player === 1) log(v, `${unitName(v, e.uid)} が${e.grand ? "大奥義" : "奥義"}を構えた！`, "f");
       break;
+    }
     case "stanceCancel":
       if (e.player === 0 && e.reason !== "input") log(v, "構えがキャンセルされた", "a");
+      break;
+    case "rotate":
+    case "forcedRotate":
+      S.sfxRotate();
+      if (e.t === "forcedRotate") log(v, `${e.player === 0 ? "こちら" : "相手"}の前衛が全滅して、ホイールが回った`, e.player === 0 ? "a" : "f");
       break;
     case "doll":
       log(v, `${unitName(v, e.uid)} は身代わり人形で耐えた`, side(e.uid));
       break;
     case "endure":
-      float(v, e.uid, "踏ん張り", "info");
+      floatText(v, e.uid, "踏ん張り", "info");
       log(v, `${unitName(v, e.uid)} は踏ん張った`, side(e.uid));
       break;
     case "firstStrike":
-      float(v, e.uid, "先駆け", "info");
-      break;
-    case "forcedRotate":
-      log(v, `${e.player === 0 ? "こちら" : "相手"}の前衛が全滅して、ホイールが回った`, e.player === 0 ? "a" : "f");
+      floatText(v, e.uid, "先駆け", "info");
       break;
     case "suddenDeath":
+      S.sfxAlarm();
       log(v, "サドンデス！ ダメージが全部 999 になる", "f");
       break;
     case "pokeEnd":
@@ -694,246 +776,222 @@ function onEvent(v: View, e: BattleEvent): void {
   }
 }
 
-function unitOf(v: View, uid: number): UnitState {
-  return v.state.players[uid < 6 ? 0 : 1].units[uid % 6];
-}
-
-// ---- 描画 ----
-
-function pct(n: number, d: number): string {
-  return `${Math.max(0, Math.min(100, (n * 100) / d))}%`;
-}
-
-/** 攻撃するならだれを狙うか（§4.4） */
-function aimName(v: View, u: UnitState): string {
-  const t = pickEnemyTarget(v.state.players[u.owner], v.state.players[1 - u.owner]);
-  return t ? def(t).name : "―";
-}
-
-function renderUnit(v: View, u: UnitState, el: HTMLElement): void {
-  const p = v.state.players[u.owner];
-  const me = v.state.players[0];
-  const d = def(u);
-  (el.querySelector(".n") as HTMLElement).textContent = d.name;
-  const st = el.querySelector(".st") as HTMLElement;
-  st.textContent = `HP ${u.hp}/${u.maxHp}`;
-  (el.querySelector(".hp i") as HTMLElement).style.width = pct(u.hp, u.maxHp);
-  el.querySelector(".hp")!.classList.toggle("low", hpRatio(u) <= 250);
-  const need = Math.max(1, agNeeded(p, u));
-  (el.querySelector(".ag i") as HTMLElement).style.width = pct(u.ag, need);
-  (el.querySelector(".sg i") as HTMLElement).style.width = pct(u.sg, C.SG_FULL);
-  el.querySelector(".sg")!.classList.toggle("full", u.sg >= C.SG_FULL);
-  const eta = el.querySelector(".eta") as HTMLElement;
-  const front = p.wheel.indexOf(u.index) < 3;
-  eta.textContent = !isAlive(u)
-    ? ""
-    : p.stance && (p.stance.unit === u.index || p.stance.partners.includes(u.index))
-      ? "構え中"
-      : u.pendingAction
-        ? "敵待ち"
-        : front
-          ? `次の行動まで ${secs(Math.max(0, Math.ceil((need - u.ag) / C.AG_PER_TICK)))} 秒 → ${aimName(v, u)}`
-          : "";
-  const fx = el.querySelector(".fx") as HTMLElement;
-  const chips: string[] = [];
-  if (u.curse) chips.push(`<span class="chip c">${CURSE[u.curse.kind]}${TIER[u.curse.tier]} ${secs(u.curse.remaining)}</span>`);
-  if (u.blessing) chips.push(`<span class="chip b">${BLESS[u.blessing.kind]} ${secs(u.blessing.remaining)}</span>`);
-  if (u.guarding) chips.push('<span class="chip g">守り</span>');
-  if (u.loafing) chips.push('<span class="chip l">なまけ中</span>');
-  const html = chips.join("");
-  if (fx.innerHTML !== html) fx.innerHTML = html;
-  el.classList.toggle("dead", !isAlive(u));
-  el.classList.toggle("ready", front && isAlive(u) && !u.pendingAction && u.ag >= need * 0.85);
-  const st2 = p.stance;
-  el.classList.toggle("stance", !!st2 && (st2.unit === u.index || st2.partners.includes(u.index)));
-  el.classList.toggle("grand", !!st2 && st2.grand);
-  el.classList.toggle("targeted", u.owner === 1 && me.target === u.index);
-  el.classList.toggle("pokeable", u.owner === 1 && v.zero && isAlive(u) && (u.curse !== null || u.loafing));
-  el.classList.toggle("pick", u.owner === 0 && v.mode === "ult" && u.sg >= C.SG_FULL && isAlive(u));
-}
-
-function render(v: View): void {
-  const s = v.state;
-  const r = v.refs;
-  // 時計
-  const left = s.tick < C.SUDDEN_DEATH_TICKS ? C.SUDDEN_DEATH_TICKS - s.tick : C.TIME_LIMIT_TICKS - s.tick;
-  const sec = Math.max(0, Math.ceil(left / C.TICKS_PER_SEC));
-  r.clock.textContent = `${s.tick >= C.SUDDEN_DEATH_TICKS ? "サドンデス " : ""}${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
-  r.clock.classList.toggle("sudden", s.tick >= C.SUDDEN_DEATH_TICKS);
-  // 前衛
-  for (const pid of [0, 1] as const) {
-    const p = s.players[pid];
-    const line = pid === 0 ? r.allyLine : r.foeLine;
-    const want = [0, 1, 2].map((pos) => v.unitEl.get(p.units[p.wheel[pos]].uid)!);
-    if (want.some((el, i) => line.children[i] !== el)) line.replaceChildren(...want);
-    for (const el of want) renderUnit(v, unitOf(v, Number(el.dataset.uid)), el);
-    // 後衛の SG
-    const res = pid === 0 ? r.allyRes : r.foeRes;
-    const back = [3, 4, 5].map((pos) => p.units[p.wheel[pos]]);
-    res.innerHTML = back
-      .map((u) => `<span class="${isAlive(u) ? "" : "dead"}" title="${def(u).name}"><i style="width:${pct(u.sg, C.SG_FULL)}"></i></span>`)
-      .join("");
-  }
-  drawArrows(v);
-  callouts(v);
-  renderOrder(v);
-  // 陣
-  const me = s.players[0];
-  const forms = new Set<string>();
-  for (let pos = 0; pos < 3; pos++) {
-    const u = me.units[me.wheel[pos]];
-    const f = formationPermil(me, u);
-    if (f > 0) forms.add(`${TRIBE[def(u).tribe]}の陣 +${f / 10}%`);
-  }
-  r.formation.textContent = forms.size ? `こちらの陣：${[...forms].join("・")}` : "";
-
-  // ホイール
-  const rad = r.wheel.clientWidth / 2;
-  const R = rad - 32;
-  for (const u of me.units) {
-    const el = v.wheelEl.get(u.index)!;
-    const pos = me.wheel.indexOf(u.index);
-    const shown = (((pos + v.preview) % 6) + 6) % 6;
-    const ang = ((-150 + shown * 60) * Math.PI) / 180;
-    el.style.left = `${rad + R * Math.cos(ang)}px`;
-    el.style.top = `${rad + R * Math.sin(ang)}px`;
-    const label = `<span class="wart">${artSvg(def(u).id, def(u).name.slice(0, 1))}</span><span class="num">${Math.round((u.sg * 100) / C.SG_FULL)}%</span>`;
-    if (el.innerHTML !== label) el.innerHTML = label;
-    el.classList.toggle("front", shown < 3);
-    el.classList.toggle("dead", !isAlive(u));
-    el.classList.toggle("cursed", !!u.curse);
-    el.classList.toggle("purifying", me.purify?.unit === u.index);
-    el.classList.toggle("pick", (v.mode === "purify" && pos >= 3 && !!u.curse) || (v.mode === "ult" && pos < 3 && u.sg >= C.SG_FULL));
-    el.title = `${def(u).name}　HP ${u.hp}/${u.maxHp}${u.curse ? "　" + CURSE[u.curse.kind] : ""}`;
-  }
-  const cool = r.wheel.querySelector(".cool") as HTMLElement;
-  const cd = me.rotateCooldown / C.ROTATE_COOLDOWN;
-  cool.style.background = cd > 0 ? `conic-gradient(var(--lantern) ${cd * 360}deg, transparent 0)` : "transparent";
-  cool.style.mask = "radial-gradient(circle, transparent 66%, #000 67%)";
-
-  r.wheel.classList.toggle("previewing", v.preview !== 0);
-  r.controls.classList.toggle("zero", v.zero);
-  r.bottom.classList.toggle("zero", v.zero);
-  r.bUlt.textContent = v.zero ? "大奥義" : "奥義";
-  r.bTarget.textContent = v.zero ? "つつき" : "標的";
-  r.bUlt.classList.toggle("on", v.mode === "ult");
-  r.hint.textContent = hintText(v);
-  renderOverlay(v);
-}
-
 /** 吹き出しと声 */
-function say(v: View, u: UnitState, text: string, big = false): void {
-  const el = v.unitEl.get(u.uid);
-  if (!el) return;
-  const b = el.querySelector(".bubble") as HTMLElement;
-  b.textContent = text;
-  b.classList.toggle("big", big);
-  b.hidden = false;
-  b.getAnimations().forEach((a) => a.cancel());
-  b.animate([{ opacity: 0, transform: "translate(-50%, 6px) scale(.8)" }, { opacity: 1, transform: "translate(-50%, 0) scale(1)", offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], {
-    duration: big ? 1600 : 1100,
-  }).onfinish = () => {
-    b.hidden = true;
-  };
+function say(v: View, uid: number, text: string, big = false): void {
+  const p = v.scene.project(uid, 2.35);
+  if (!p.visible) return;
+  const b = h("div", "bubble3d" + (big ? " big" : ""), text);
+  b.style.left = `${p.x}px`;
+  b.style.top = `${p.y}px`;
+  v.refs.fx.append(b);
+  setTimeout(() => b.remove(), big ? 1600 : 1150);
+  const u = unitOf(v, uid);
   S.voice(M.VOICE_PITCH[def(u).id] ?? 300, Math.ceil(text.length / 2), u.owner === 1);
 }
 
-/** 行動まであと少しになったら、セリフで知らせる（本家の「参る」のような合図）。行動の中身はまだ決まっていない */
-const CALL_TICKS = 12;
-function callouts(v: View): void {
-  for (const pid of [0, 1] as const) {
-    const p = v.state.players[pid];
-    for (let pos = 0; pos < 3; pos++) {
-      const u = p.units[p.wheel[pos]];
-      const frozen = p.stance && (p.stance.unit === u.index || p.stance.partners.includes(u.index));
-      if (!isAlive(u) || frozen || u.pendingAction) continue;
-      const left = Math.ceil((agNeeded(p, u) - u.ag) / C.AG_PER_TICK);
-      if (left <= CALL_TICKS && !v.called.has(u.uid)) {
-        v.called.add(u.uid);
-        say(v, u, M.CALL_LINE[def(u).id] ?? "参る！");
-      }
-    }
-    // 後衛に下がった・倒れたユニットは、次に前に出たときにまた言う
-    for (let pos = 3; pos < 6; pos++) v.called.delete(p.units[p.wheel[pos]].uid);
-  }
-}
-
-/** 次に動く順（前衛の6体を、行動までの時間が短い順に） */
-function renderOrder(v: View): void {
-  const list: { u: UnitState; left: number }[] = [];
+/** 次に行動するユニット（行動ポイントが一番少ない前衛。BATTLE_SPEC §4.1） */
+function upcoming(v: View): UnitState[] {
+  const list: { u: UnitState; spd: number; pid: number; pos: number }[] = [];
   for (const pid of [0, 1] as const) {
     const p = v.state.players[pid];
     for (let pos = 0; pos < 3; pos++) {
       const u = p.units[p.wheel[pos]];
       const frozen = p.stance && (p.stance.unit === u.index || p.stance.partners.includes(u.index));
       if (!isAlive(u) || frozen) continue;
-      list.push({ u, left: Math.max(0, Math.ceil((agNeeded(p, u) - u.ag) / C.AG_PER_TICK)) });
+      list.push({ u, spd: u.spd, pid, pos });
     }
   }
-  list.sort((a, b) => a.left - b.left || a.u.uid - b.u.uid);
-  const html =
-    '<span class="olabel">次に動く順</span>' +
-    list
-      .map(
-        ({ u, left }) =>
-          `<span class="oitem ${u.owner === 0 ? "a" : "f"}" title="${def(u).name}"><span class="oart">${artSvg(def(u).id, def(u).name.slice(0, 1))}</span><span class="num">${secs(left)}</span></span>`,
-      )
-      .join("");
-  if (v.refs.order.innerHTML !== html) v.refs.order.innerHTML = html;
+  list.sort((a, b) => a.u.ap - b.u.ap || b.spd - a.spd || a.pid - b.pid || a.pos - b.pos);
+  return list.map((x) => x.u);
 }
 
-/** だれがだれを狙っているか（§4.4 のねらい）。もうすぐ動くユニットほど濃く・太く */
-function drawArrows(v: View): void {
-  const svg = v.arrows;
-  if (!svg) return;
-  const box = v.refs.top.getBoundingClientRect();
-  svg.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
-  const center = (uid: number) => {
-    const r = v.unitEl.get(uid)!.getBoundingClientRect();
-    return { x: r.left - box.left + r.width / 2, y: r.top - box.top + r.height / 2, h: r.height };
-  };
+/** 本家の「参る」のように、行動の直前にセリフで知らせる */
+function callouts(v: View): void {
+  const s = v.state;
+  const next = upcoming(v)[0];
+  if (!next) return;
+  const left = s.busyUntil - s.tick;
+  const key = `${s.busyUntil}:${next.uid}`;
+  if (left <= 12 && v.called !== key) {
+    v.called = key;
+    say(v, next.uid, M.CALL_LINE[def(next).id] ?? "参る！");
+  }
+}
+
+// ---- 描画 ----
+
+function render(v: View, dt: number): void {
+  const s = v.state;
+  const r = v.refs;
+  const me = s.players[0];
+  const foe = s.players[1];
+  const sc = v.scene;
+  sc.setLine(true, frontUids(v, 0));
+  sc.setLine(false, frontUids(v, 1));
+  for (const p of s.players) {
+    for (const u of p.units) {
+      sc.setAlive(u.uid, isAlive(u));
+      const st = p.stance;
+      sc.setStance(u.uid, !!st && (st.unit === u.index || st.partners.includes(u.index)), !!st && st.grand);
+    }
+  }
+  sc.update(dt);
+  callouts(v);
+
+  // 時計
+  const left = s.tick < C.SUDDEN_DEATH_TICKS ? C.SUDDEN_DEATH_TICKS - s.tick : C.TIME_LIMIT_TICKS - s.tick;
+  const sec = Math.max(0, Math.ceil(left / C.TICKS_PER_SEC));
+  r.clock.textContent = `${s.tick >= C.SUDDEN_DEATH_TICKS ? "サドンデス " : ""}${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+  r.clock.classList.toggle("sudden", s.tick >= C.SUDDEN_DEATH_TICKS);
+
+  // 次に動く順
+  const up = upcoming(v);
+  const orderHtml =
+    '<span class="olabel">次</span>' +
+    up
+      .map((u) => `<span class="oitem ${u.owner === 0 ? "a" : "f"}"><span class="oart">${artSvg(def(u).id, def(u).name.slice(0, 1))}</span></span>`)
+      .join("");
+  if (r.order.innerHTML !== orderHtml) r.order.innerHTML = orderHtml;
+
+  // 味方の名前の札（本家と同じく、上画面の下に3つ並べる）
+  frontUids(v, 0).forEach((uid, i) => {
+    const u = unitOf(v, uid);
+    const plate = v.plates[i];
+    (plate.querySelector(".pn") as HTMLElement).textContent = def(u).name;
+    (plate.querySelector(".hp i") as HTMLElement).style.width = pct(u.hp, u.maxHp);
+    plate.querySelector(".hp")!.classList.toggle("low", hpRatio(u) <= 250);
+    const clip = plate.querySelector(".soul-clip") as SVGRectElement;
+    clip.setAttribute("y", String(24 - (24 * u.sg) / C.SG_FULL));
+    plate.classList.toggle("full", u.sg >= C.SG_FULL && isAlive(u));
+    plate.classList.toggle("dead", !isAlive(u));
+    plate.classList.toggle("pick", v.mode === "ult" && u.sg >= C.SG_FULL && isAlive(u));
+    const chips = statusChips(u);
+    const fx = plate.querySelector(".fxs") as HTMLElement;
+    if (fx.innerHTML !== chips) fx.innerHTML = chips;
+  });
+  // 敵の HP（頭の上）
+  const foeFront = frontUids(v, 1);
+  for (const [uid, bar] of v.foeBars) {
+    const u = unitOf(v, uid);
+    const p = sc.project(uid, 2.45);
+    const show = foeFront.includes(uid) && p.visible;
+    bar.hidden = !show;
+    if (!show) continue;
+    bar.style.left = `${p.x}px`;
+    bar.style.top = `${p.y}px`;
+    (bar.querySelector(".n") as HTMLElement).textContent = def(u).name;
+    (bar.querySelector(".hp i") as HTMLElement).style.width = pct(u.hp, u.maxHp);
+    const chips = statusChips(u);
+    const fx = bar.querySelector(".fxs") as HTMLElement;
+    if (fx.innerHTML !== chips) fx.innerHTML = chips;
+    bar.classList.toggle("targeted", me.target === u.index);
+    bar.classList.toggle("pokeable", v.zero && isAlive(u) && (u.curse !== null || u.loafing));
+    bar.classList.toggle("dead", !isAlive(u));
+  }
+  drawArrows(v, up[0]);
+  renderWheel(v);
+  r.hint.textContent = hintText(v);
+  renderOverlay(v);
+  void foe;
+}
+
+function statusChips(u: UnitState): string {
+  const chips: string[] = [];
+  if (u.curse) chips.push(`<span class="chip c">${CURSE[u.curse.kind]}${TIER[u.curse.tier]} ${secs(u.curse.remaining)}</span>`);
+  if (u.blessing) chips.push(`<span class="chip b">${BLESS[u.blessing.kind]} ${secs(u.blessing.remaining)}</span>`);
+  if (u.guarding) chips.push('<span class="chip g">守り</span>');
+  if (u.loafing) chips.push('<span class="chip l">なまけ中</span>');
+  return chips.join("");
+}
+
+/** だれがだれを狙っているか。次に動くユニットの矢印だけ濃くする */
+function drawArrows(v: View, next: UnitState | undefined): void {
   const lines: string[] = [];
   for (const pid of [0, 1] as const) {
     const p = v.state.players[pid];
-    const e = v.state.players[1 - pid];
-    const t = pickEnemyTarget(p, e);
+    const t = pickEnemyTarget(p, v.state.players[1 - pid]);
     if (!t) continue;
-    const to = center(t.uid);
-    [0, 1, 2].forEach((pos, i) => {
-      const u = p.units[p.wheel[pos]];
-      if (!isAlive(u)) return;
+    const to = v.scene.project(t.uid, 0.2);
+    for (const uid of frontUids(v, pid)) {
+      const u = unitOf(v, uid);
+      if (!isAlive(u)) continue;
+      const from = v.scene.project(uid, 0.2);
+      if (!from.visible || !to.visible) continue;
       const stance = p.stance?.unit === u.index;
-      const progress = Math.min(1, u.ag / Math.max(1, agNeeded(p, u)));
-      const from = center(u.uid);
-      const dx = (i - 1) * 10;
-      const y1 = from.y + (pid === 0 ? -from.h / 2 : from.h / 2);
-      const y2 = to.y + (pid === 0 ? to.h / 2 : -to.h / 2);
+      const isNext = next?.uid === uid;
       const color = stance ? "#f2a541" : pid === 0 ? "#5fb3d9" : "#e0655a";
-      const marker = stance ? "ah-u" : pid === 0 ? "ah-a" : "ah-f";
-      const op = stance ? 1 : 0.15 + 0.85 * progress * progress;
-      const w = stance ? 5 : 1.5 + 2.5 * progress;
+      const op = stance || isNext ? 0.95 : 0.18;
+      const w = stance ? 5 : isNext ? 4 : 2;
+      const mx = (from.x + to.x) / 2;
+      const my = Math.min(from.y, to.y) - 40;
       lines.push(
-        `<line x1="${from.x + dx}" y1="${y1}" x2="${to.x + dx}" y2="${y2}" stroke="${color}" stroke-width="${w}" stroke-opacity="${op}" marker-end="url(#${marker})"${stance ? ' stroke-dasharray="8 5"' : ""}/>`,
+        `<path d="M${from.x} ${from.y} Q${mx} ${my} ${to.x} ${to.y}" fill="none" stroke="${color}" stroke-width="${w}" stroke-opacity="${op}" stroke-linecap="round"${stance ? ' stroke-dasharray="10 6"' : ""}/>` +
+          `<circle cx="${to.x}" cy="${to.y}" r="${isNext || stance ? 7 : 4}" fill="${color}" fill-opacity="${op}"/>`,
       );
+    }
+  }
+  const html = lines.join("");
+  const svg = v.svg.arrows;
+  if (svg.innerHTML !== html) svg.innerHTML = html;
+}
+
+function renderWheel(v: View): void {
+  const me = v.state.players[0];
+  const key = me.wheel.join(",");
+  const rotor = v.svg.rotor;
+  if (v.wheelKey !== key) {
+    v.wheelKey = key;
+    rotor.querySelectorAll<SVGGElement>(".wedge").forEach((g) => {
+      const pos = Number(g.dataset.pos);
+      const u = me.units[me.wheel[pos]];
+      const [x, y] = polar(-150 + pos * 60, 104);
+      const art = artSvg(def(u).id, def(u).name.slice(0, 1)).replace('width="100%" height="100%"', `x="${x - 32}" y="${y - 32}" width="64" height="64"`);
+      g.querySelector(".wart")!.innerHTML = art;
     });
+    rotor.removeAttribute("transform");
   }
-  const g = lines.join("");
-  let layer = svg.querySelector("g");
-  if (!layer) {
-    layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    svg.append(layer);
+  if (v.preview !== 0 && !rotor.hasAttribute("data-drag")) {
+    rotor.setAttribute("transform", `rotate(${v.preview * 60})`);
+  } else if (v.preview === 0 && !rotor.hasAttribute("data-drag")) {
+    rotor.removeAttribute("transform");
   }
-  if (layer.innerHTML !== g) layer.innerHTML = g;
+  rotor.querySelectorAll<SVGGElement>(".wedge").forEach((g) => {
+    const pos = Number(g.dataset.pos);
+    const u = me.units[me.wheel[pos]];
+    g.classList.toggle("front", pos < 3);
+    g.classList.toggle("dead", !isAlive(u));
+    g.classList.toggle("cursed", !!u.curse);
+    g.classList.toggle("purifying", me.purify?.unit === u.index);
+    g.classList.toggle(
+      "pick",
+      (v.mode === "purify" && pos >= 3 && !!u.curse) || (v.mode === "ult" && pos < 3 && u.sg >= C.SG_FULL && isAlive(u)),
+    );
+    const soul = g.querySelector(".wsoul") as SVGCircleElement;
+    const c = 2 * Math.PI * 10;
+    soul.setAttribute("stroke-dasharray", `${(c * u.sg) / C.SG_FULL} ${c}`);
+    soul.classList.toggle("full", u.sg >= C.SG_FULL);
+  });
+  const cd = me.rotateCooldown / C.ROTATE_COOLDOWN;
+  const circ = 2 * Math.PI * 152;
+  v.svg.cool.setAttribute("stroke-dasharray", `${circ * cd} ${circ}`);
+  v.svg.wheel.classList.toggle("zero", v.zero);
+  v.refs.bottom.classList.toggle("zero", v.zero);
+  (v.refs.bUlt.querySelector(".clabel") as HTMLElement).textContent = v.zero ? "大奥義" : "奥義";
+  (v.refs.bTarget.querySelector(".clabel") as HTMLElement).textContent = v.zero ? "つつき" : "標的";
+  (v.refs.bPurify.querySelector(".clabel") as HTMLElement).textContent = "浄化";
+  (v.refs.bEmpty.querySelector(".clabel") as HTMLElement).textContent = "";
+  v.refs.bUlt.classList.toggle("on", v.mode === "ult");
+  v.refs.bPurify.classList.toggle("on", v.mode === "purify");
 }
 
 function hintText(v: View): string {
   const me = v.state.players[0];
   if (v.mode === "ult") return v.zero ? "大奥義を撃つ前衛を選ぶ（自分と両隣の妖気が満タン）" : "奥義を撃つ前衛を選ぶ（妖気が満タン）";
   if (v.mode === "purify") return "浄化する後衛（呪付のかかったユニット）を選ぶ";
-  if (v.zero) return "ゼロ：光っている敵をクリックでつつき。奥義ボタンは大奥義になる";
-  if (v.preview !== 0) return `${Math.abs(v.preview)} つ分${v.preview > 0 ? "時計回り" : "反時計回り"}に回す（離すと決定）`;
+  if (v.preview !== 0) return `${Math.abs(v.preview)} つ分${v.preview > 0 ? "時計回り" : "反時計回り"}に回す`;
+  if (v.zero) return "ゼロ：光っている敵をタップでつつき";
   if (me.rotateCooldown > 0) return `回転まで ${secs(me.rotateCooldown)} 秒`;
-  return "敵をクリックで標的。前衛の妖気が満タンならクリックで奥義";
+  return "ホイールをなぞって回す・敵をタップで標的";
 }
 
 function renderOverlay(v: View): void {
@@ -953,28 +1011,27 @@ function renderOverlay(v: View): void {
       const title = h("div", "title", `${def(me.units[st.unit]).name} の${st.grand ? "大奥義" : "奥義"}「${def(me.units[st.unit]).ultName}」`);
       const chargeEl = h("div", "charge");
       const ring = h("button", "skill");
-      ring.title = "クリックで解放（Space）";
+      ring.title = "タップで解放（Space）";
       ring.onclick = () => send(v, { t: "ultRelease" });
       for (let i = 0; i < C.SKILL_CURSOR_PERIOD; i++) {
         const seg = h("span", "seg" + (C.PERFECT_CELLS.includes(i) ? " perfect" : C.GOOD_CELLS.includes(i) ? " good" : ""));
         const a = ((-90 + (i * 360) / C.SKILL_CURSOR_PERIOD) * Math.PI) / 180;
-        seg.style.transform = `translate(${60 * Math.cos(a)}px, ${60 * Math.sin(a)}px)`;
+        seg.style.transform = `translate(${70 * Math.cos(a)}px, ${70 * Math.sin(a)}px)`;
         ring.append(seg);
       }
-      ring.append(h("span", "face", "解放"));
+      const face = h("span", "face");
+      face.innerHTML = artSvg(def(me.units[st.unit]).id, "");
+      ring.append(face);
       const row = h("div", "row");
-      const rel = h("button", "btn primary", "解放（Space）");
+      const rel = h("button", "btn primary", "解放");
       rel.onclick = () => send(v, { t: "ultRelease" });
-      const can = h("button", "btn", "キャンセル（Esc）");
+      const can = h("button", "btn", "キャンセル");
       can.onclick = () => send(v, { t: "ultCancel" });
       row.append(rel, can);
-      const note = h("div", "help", "橙が Perfect、緑が Good。溜めるほど強いが、2秒を超えると自動で Miss。");
-      ov.append(title, chargeEl, ring, row, note);
+      ov.append(title, chargeEl, ring, row);
     }
-    const chargeEl = ov.querySelector(".charge") as HTMLElement;
-    chargeEl.innerHTML =
-      `溜め ${[1, 2, 3].map((t) => `<span class="${t <= tier ? "on" : ""}"></span>`).join("")} ×${mult}` +
-      `　残り ${secs(Math.max(0, C.CHARGE_MAX_TICKS - charge))} 秒`;
+    (ov.querySelector(".charge") as HTMLElement).innerHTML =
+      `溜め ${[1, 2, 3].map((t) => `<span class="${t <= tier ? "on" : ""}"></span>`).join("")} ×${mult}　残り ${secs(Math.max(0, C.CHARGE_MAX_TICKS - charge))} 秒`;
     ov.querySelectorAll(".seg").forEach((seg, i) => seg.classList.toggle("cur", i === cursor));
     return;
   }
@@ -991,23 +1048,25 @@ function renderOverlay(v: View): void {
       gauge.append(h("i"));
       const info = h("div", "help num");
       const grid = h("div", "grid4");
+      const face = h("div", "pokeface");
+      face.innerHTML = artSvg(def(target).id, "");
+      grid.append(face);
       for (let i = 0; i < C.POKE_CELLS; i++) {
         const c = h("button", "cell");
         c.onpointerdown = (e) => {
           e.preventDefault();
-          const k = v.state.players[0].poke;
-          S.sfxPoke(!!k && k.weakCell === i);
+          const kk = v.state.players[0].poke;
+          S.sfxPoke(!!kk && kk.weakCell === i);
           send(v, { t: "pokeTap", cell: i });
         };
         grid.append(c);
       }
-      const stop = h("button", "btn", "やめる（Esc）");
+      const stop = h("button", "btn", "やめる");
       stop.onclick = () => send(v, { t: "pokeStop" });
       ov.append(title, gauge, info, grid, stop);
     }
     (ov.querySelector(".gauge i") as HTMLElement).style.width = pct(k.gauge, C.POKE_GAUGE_GOAL);
-    (ov.querySelector(".help") as HTMLElement).textContent =
-      `残り ${secs(C.POKE_TICKS - k.elapsed)} 秒　ゲージ ${k.gauge}/${C.POKE_GAUGE_GOAL}（★を連打）`;
+    (ov.querySelector(".help") as HTMLElement).textContent = `残り ${secs(C.POKE_TICKS - k.elapsed)} 秒　★を連打`;
     ov.querySelectorAll(".cell").forEach((c, i) => {
       c.classList.toggle("weak", i === k.weakCell);
       c.textContent = i === k.weakCell ? "★" : "";
