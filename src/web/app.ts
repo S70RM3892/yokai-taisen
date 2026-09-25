@@ -97,7 +97,9 @@ const def = (u: UnitState) => UNITS[u.defIndex];
 // 編成画面
 // =====================================================================
 
-let picked: string[] = [];
+/** 編成の6つの枠（位置 0〜5。0〜2 が前衛）。空きは null */
+let picked: (string | null)[] = [null, null, null, null, null, null];
+const pickedIds = () => picked.filter((x): x is string => x !== null);
 
 function randomSeed(): number {
   // 試合のシードは画面側で決める（戦闘コアの中では Math.random を使わない）
@@ -114,99 +116,274 @@ function showSetup(): void {
   title.append(h("small", "", "試作版（人 vs CPU）"));
   app.append(title, audioBar());
 
-  const setup = h("section", "setup");
-  const lead = h("p", "help");
-  lead.innerHTML =
-    "6体を選んで対戦する。<b>並び順がホイールの最初の並び</b>（1〜3番目が前衛）。S ランクは2体まで、A ランクは2体まで、大物はチームに1体まで。";
-  setup.append(lead);
+  let sel = picked.findIndex((x) => x === null);
+  if (sel < 0) sel = 0;
+  let moveFrom: number | null = null;
+  let moving = false;
+  let showList = true;
 
-  const slots = h("div", "slots");
-  const errors = h("div", "errors");
-  const start = h("button", "btn primary", "対戦開始");
-  const refresh = () => {
-    slots.replaceChildren();
-    for (let i = 0; i < 6; i++) {
-      const id = picked[i];
-      const b = h("button", "slot" + (id ? " filled" : ""));
-      b.append(h("span", "pos", i < 3 ? `前衛 ${i + 1}` : `後衛 ${i + 1}`));
-      if (id) {
-        const d = UNITS.find((u) => u.id === id)!;
-        b.append(h("b", "", d.name), h("span", "tag", `${d.rank}・${TRIBE[d.tribe]}`));
-        b.title = "クリックで外す";
-        b.onclick = () => {
-          picked.splice(i, 1);
-          refresh();
-        };
-      } else {
-        b.append(h("span", "muted", "空き"));
-        b.disabled = true;
-      }
-      slots.append(b);
-    }
-    const errs = picked.length === 6 ? validateTeam(picked.map((unit) => ({ unit }))) : [];
-    errors.textContent = picked.length < 6 ? `あと ${6 - picked.length} 体` : errs.join(" / ");
-    start.disabled = picked.length !== 6 || errs.length > 0;
+  const root = h("section", "builder");
+  const head = h("div", "b-head");
+  head.append(h("span", "b-tag", "編成"), h("span", "b-sub", "対戦に出す6体とホイールの並び"));
+  const left = h("div", "b-left");
+  const center = h("div", "b-center");
+  const right = h("div", "b-right");
+  const bar = h("div", "b-bar");
+  root.append(head, left, center, right, bar);
+
+  // ---- 左：公式ルールの枠とマイセット ----
+  const rules = h("div", "b-rules");
+  const sets = h("div", "b-sets");
+  left.append(rules, sets);
+
+  // ---- 真ん中：ホイール（6つのメダル枠、中央に前／後） ----
+  const wheel = svgEl("svg", { class: "b-wheel", viewBox: "-160 -160 320 320" });
+  wheel.innerHTML =
+    '<defs><radialGradient id="bw" cx="50%" cy="45%"><stop offset="0" stop-color="#3a3f66"/><stop offset="1" stop-color="#1a1d33"/></radialGradient>' +
+    '<linearGradient id="bf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2c96a"/><stop offset="1" stop-color="#c98f3a"/></linearGradient>' +
+    '<linearGradient id="bb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a6aa8"/><stop offset="1" stop-color="#4a3f78"/></linearGradient></defs>' +
+    '<circle r="156" fill="url(#bw)" stroke="#0c0f19" stroke-width="4"/>' +
+    '<path d="M-156 0 A156 156 0 0 1 156 0 L60 0 A60 60 0 0 0 -60 0Z" fill="url(#bf)" opacity=".35"/>' +
+    '<path d="M-156 0 A156 156 0 0 0 156 0 L60 0 A60 60 0 0 1 -60 0Z" fill="url(#bb)" opacity=".35"/>';
+  const medals = svgEl("g");
+  wheel.append(medals);
+  const hub = svgEl("g", { class: "b-hub" });
+  hub.innerHTML =
+    '<circle r="52" fill="#10131f" stroke="#e9d9a8" stroke-width="4"/>' +
+    '<path d="M-52 0 A52 52 0 0 1 52 0Z" fill="#b8742a"/><path d="M-52 0 A52 52 0 0 0 52 0Z" fill="#3f6f9e"/>' +
+    '<line x1="-52" x2="52" y1="0" y2="0" stroke="#e9d9a8" stroke-width="3"/>' +
+    '<text y="-14" text-anchor="middle" class="b-hub-t">前</text><text y="34" text-anchor="middle" class="b-hub-t">後</text>';
+  wheel.append(hub);
+  const rotL = h("button", "b-shoulder l", "⟲ 回す");
+  const rotR = h("button", "b-shoulder r", "回す ⟳");
+  const rotate = (d: number) => {
+    const n = picked.slice();
+    picked = n.map((_, pos) => n[(pos - d + 6) % 6]);
+    sel = (sel + d + 6) % 6;
+    refresh();
   };
+  rotL.onclick = () => rotate(-1);
+  rotR.onclick = () => rotate(1);
+  const wrapWheel = h("div", "b-wheelwrap");
+  wrapWheel.append(wheel, rotL, rotR);
+  const status = h("div", "b-status");
+  center.append(wrapWheel, status);
 
-  const roster = h("div", "roster");
-  for (const d of UNITS) {
-    const card = h("button", "card");
-    const pic = h("div", "pic");
-    pic.innerHTML = artSvg(d.id, d.name.slice(0, 1));
-    pic.style.setProperty("--tribe", TRIBE_COLOR[d.tribe]);
-    card.append(pic);
-    const head = h("div", "head");
-    head.append(h("span", "name", d.name), h("span", "rank " + d.rank, d.group ? `${d.rank}・大物` : d.rank));
-    head.append(h("span", "tag", `${TRIBE[d.tribe]}・${natureById(d.defaultNature).name}`));
-    card.append(head);
-    card.append(h("span", "trait", `特性：${TRAIT_NAMES[d.trait]}`));
-    card.append(
-      h(
-        "span",
-        "stats num",
-        `HP ${d.hp}　ATK ${d.atk}　SPA ${d.spa}　DEF ${d.def}　SPD ${d.spd}　妖気 ${d.sgRank}`,
-      ),
-    );
-    card.append(h("span", "stats", `奥義：${d.ultName}　弱点 ${d.weak ? ELEMENT[d.weak] : "なし"}`));
-    card.onclick = () => {
-      if (picked.length >= 6) return;
-      picked.push(d.id);
-      refresh();
-    };
-    roster.append(card);
+  // ---- 右：選ぶリスト／くわしく ----
+  const list = h("div", "b-list");
+  const detail = h("div", "b-detail");
+  right.append(list, detail);
+
+  // ---- 下：ボタン ----
+  const bBack = h("button", "b-btn", "もどす");
+  bBack.title = "選んでいる枠を空にする（Backspace）";
+  const bMove = h("button", "b-btn", "いどう");
+  bMove.title = "2つの枠を入れ替える（M）";
+  const bSwitch = h("button", "b-btn", "きりかえ");
+  bSwitch.title = "リストとくわしい情報を切り替える（Tab）";
+  const bAuto = h("button", "b-btn", "おまかせ");
+  const bGo = h("button", "b-btn go", "けってい");
+  bGo.title = "この6体で対戦する（Enter）";
+  bar.append(bBack, bMove, bSwitch, bAuto, bGo);
+
+  const unitDef = (id: string | null) => (id ? UNITS.find((u) => u.id === id)! : null);
+
+  function place(id: string): void {
+    picked[sel] = id;
+    const next = picked.findIndex((x) => x === null);
+    if (next >= 0) sel = next;
+    refresh();
   }
 
-  const actions = h("div", "row");
-  const rnd = h("button", "btn", "おまかせ");
-  rnd.onclick = () => {
+  function refresh(): void {
+    // メダル
+    medals.replaceChildren();
+    for (let pos = 0; pos < 6; pos++) {
+      const [x, y] = polar(-150 + pos * 60, 104);
+      const g = svgEl("g", { class: "b-medal" + (pos === sel ? " sel" : "") + (moveFrom === pos ? " moving" : "") + (pos < 3 ? " front" : "") });
+      const d = unitDef(picked[pos]);
+      g.append(svgEl("circle", { cx: x, cy: y, r: 42, class: "b-ring" }));
+      g.append(svgEl("circle", { cx: x, cy: y, r: 36, class: "b-face", fill: d ? TRIBE_COLOR[d.tribe] : "#262a42" }));
+      if (d) {
+        const art = svgEl("g");
+        art.innerHTML = artSvg(d.id, d.name.slice(0, 1)).replace('width="100%" height="100%"', `x="${x - 32}" y="${y - 32}" width="64" height="64"`);
+        g.append(art);
+        const rk = svgEl("text", { x: x + 28, y: y - 26, class: "b-rank r" + d.rank, "text-anchor": "middle" });
+        rk.textContent = d.rank;
+        g.append(rk);
+      } else {
+        const t = svgEl("text", { x, y: y + 6, "text-anchor": "middle", class: "b-empty" });
+        t.textContent = "＋";
+        g.append(t);
+      }
+      g.addEventListener("click", () => {
+        if (moving) {
+          if (moveFrom === null) moveFrom = pos;
+          else {
+            [picked[moveFrom], picked[pos]] = [picked[pos], picked[moveFrom]];
+            moveFrom = null;
+            moving = false;
+          }
+        } else sel = pos;
+        refresh();
+      });
+      medals.append(g);
+    }
+
+    // 公式ルールの枠（S・S・A・A）
+    const ids = pickedIds();
+    const count = { S: 0, A: 0, B: 0 };
+    let ogres = 0;
+    for (const id of ids) {
+      const d = unitDef(id)!;
+      count[d.rank]++;
+      if (d.group) ogres++;
+    }
+    const box = (rank: "S" | "A", i: number) =>
+      `<span class="b-rk r${rank} ${count[rank] > i ? "used" : ""} ${count[rank] > 2 && i === 1 ? "over" : ""}">${rank}</span>`;
+    rules.innerHTML =
+      '<div class="b-rules-t">公式ルール</div>' +
+      `<div class="b-rules-row">ランク ${box("S", 0)}${box("S", 1)}${box("A", 0)}${box("A", 1)}</div>` +
+      '<div class="b-rules-note">まで OK（B は何体でも）</div>' +
+      `<div class="b-rules-row">大物 <span class="b-rk ogre ${ogres >= 1 ? "used" : ""} ${ogres > 1 ? "over" : ""}">1</span> まで</div>`;
+
+    // マイセット
+    sets.replaceChildren(h("div", "b-rules-t", "マイセット"));
+    for (let k = 0; k < 3; k++) {
+      const saved = loadSet(k);
+      const row = h("div", "b-set");
+      const load = h("button", "b-mini", saved ? saved.map((id) => (unitDef(id)?.name ?? "?").slice(0, 2)).join("・") : `セット ${k + 1}（空き）`);
+      load.disabled = !saved;
+      load.onclick = () => {
+        if (!saved) return;
+        picked = saved.slice();
+        refresh();
+      };
+      const save = h("button", "b-mini save", "保存");
+      save.disabled = ids.length !== 6;
+      save.onclick = () => {
+        saveSet(k, picked as string[]);
+        refresh();
+      };
+      row.append(load, save);
+      sets.append(row);
+    }
+
+    // 状態
+    const errs = ids.length === 6 ? validateTeam(ids.map((unit) => ({ unit }))) : [];
+    status.textContent = moving
+      ? moveFrom === null
+        ? "いどう：1つめの枠を選ぶ"
+        : "いどう：入れ替える枠を選ぶ"
+      : ids.length < 6
+        ? `あと ${6 - ids.length} 体（${sel < 3 ? "前衛" : "後衛"}の枠を選択中）`
+        : errs.length
+          ? errs.join(" / ")
+          : "この6体で対戦できる";
+    status.classList.toggle("bad", errs.length > 0);
+    bGo.disabled = ids.length !== 6 || errs.length > 0;
+    bMove.classList.toggle("on", moving);
+
+    // リスト（ランクと大物の制限で入れられないものは暗く）
+    list.hidden = !showList;
+    detail.hidden = showList;
+    if (showList) {
+      list.replaceChildren();
+      const cur = unitDef(picked[sel]);
+      for (const d of UNITS) {
+        const trial = picked.slice();
+        trial[sel] = d.id;
+        const bad = validateTeam(trial.filter((x): x is string => x !== null).map((unit) => ({ unit })).concat(
+          Array.from({ length: 6 - trial.filter((x) => x).length }, () => ({ unit: "karakasa" })),
+        )).length > 0;
+        const b = h("button", "b-item" + (bad ? " ng" : "") + (cur?.id === d.id ? " cur" : ""));
+        const pic = h("span", "b-pic");
+        pic.innerHTML = artSvg(d.id, d.name.slice(0, 1));
+        pic.style.background = TRIBE_COLOR[d.tribe];
+        b.append(pic, h("span", "b-nm", d.name), h("span", "b-r r" + d.rank, d.group ? "大" : d.rank));
+        b.title = `${d.name}（${d.rank}・${TRIBE[d.tribe]}）特性：${TRAIT_NAMES[d.trait]}`;
+        b.onclick = () => place(d.id);
+        list.append(b);
+      }
+    } else {
+      const d = unitDef(picked[sel]);
+      detail.innerHTML = d
+        ? `<div class="b-dhead"><span class="b-dpic" style="background:${TRIBE_COLOR[d.tribe]}">${artSvg(d.id, "")}</span>` +
+          `<div><b>${d.name}</b> <span class="rank ${d.rank}">${d.group ? d.rank + "・大物" : d.rank}</span><br>` +
+          `<span class="tag">${TRIBE[d.tribe]}・${natureById(d.defaultNature).name}</span></div></div>` +
+          `<div class="trait">特性：${TRAIT_NAMES[d.trait]}</div>` +
+          `<div class="stats num">HP ${d.hp}　ATK ${d.atk}　SPA ${d.spa}<br>DEF ${d.def}　SPD ${d.spd}　妖気 ${d.sgRank}</div>` +
+          `<div class="stats">術：${ELEMENT[d.skillElement]} ${d.skillPower}　通常攻撃 ${d.attackPower}</div>` +
+          `<div class="stats">奥義：${d.ultName}</div>` +
+          `<div class="stats">弱点 ${d.weak ? ELEMENT[d.weak] : "なし"}・耐性 ${d.resist ? ELEMENT[d.resist] : "なし"}</div>`
+        : '<div class="muted">この枠は空き。「きりかえ」でリストに戻って選ぶ。</div>';
+    }
+  }
+
+  bBack.onclick = () => {
+    picked[sel] = null;
+    refresh();
+  };
+  bMove.onclick = () => {
+    moving = !moving;
+    moveFrom = null;
+    refresh();
+  };
+  bSwitch.onclick = () => {
+    showList = !showList;
+    refresh();
+  };
+  bAuto.onclick = () => {
     picked = randomUnitIds(randomSeed());
     refresh();
   };
-  const clear = h("button", "btn", "全部外す");
-  clear.onclick = () => {
-    picked = [];
-    refresh();
+  bGo.onclick = () => {
+    if (!bGo.disabled) {
+      document.removeEventListener("keydown", keys);
+      startBattle(pickedIds().map((unit) => ({ unit })));
+    }
   };
-  start.onclick = () => startBattle(picked.map((unit) => ({ unit })));
-  actions.append(start, rnd, clear, errors);
+  const keys = (e: KeyboardEvent) => {
+    if (view) return;
+    if (e.key === "Enter") bGo.click();
+    else if (e.key === "Tab") {
+      e.preventDefault();
+      bSwitch.click();
+    } else if (e.key.toLowerCase() === "m") bMove.click();
+    else if (e.key === "Backspace") bBack.click();
+    else if (e.key === "ArrowLeft" || e.key.toLowerCase() === "q") rotate(-1);
+    else if (e.key === "ArrowRight" || e.key.toLowerCase() === "e") rotate(1);
+  };
+  document.addEventListener("keydown", keys);
 
-  const help = h("div", "help");
-  help.innerHTML =
-    "操作：ホイールをドラッグ、または <kbd>Q</kbd>/<kbd>E</kbd> で回す（3秒に1回）。" +
-    "敵をクリックで標的。<kbd>1</kbd>〜<kbd>3</kbd> で前衛の奥義（妖気が満タンのとき）→ <kbd>Space</kbd> で解放、<kbd>Esc</kbd> でキャンセル。" +
-    "<kbd>Z</kbd>（中央のゼロ）で 奥義↔大奥義・標的↔つつき を切り替え。後衛で呪付のかかったユニットをクリック（<kbd>4</kbd>〜<kbd>6</kbd>）で浄化。";
-
-  setup.append(slots, actions, help, roster);
   app.append(
-    setup,
+    root,
     h(
       "footer",
       "",
-      "見た目は仮（四角と文字）。効果音はその場で合成している。BGM は手元の曲ファイルをこのブラウザの中だけで流す（どこにも送らない）。NCS の曲はゲームへの組み込みにライセンスが要るので、ゲームには入れていない。戦闘のルールは BATTLE_SPEC v0.18。",
+      "配置は本家の編成画面と同じにして、色・絵・言葉はオリジナル。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。",
     ),
   );
-  if (picked.length === 0) picked = randomUnitIds(randomSeed());
+  if (pickedIds().length === 0) picked = randomUnitIds(randomSeed());
   refresh();
+}
+
+function loadSet(k: number): string[] | null {
+  try {
+    const raw = localStorage.getItem(`yokai-taisen:set:${k}`);
+    const v = raw ? (JSON.parse(raw) as unknown) : null;
+    return Array.isArray(v) && v.length === 6 && v.every((x) => typeof x === "string" && UNITS.some((u) => u.id === x)) ? (v as string[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSet(k: number, ids: string[]): void {
+  try {
+    localStorage.setItem(`yokai-taisen:set:${k}`, JSON.stringify(ids));
+  } catch {
+    // 保存できない環境では何もしない
+  }
 }
 
 // =====================================================================
@@ -1097,7 +1274,7 @@ function showResult(v: View): void {
   const again = h("button", "btn primary", "同じチームでもう一度");
   again.onclick = () => {
     wrap.remove();
-    startBattle(picked.map((unit) => ({ unit })));
+    startBattle(pickedIds().map((unit) => ({ unit })));
   };
   const back = h("button", "btn", "編成に戻る");
   back.onclick = () => {
