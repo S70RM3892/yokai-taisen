@@ -1,0 +1,28 @@
+// 1 tick の間に起きたこと。描画・ログ・集計はこれを見る（§9.2：演出は状態とイベントから作る）。
+
+import type { ActionKind, BlessingKind, CurseKind } from "./data.js";
+import type { Input } from "./input.js";
+import type { Outcome, PlayerId } from "./state.js";
+
+export type Quality = "perfect" | "good" | "miss";
+export type DamageSource = "attack" | "skill" | "ult" | "poison" | "poke";
+
+export type BattleEvent =
+  | { t: "dropped"; player: PlayerId; input: Input }
+  | { t: "rotate"; player: PlayerId; dir: "cw" | "ccw" }
+  | { t: "target"; player: PlayerId; enemyUnit: number }
+  | { t: "action"; uid: number; action: ActionKind | "loaf" }
+  | { t: "damage"; src: number | null; dst: number; amount: number; source: DamageSource; crit: boolean }
+  | { t: "heal"; src: number | null; dst: number; amount: number }
+  | { t: "curse"; src: number; dst: number; kind: CurseKind; tier: number; result: "hit" | "miss" | "warded" }
+  | { t: "bless"; src: number; dst: number; kind: BlessingKind; tier: number }
+  | { t: "curseCleared"; uid: number; by: "purify" | "ward" | "expire" }
+  | { t: "doll"; uid: number }
+  | { t: "ko"; uid: number }
+  | { t: "stance"; player: PlayerId; uid: number; grand: boolean }
+  | { t: "stanceCancel"; player: PlayerId; uid: number; grand: boolean; reason: "input" | "rotate" | "ko" }
+  | { t: "ult"; player: PlayerId; uid: number; grand: boolean; quality: Quality; charge: number; auto: boolean }
+  | { t: "purifyStart"; player: PlayerId; uid: number }
+  | { t: "pokeStart"; player: PlayerId; target: number }
+  | { t: "pokeEnd"; player: PlayerId; target: number; result: "success" | "fail" | "stopped" }
+  | { t: "end"; outcome: Outcome };
