@@ -179,8 +179,9 @@ function hit(
   let crit = false;
   const critChance = defender.loafing ? C.CRIT_CHANCE_VS_LOAFING : C.CRIT_CHANCE;
   if (o.canCrit && randInt(attacker.rng, C.CRIT_DENOM) < critChance) {
+    // 【原作】クリティカルは守りを無視して 1.5 倍（§4.6）
     crit = true;
-    dmg = mul(dmg, C.CRIT_MULT);
+    dmg = mul(Math.floor((a + o.power) / 2), C.CRIT_MULT);
   }
   const def = UNITS[defender.defIndex];
   if (o.element !== null) {

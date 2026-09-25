@@ -227,25 +227,30 @@ describe("ダメージ（§5）", () => {
     expect(baseDamage(100, 90, 100)).toBe(70);
   });
 
-  it("クリティカルは通常攻撃の 2 倍、64 回に1回くらい", () => {
-    const team = [{ unit: "oni", nature: "fierce" as const }, ...TEAM_A.slice(1)];
+  it("クリティカルは守りを無視して 1.5 倍、64 回に1回くらい", () => {
+    const team = [{ unit: "oni", nature: "fierce" as const, equipment: "diligence_band" as const }, ...TEAM_A.slice(1)];
     const s = battle(11, team, TEAM_B);
     for (const u of s.players[1].units) u.maxHp = u.hp = 10_000_000;
-    const normal: number[] = [];
     const crit: number[] = [];
-    for (let i = 0; i < 3000; i++) {
+    let total = 0;
+    for (let i = 0; i < 4000; i++) {
       freezeAg(s);
       s.players[0].units[0].ag = agNeeded(s.players[0], s.players[0].units[0]);
       for (const e of tick(s)) {
-        // 天狗（uid 6）への通常攻撃だけ比べる
-        if (e.t === "damage" && e.src === 0 && e.source === "attack" && e.dst === 6) (e.crit ? crit : normal).push(e.amount);
+        // 天狗（uid 6、DEF 70）への通常攻撃だけ数える
+        if (e.t === "damage" && e.src === 0 && e.source === "attack" && e.dst === 6) {
+          total++;
+          if (e.crit) crit.push(e.amount);
+        }
       }
     }
+    // 鬼 ATK 135・威力 135 → floor(270 / 2) = 135 → × 1.5 = 202（守りを引かない）。揺れ ±2%
     expect(crit.length).toBeGreaterThan(0);
-    // 揺れ（±2%）の分だけ幅がある
-    expect(Math.min(...crit)).toBeGreaterThanOrEqual(Math.floor(Math.min(...normal) * 2 * 0.96));
-    expect(Math.max(...crit)).toBeLessThanOrEqual(Math.ceil(Math.max(...normal) * 2 * 1.04));
-    const rate = crit.length / (crit.length + normal.length);
+    for (const d of crit) {
+      expect(d).toBeGreaterThanOrEqual(Math.floor((202 * 980) / 1000));
+      expect(d).toBeLessThanOrEqual(Math.floor((202 * 1020) / 1000));
+    }
+    const rate = crit.length / total;
     expect(rate).toBeGreaterThan(0.005);
     expect(rate).toBeLessThan(0.03);
   });

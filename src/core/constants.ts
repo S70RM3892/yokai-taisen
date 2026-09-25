@@ -25,7 +25,8 @@ export function actionPoints(spd: number): number {
 export const CRIT_DENOM = 64;
 export const CRIT_CHANCE = 1;
 export const CRIT_CHANCE_VS_LOAFING = 4;
-export const CRIT_MULT = 2000;
+/** 【原作】クリティカルは守りを無視して 1.5 倍 */
+export const CRIT_MULT = 1500;
 
 // ---- 行動（§4.3） ----
 export const GUARD_MULT = 500;
