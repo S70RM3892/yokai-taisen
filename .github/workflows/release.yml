@@ -1,0 +1,60 @@
+# 妖怪大戦を GitHub Pages に公開し、v で始まるタグを押したら GitHub Release も作る。
+#   main に push      → テスト → ビルド → Pages に公開（https://<owner>.github.io/<repo>/）
+#   タグ v* を push   → 上に加えて、dist/index.html を添付した Release を作る
+name: release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Pages 用にまとめる
+        run: |
+          mkdir -p _site
+          cp dist/index.html _site/index.html
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Release（タグのときだけ）
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp dist/index.html yokai-taisen.html
+          gh release create "$GITHUB_REF_NAME" yokai-taisen.html \
+            --title "妖怪大戦 $GITHUB_REF_NAME" \
+            --notes "ブラウザで開くだけで遊べる 1 ファイル版（yokai-taisen.html）。オンライン版：https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
