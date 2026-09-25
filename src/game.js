@@ -10999,7 +10999,7 @@
         poke: null,
         pokeCooldown: 0,
         pokeRng: ni(e, Eh + n),
-        bag: validBag(opts.bags?.[n]),
+        bag: opts.noItems ? [] : validBag(opts.bags?.[n]),
         itemCooldown: 0,
         mgRng: ni(e, 30 + n)
       }
@@ -33122,10 +33122,10 @@ void main() {
       for (let W of e.state.players[N].units)
         if (e.scene.addFigure(W.uid, N === 0, da(Ze(W).id, Ze(W).name.slice(0, 1)), Pi[Ze(W).tribe], p0(Ze(W).id), Ze(W)), N === 1) {
           let L = q("div", "foebar");
-          L.innerHTML = '<span class="n"></span><div class="bar hp"><i></i></div><div class="fxs"></div>', e.foeBars.set(W.uid, L), n.append(L)
+          L.innerHTML = '<span class="n"></span><span class="peq"></span><div class="bar hp"><i></i></div><div class="fxs"></div>', e.foeBars.set(W.uid, L), n.append(L)
         } for (let N = 0; N < 3; N++) {
       let W = q("div", "plate");
-      W.innerHTML = '<span class="soul"><svg viewBox="0 0 20 24"><path class="soul-bg" d="M10 1 C14 7 19 11 19 16 A9 8 0 0 1 1 16 C1 11 6 7 10 1Z"/><clipPath id="sc' + N + '"><rect class="soul-clip" x="0" y="24" width="20" height="24"/></clipPath><path class="soul-fill" clip-path="url(#sc' + N + ')" d="M10 1 C14 7 19 11 19 16 A9 8 0 0 1 1 16 C1 11 6 7 10 1Z"/></svg></span><span class="pn"></span><div class="bar hp"><i></i></div><div class="fxs"></div>', e.plates.push(W), o.append(W)
+      W.innerHTML = '<span class="soul"><svg viewBox="0 0 20 24"><path class="soul-bg" d="M10 1 C14 7 19 11 19 16 A9 8 0 0 1 1 16 C1 11 6 7 10 1Z"/><clipPath id="sc' + N + '"><rect class="soul-clip" x="0" y="24" width="20" height="24"/></clipPath><path class="soul-fill" clip-path="url(#sc' + N + ')" d="M10 1 C14 7 19 11 19 16 A9 8 0 0 1 1 16 C1 11 6 7 10 1Z"/></svg></span><span class="pn"></span><span class="peq"></span><div class="bar hp"><i></i></div><div class="fxs"></div>', e.plates.push(W), o.append(W)
     }
     t.addEventListener("click", N => H2(e, N));
     let c = q("div", "bottom3d"),
@@ -33155,7 +33155,7 @@ void main() {
     }, h[2].onclick = () => {
       e.mode = e.mode === "purify" ? "none" : "purify"
     }, h[3].onclick = () => {
-      if (e.state.noItems) return Jr(e, "対人戦ではアイテムを使えない", "miss", "", 900);
+      if (e.state.noItems) return Jr(e, "対人戦はアイテムなし", "miss", "", 900);
       e.mode = e.mode === "item" || e.mode === "itemTarget" ? "none" : "item", e.fleeArm = null
     };
     let f = q("div", "wheelbox"),
@@ -33551,7 +33551,7 @@ void main() {
         }
         i && (ma(e, t.dst, i > 0 ? "弱点！" : "いまひとつ", "eff " + (i > 0 ? "weak" : "resist")), i > 0 && r.hit(t.dst, !0, 16765562)), (t.crit || t.amount >= 160) && ql(e)
       }
-      r.hit(t.dst, t.crit, t.source === "attack" ? 16777215 : 16765562), ma(e, t.dst, String(t.amount), (t.crit ? "crit" : "dmg") + (t.amount >= 160 ? " huge" : t.amount >= 90 ? " big" : "")), t.crit ? (d2(), Rt(e, `${la(e,t.src??t.dst)} のクリティカル！ ${t.amount}`, a(t.src ?? t.dst))) : Ot(e, t.dst).guarding && (t.source === "attack" || t.source === "skill") && p2(), t.source === "trait" && Rt(e, `${la(e,t.dst)} に特性のダメージ ${t.amount}`, a(t.dst));
+      r.hit(t.dst, t.crit, t.crit ? 16767334 : t.source === "attack" ? 16777215 : 16765562), dmgPop(e, t, U2(e, t)), t.crit ? (d2(), Rt(e, `${la(e,t.src??t.dst)} のクリティカル！ ${t.amount}`, a(t.src ?? t.dst))) : Ot(e, t.dst).guarding && (t.source === "attack" || t.source === "skill") && p2(), t.source === "trait" && Rt(e, `${la(e,t.dst)} に特性のダメージ ${t.amount}`, a(t.dst));
       break;
       case "heal":
         ma(e, t.dst, "+" + t.amount, "heal"), t.amount >= 20 && (f2(), r.healFx(t.dst));
@@ -33689,7 +33689,7 @@ void main() {
     r.order.dataset.k !== d && (r.order.dataset.k = d, r.order.innerHTML = d), dr(e, 0).forEach((h, f) => {
       let g = Ot(e, h),
         k = e.plates[f];
-      k.querySelector(".pn").textContent = Ze(g).name, k.querySelector(".hp i").style.width = jl(g.hp, g.maxHp), k.querySelector(".hp").classList.toggle("low", mr(g) <= 250), k.querySelector(".soul-clip").setAttribute("y", String(24 - 24 * g.sg / Nt)), k.classList.toggle("full", g.sg >= Nt && Se(g)), k.classList.toggle("dead", !Se(g)), k.classList.toggle("pick", e.mode === "ult" && g.sg >= Nt && Se(g));
+      k.querySelector(".pn").textContent = Ze(g).name, k.querySelector(".peq").textContent = eqLabel(g), k.querySelector(".hp i").style.width = jl(g.hp, g.maxHp), k.querySelector(".hp").classList.toggle("low", mr(g) <= 250), k.querySelector(".soul-clip").setAttribute("y", String(24 - 24 * g.sg / Nt)), k.classList.toggle("full", g.sg >= Nt && Se(g)), k.classList.toggle("dead", !Se(g)), k.classList.toggle("pick", e.mode === "ult" && g.sg >= Nt && Se(g));
       let m = Hd(g),
         p = k.querySelector(".fxs");
       p.innerHTML !== m && (p.innerHTML = m)
@@ -33700,7 +33700,7 @@ void main() {
         k = s.project(h, 2.45),
         m = c.includes(h) && k.visible;
       if (f.hidden = !m, !m) continue;
-      f.style.left = `${k.x}px`, f.style.top = `${k.y}px`, f.querySelector(".n").textContent = Ze(g).name, f.querySelector(".hp i").style.width = jl(g.hp, g.maxHp);
+      f.style.left = `${k.x}px`, f.style.top = `${k.y}px`, f.querySelector(".n").textContent = Ze(g).name, f.querySelector(".peq").textContent = eqLabel(g), f.querySelector(".hp i").style.width = jl(g.hp, g.maxHp);
       let p = Hd(g),
         y = f.querySelector(".fxs");
       y.innerHTML !== p && (y.innerHTML = p), f.classList.toggle("targeted", i.target === g.index), f.classList.toggle("pokeable", e.zero && Se(g) && (g.curse !== null || g.loafing)), f.classList.toggle("dead", !Se(g))
@@ -33763,7 +33763,7 @@ void main() {
     });
     let i = t.rotateCooldown / cu,
       n = 2 * Math.PI * 152;
-    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? `アイテム禁止（${t.bag.length}）` : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
+    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? "アイテムなし" : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
   }
 
   function Z2(e) {

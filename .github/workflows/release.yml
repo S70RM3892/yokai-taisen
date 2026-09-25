@@ -67,9 +67,29 @@ jobs:
               --notes "yokai-taisen.html をダウンロードしてブラウザで開くだけで遊べる（1 ファイル）。オンライン版：https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
           fi
 
+  # gh-pages ブランチにも置く（Settings → Pages を「Deploy from a branch: gh-pages」にしても公開できる）
+  gh-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: yokai-taisen
+      - name: gh-pages ブランチへ
+        run: |
+          mkdir -p /tmp/site && cp yokai-taisen.html /tmp/site/index.html && touch /tmp/site/.nojekyll
+          cd /tmp/site
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -q -m "Publish ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+
   pages:
     needs: build
     runs-on: ubuntu-latest
+    continue-on-error: true # Pages が「GitHub Actions」になっていないときは失敗するが、ほかは止めない
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

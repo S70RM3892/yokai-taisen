@@ -245,10 +245,21 @@ Object.assign(e2.prototype, {
     const f = this.figs.get(uid);
     if (!f) return;
     const h = f.model.userData.height ?? 1.6, p = f.root.position.clone().setY(h * 0.55);
-    this.flare(p, color, crit ? 2.6 : 1.5);
-    this.sparkle(p, color, crit ? 18 : 8, crit ? 3.4 : 2.4);
-    this.slash(p, crit ? 0xfff2a0 : 0xffffff, crit ? 1.6 : 1);
-    if (crit) this.slash(p, 0xf2a541, 1.3), this.shockwave(f.root.position, 0xf2a541, 2.2, 0.45);
+    if (!crit) {
+      // ふつう：白い光と小さな火花、斬撃 1 本
+      this.flare(p, color, 1.3, 0.22);
+      this.sparkle(p, color, 7, 2.2, 0.22);
+      this.slash(p, 0xffffff, 0.9);
+      return;
+    }
+    // 会心：金の大きな光、斬撃 3 本、金のかけら、二重の衝撃波
+    this.flare(p, 0xfff2a0, 3.6, 0.35);
+    this.flare(p, 0xffffff, 1.8, 0.18);
+    for (let i = 0; i < 3; i++) this.slash(p, i === 1 ? 0xffffff : 0xf2c14a, 1.5 + i * 0.35);
+    this.sparkle(p, 0xf2d15c, 30, 4.4, 0.3, 0.9, 0.9);
+    this.sparkle(p, 0xffffff, 10, 3, 0.18);
+    this.shockwave(f.root.position, 0xf2a541, 2.8, 0.5);
+    this.shockwave(f.root.position, 0xfff2a0, 1.6, 0.35, 0.4);
   };
   P.ko = function (uid) {
     orig.ko.call(this, uid);
@@ -331,4 +342,71 @@ function sfxJudge(kind) {
 
 function sfxCharged() {
   Tt(0.5, 0.35, "bandpass", 400, 0, 1.5, 4e3), qe(330, 0.4, "sawtooth", 0.12, 0, 1320), qe(660, 0.5, "triangle", 0.12, 0.1, 1760);
+}
+
+// ---- ダメージの数字・会心の演出・連続ヒット ----
+// 与えたダメージは白〜金、受けたダメージは赤。会心は大きな金の数字に「CRITICAL!!」、放射線、
+// 一瞬の止め（ヒットストップ）と画面のフラッシュ。こちらの攻撃が続くと「○ HIT」と合計を数える。
+function dmgPop(e, ev, eff) {
+  const p = e.scene.project(ev.dst, 2);
+  if (!p.visible) return;
+  const taken = ev.dst < ii, crit = !!ev.crit;
+  const size = ev.amount >= 160 ? " huge" : ev.amount >= 90 ? " big" : "";
+  const el = q("div", `dnum ${crit ? "crit" : "norm"}${size} ${taken ? "taken" : "dealt"}${eff > 0 ? " weak" : ""}${ev.source === "ult" ? " ult" : ""}`);
+  el.style.left = `${p.x + (Math.random() - 0.5) * 36}px`;
+  el.style.top = `${p.y - Math.random() * 12}px`;
+  if (crit) el.append(q("span", "drays"), q("span", "dlab", "CRITICAL!!"));
+  const val = q("span", "dval", "0");
+  el.append(val);
+  e.refs.fx.append(el);
+  // 数字がくるくる上がって止まる（大きいほど長く）
+  const dur = crit ? 320 : Math.min(260, 90 + ev.amount), t0 = performance.now();
+  const roll = () => {
+    const k = Math.min(1, (performance.now() - t0) / dur);
+    val.textContent = String(Math.round(ev.amount * (1 - (1 - k) ** 3)));
+    if (k < 1 && el.isConnected) requestAnimationFrame(roll);
+  };
+  roll();
+  setTimeout(() => el.remove(), crit ? 1500 : 1050);
+  if (crit) critBurst(e, ev, p);
+  comboHit(e, ev);
+}
+
+function critBurst(e, ev, p) {
+  const top = e.refs.top, sc = e.scene;
+  if (!sc.reduced) {
+    const fl = q("div", "critflash" + (ev.dst < ii ? " taken" : ""));
+    fl.style.setProperty("--x", `${p.x}px`), fl.style.setProperty("--y", `${p.y}px`);
+    top.append(fl);
+    setTimeout(() => fl.remove(), 520);
+  }
+  sc.hitStop = Math.max(sc.hitStop, 0.16);
+  sc.camShake = Math.max(sc.camShake, 0.42);
+  sc.flashLevel = Math.max(sc.flashLevel, 0.3);
+  sfxCrit();
+}
+
+function comboHit(e, ev) {
+  if (ev.src === null || ev.src === void 0 || ev.src >= ii || ev.dst < ii) return;
+  const now = performance.now();
+  let c = e.combo;
+  if (!c || now - c.t > 2600) {
+    c?.el.remove();
+    c = e.combo = { n: 0, total: 0, crits: 0, t: now, el: q("div", "combo") };
+    e.refs.top.append(c.el);
+  }
+  c.n++, c.total += ev.amount, c.t = now, ev.crit && c.crits++;
+  const word = c.n >= 12 ? "ぶっとび！！" : c.n >= 8 ? "すごい！" : c.n >= 5 ? "いいぞ！" : "";
+  c.el.innerHTML = `<b class="num">${c.n}</b><span class="hit">HIT</span><span class="tot num">${c.total}</span>${word ? `<span class="word">${word}</span>` : ""}`;
+  c.el.className = "combo" + (ev.crit ? " gold" : "") + (c.n >= 8 ? " hot" : "");
+  c.el.style.animation = "none", c.el.offsetWidth, c.el.style.animation = "";
+  clearTimeout(c.timer);
+  c.timer = setTimeout(() => { c.el.classList.add("out"); setTimeout(() => c.el.remove(), 400); if (e.combo === c) e.combo = null; }, 2600);
+  if (c.n > 1) qe(520 + Math.min(c.n, 16) * 45, 0.07, "triangle", 0.1); // 続くほど音が上がる
+}
+
+function sfxCrit() {
+  Tt(0.08, 0.5, "highpass", 2500, 0, 0.8);
+  qe(1760, 0.12, "square", 0.12, 0.02, 2640), qe(2637, 0.22, "triangle", 0.14, 0.07), qe(3520, 0.26, "sine", 0.1, 0.12);
+  qe(90, 0.3, "sine", 0.5, 0, 40);
 }

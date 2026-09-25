@@ -113,7 +113,7 @@ function renderDetail(host, slot, onChange) {
   const souls = soulChoices().map(s => ({ value: s.id, label: s.name }));
   optionList(selE, [{ value: "", label: "なし" }, ...[...groups].map(([g, items]) => ({ group: g === "このゲーム" ? "このゲームの装備" : `本家：${g}`, items })), { group: "魂（本家：魂へんげ）", items: souls }], lo.equipment);
   selE.onchange = () => { SLOT_LOADOUT[slot].equipment = selE.value || null; saveLoadout(); onChange(); };
-  mk("装備", selE, q("span", "dt-note", eq ? equipDesc(eq) : "装備なし"));
+  mk("持ち物", selE, q("span", "dt-note", eq ? equipDesc(eq) : "装備なし"));
 
   const selF = q("select", "dt-sel");
   optionList(selF, [{ value: "", label: "なし" }, ...Tu.map(t => ({ value: t.id, label: `${t.name}（${Object.entries(t.effort).filter(([, v]) => v).map(([k, v]) => `${STAT_JA[k]}+${k === "hp" ? v * wh : v}`).join("・")}）` }))], lo.effort);
@@ -141,7 +141,7 @@ function ultDesc(u) {
 
 // 持ち物（左の列）
 function renderBag(host, onChange) {
-  host.replaceChildren(q("div", "b-rules-t", `持ち物（${BAG.length}/${BAG_SIZE}）`));
+  host.replaceChildren(q("div", "b-rules-t", `アイテム（${BAG.length}/${BAG_SIZE}）`));
   const list = q("div", "bag-list");
   BAG.forEach((id, i) => {
     const it = battleItem(id);
@@ -158,7 +158,7 @@ function renderBag(host, onChange) {
   const add = q("button", "b-mini save", "＋ アイテムを入れる");
   add.disabled = BAG.length >= BAG_SIZE;
   add.onclick = () => openItemPicker(id => { if (BAG.length < BAG_SIZE) BAG.push(id); saveLoadout(); onChange(); });
-  host.append(add, q("div", "b-rules-note", "対戦中、右下の「アイテム」で使う。好物なら 1.25 倍。"));
+  host.append(add, q("div", "b-rules-note", "CPU 戦で、右下の「アイテム」で使う。好物なら 1.25 倍。対人戦はアイテムなし。"));
 }
 
 function itemIcon(it) {
@@ -172,7 +172,7 @@ var ITEM_GROUPS = [
 function openItemPicker(onPick) {
   const wrap = q("div", "result picker");
   const box = q("div", "box");
-  box.append(q("div", "title", "持ち物にいれるアイテム（本家のアイテム）"));
+  box.append(q("div", "title", "アイテム（本家のアイテム。CPU 戦で使う）"));
   const search = q("input", "b-search");
   search.placeholder = "名前でさがす";
   const body = q("div", "pick-body");
@@ -215,11 +215,11 @@ function openConfirm(members, bag, onGo) {
     card.innerHTML = `<div class="cf-head"><span class="cf-pic" style="background:${Pi[d.tribe]}">${da(d.id, d.name.slice(0, 1))}</span><div><b>${d.name}</b> <span class="rank ${d.rank}">${d.rank}</span><div class="tag">${i < 3 ? "前衛" : "後衛"}・${qn(st.nature).name}・好物 ${FOOD_CATS[st.favorite]}</div></div></div>
       <div class="cf-stats num">HP ${st.maxHp}　ちから ${st.atk}　ようりょく ${st.spa}　まもり ${st.def}　すばやさ ${st.spd}</div>
       <div class="cf-line"><span class="dt-k">特性</span> ${tr.name}</div>
-      <div class="cf-line"><span class="dt-k">装備</span> ${eq ? `${eq.name}<small>（${equipDesc(eq)}）</small>` : "なし"}</div>`;
+      <div class="cf-line"><span class="dt-k">持ち物</span> ${eq ? `${eq.name}<small>（${equipDesc(eq)}）</small>` : "なし"}</div>`;
     grid.append(card);
   });
   box.append(grid);
-  box.append(q("div", "cf-bag", `持ち物：${bag.length ? bag.map(id => battleItem(id).name).join("・") : "なし"}`));
+  box.append(q("div", "cf-bag", `アイテム：${bag.length ? bag.map(id => battleItem(id).name).join("・") : "なし"}`));
   const row = q("div", "row");
   row.style.justifyContent = "center";
   const go = q("button", "btn primary", "この内容で対戦する");
