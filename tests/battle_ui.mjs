@@ -24,6 +24,8 @@ await page.click(".confirm .btn.primary");
 await page.waitForTimeout(2800);
 
 // 1) アイテム：メニュー → 前衛に使う
+// 確認のあいだは相手の CPU を止める（遅い環境だと、使う前に倒されて「使えない」になるため）
+const cpuParams = await page.evaluate(() => { const g = __yokaiDebug.ga(), old = g.cpu.params; g.cpu.params = { ...old, lag: 1e9 }; return old; });
 const hpBefore = await page.evaluate(() => { const g = __yokaiDebug.ga(), p = g.state.players[0], u = p.units[p.wheel[0]]; u.hp = Math.floor(u.maxHp / 3); return u.hp; });
 { const bb = await (await page.$(".bottom3d .c-br")).boundingBox(); await page.mouse.click(bb.x + bb.width - 25, bb.y + bb.height - 20); }
 await page.waitForTimeout(200);
@@ -38,6 +40,7 @@ const used = await page.evaluate(() => [...document.querySelectorAll(".log p")].
 const hpAfter = await page.evaluate(() => { const p = __yokaiDebug.ga().state.players[0]; return p.units[p.wheel[0]].hp; });
 console.log(`HP ${hpBefore} -> ${hpAfter}`);
 if (!used) fail("item was not used"); else console.log("item:", used);
+await page.evaluate(old => { __yokaiDebug.ga().cpu.params = old; }, cpuParams);
 
 // 2) パワーチャージ 4 種
 for (const game of ["mawase", "nazore", "ute", "awasero"]) {
