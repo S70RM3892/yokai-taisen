@@ -9,7 +9,7 @@ export type DamageSource = "attack" | "skill" | "ult" | "poison" | "poke" | "tra
 
 export type BattleEvent =
   | { t: "dropped"; player: PlayerId; input: Input }
-  | { t: "rotate"; player: PlayerId; dir: "cw" | "ccw" }
+  | { t: "rotate"; player: PlayerId; dir: "cw" | "ccw"; steps: number }
   /** 前衛が全滅したときの強制回転（§12.2） */
   | { t: "forcedRotate"; player: PlayerId }
   /** サドンデスに入った（§10） */

@@ -382,7 +382,9 @@ function handleInput(s: BattleState, pid: PlayerId, input: Input, events: Battle
     case "rotate": {
       if (poking || p.rotateCooldown > 0) return false;
       if (input.dir !== "cw" && input.dir !== "ccw") return false;
-      rotate(s, pid, input.dir, events);
+      const steps = input.steps ?? 1;
+      if (!isInt(steps, 1, 5)) return false;
+      rotate(s, pid, input.dir, steps, events);
       return true;
     }
     case "target": {
@@ -462,15 +464,15 @@ function handleInput(s: BattleState, pid: PlayerId, input: Input, events: Battle
   }
 }
 
-function rotate(s: BattleState, pid: PlayerId, dir: "cw" | "ccw", events: BattleEvent[]): void {
+function rotate(s: BattleState, pid: PlayerId, dir: "cw" | "ccw", steps: number, events: BattleEvent[]): void {
   const p = s.players[pid];
   const old = p.wheel;
-  const shift = dir === "cw" ? 1 : 5;
+  const shift = dir === "cw" ? steps : 6 - steps;
   const next = new Array<number>(6);
   for (let pos = 0; pos < 6; pos++) next[(pos + shift) % 6] = old[pos];
   p.wheel = next;
   p.rotateCooldown = C.ROTATE_COOLDOWN;
-  events.push({ t: "rotate", player: pid, dir });
+  events.push({ t: "rotate", player: pid, dir, steps });
   triggerFirstStrike(p, events);
   const st = p.stance;
   // 大奥義は回すとキャンセル。普通の構えは構えたユニットが後衛に行ったらキャンセル（§6.5・§8.1）

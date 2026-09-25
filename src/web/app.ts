@@ -13,6 +13,8 @@ import {
   type Input,
   isAlive,
   natureById,
+  pickEnemyTarget,
+  agNeeded,
   type PlayerInput,
   stepInPlace,
   type TeamSpec,
@@ -216,12 +218,18 @@ interface View {
   wheelEl: Map<number, HTMLElement>;
   logEl: HTMLElement;
   running: boolean;
+  /** 回転のプレビュー（+ が時計回り）。指を離す・少し待つと、まとめて1回の回転として送る */
+  preview: number;
+  previewTimer: number | null;
+  arrows: SVGSVGElement | null;
   lastFrame: number;
   acc: number;
   refs: Record<string, HTMLElement>;
 }
 
 let view: View | null = null;
+/** ドラッグで回した直後のクリックは無視する（奥義や浄化が誤って出ないように） */
+let lastDragAt = 0;
 
 function startBattle(team: TeamSpec): void {
   const seed = randomSeed();
@@ -238,6 +246,9 @@ function startBattle(team: TeamSpec): void {
     wheelEl: new Map(),
     logEl: h("div", "log"),
     running: true,
+    preview: 0,
+    previewTimer: null,
+    arrows: null,
     lastFrame: performance.now(),
     acc: 0,
     refs: {},
@@ -278,10 +289,20 @@ function buildBattle(v: View): void {
   const clock = h("div", "clock num");
   const allyRes = h("div", "reserve");
   hud.append(foeRes, clock, allyRes);
-  const foeLine = h("div", "line");
+  const foeLine = h("div", "line foe-line");
   const allyLine = h("div", "line");
   const formation = h("div", "formation");
   top.append(hud, foeLine, allyLine, formation);
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "arrows");
+  svg.innerHTML =
+    '<defs>' +
+    '<marker id="ah-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#5fb3d9"/></marker>' +
+    '<marker id="ah-f" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#e0655a"/></marker>' +
+    '<marker id="ah-u" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#f2a541"/></marker>' +
+    "</defs>";
+  top.append(svg);
+  v.arrows = svg;
   v.refs = { clock, foeRes, allyRes, foeLine, allyLine, formation, top };
 
   for (const pid of [1, 0] as const) {
@@ -291,7 +312,7 @@ function buildBattle(v: View): void {
       el.innerHTML =
         '<div class="nm"><span class="fig"></span><span class="n"></span><span class="st"></span></div>' +
         '<div class="bar hp"><i></i></div><div class="bar ag"><i></i></div><div class="bar sg"><i></i></div>' +
-        '<div class="fx"></div>';
+        '<div class="fx"></div><div class="eta num"></div>';
       el.onclick = () => onUnitClick(v, u);
       const fig = el.querySelector(".fig") as HTMLElement;
       fig.textContent = def(u).name.slice(0, 1);
@@ -315,10 +336,10 @@ function buildBattle(v: View): void {
   z.onclick = () => toggleZero(v);
   const rl = h("button", "rot l", "⟲");
   rl.title = "反時計回り（Q）";
-  rl.onclick = () => send(v, { t: "rotate", dir: "ccw" });
+  rl.onclick = () => queueRotate(v, -1);
   const rr = h("button", "rot r", "⟳");
   rr.title = "時計回り（E）";
-  rr.onclick = () => send(v, { t: "rotate", dir: "cw" });
+  rr.onclick = () => queueRotate(v, 1);
   for (const u of v.state.players[0].units) {
     const s = h("button", "wslot");
     s.onclick = () => onWheelClick(v, u);
@@ -370,6 +391,7 @@ function onUnitClick(v: View, u: UnitState): void {
 }
 
 function onWheelClick(v: View, u: UnitState): void {
+  if (performance.now() - lastDragAt < 300) return;
   const pos = v.state.players[0].wheel.indexOf(u.index);
   if (pos >= 3) {
     send(v, { t: "purify", allySlot: pos });
@@ -385,29 +407,54 @@ function tryUlt(v: View, pos: number): void {
   if (v.zero) v.zero = false;
 }
 
+/** 回転の操作をためる。3秒の待ち時間ごとに、1回で好きなだけ回せる（BATTLE_SPEC §8.1） */
+function queueRotate(v: View, delta: number): void {
+  if (v.state.players[0].rotateCooldown > 0 || v.state.players[0].poke) return;
+  v.preview = Math.max(-5, Math.min(5, v.preview + delta));
+  if (v.previewTimer !== null) clearTimeout(v.previewTimer);
+  v.previewTimer = window.setTimeout(() => commitRotate(v), 450);
+}
+
+function commitRotate(v: View): void {
+  if (v.previewTimer !== null) clearTimeout(v.previewTimer);
+  v.previewTimer = null;
+  const net = ((v.preview % 6) + 6) % 6;
+  v.preview = 0;
+  if (net === 0) return;
+  send(v, net <= 3 ? { t: "rotate", dir: "cw", steps: net } : { t: "rotate", dir: "ccw", steps: 6 - net });
+}
+
 function bindWheelDrag(v: View, wheel: HTMLElement): void {
   let startAngle: number | null = null;
   const angle = (e: PointerEvent) => {
     const r = wheel.getBoundingClientRect();
     return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
   };
+  let total = 0;
+  let prev = 0;
   wheel.addEventListener("pointerdown", (e) => {
-    if ((e.target as HTMLElement).closest("button")) return;
+    if ((e.target as HTMLElement).closest(".zbtn, .rot")) return;
+    if (v.state.players[0].rotateCooldown > 0) return;
     startAngle = angle(e);
+    prev = startAngle;
+    total = 0;
     wheel.setPointerCapture(e.pointerId);
   });
   wheel.addEventListener("pointermove", (e) => {
     if (startAngle === null) return;
-    let d = angle(e) - startAngle;
+    const a = angle(e);
+    let d = a - prev;
     if (d > Math.PI) d -= 2 * Math.PI;
     if (d < -Math.PI) d += 2 * Math.PI;
-    if (Math.abs(d) > 0.5) {
-      send(v, { t: "rotate", dir: d > 0 ? "cw" : "ccw" });
-      startAngle = null;
-    }
+    total += d;
+    prev = a;
+    v.preview = Math.max(-5, Math.min(5, Math.round(total / (Math.PI / 3))));
   });
   const end = () => {
+    if (startAngle === null) return;
     startAngle = null;
+    if (Math.abs(total) > 0.2) lastDragAt = performance.now();
+    commitRotate(v);
   };
   wheel.addEventListener("pointerup", end);
   wheel.addEventListener("pointercancel", end);
@@ -418,8 +465,8 @@ document.addEventListener("keydown", (e) => {
   if (!v || !v.running) return;
   const k = e.key.toLowerCase();
   const me = v.state.players[0];
-  if (k === "q") send(v, { t: "rotate", dir: "ccw" });
-  else if (k === "e") send(v, { t: "rotate", dir: "cw" });
+  if (k === "q") queueRotate(v, -1);
+  else if (k === "e") queueRotate(v, 1);
   else if (k === "z") toggleZero(v);
   else if (k === " ") {
     e.preventDefault();
@@ -642,6 +689,12 @@ function pct(n: number, d: number): string {
   return `${Math.max(0, Math.min(100, (n * 100) / d))}%`;
 }
 
+/** 攻撃するならだれを狙うか（§4.4） */
+function aimName(v: View, u: UnitState): string {
+  const t = pickEnemyTarget(v.state.players[u.owner], v.state.players[1 - u.owner]);
+  return t ? def(t).name : "―";
+}
+
 function renderUnit(v: View, u: UnitState, el: HTMLElement): void {
   const p = v.state.players[u.owner];
   const me = v.state.players[0];
@@ -651,10 +704,21 @@ function renderUnit(v: View, u: UnitState, el: HTMLElement): void {
   st.textContent = `HP ${u.hp}/${u.maxHp}`;
   (el.querySelector(".hp i") as HTMLElement).style.width = pct(u.hp, u.maxHp);
   el.querySelector(".hp")!.classList.toggle("low", hpRatio(u) <= 250);
-  const need = Math.max(1, C.actionPoints(u.spd) * C.AG_PER_ACTION_POINT);
+  const need = Math.max(1, agNeeded(p, u));
   (el.querySelector(".ag i") as HTMLElement).style.width = pct(u.ag, need);
   (el.querySelector(".sg i") as HTMLElement).style.width = pct(u.sg, C.SG_FULL);
   el.querySelector(".sg")!.classList.toggle("full", u.sg >= C.SG_FULL);
+  const eta = el.querySelector(".eta") as HTMLElement;
+  const front = p.wheel.indexOf(u.index) < 3;
+  eta.textContent = !isAlive(u)
+    ? ""
+    : p.stance && (p.stance.unit === u.index || p.stance.partners.includes(u.index))
+      ? "構え中"
+      : u.pendingAction
+        ? "敵待ち"
+        : front
+          ? `次の行動まで ${secs(Math.max(0, Math.ceil((need - u.ag) / C.AG_PER_TICK)))} 秒 → ${aimName(v, u)}`
+          : "";
   const fx = el.querySelector(".fx") as HTMLElement;
   const chips: string[] = [];
   if (u.curse) chips.push(`<span class="chip c">${CURSE[u.curse.kind]}${TIER[u.curse.tier]} ${secs(u.curse.remaining)}</span>`);
@@ -694,6 +758,7 @@ function render(v: View): void {
       .map((u) => `<span class="${isAlive(u) ? "" : "dead"}" title="${def(u).name}"><i style="width:${pct(u.sg, C.SG_FULL)}"></i></span>`)
       .join("");
   }
+  drawArrows(v);
   // 陣
   const me = s.players[0];
   const forms = new Set<string>();
@@ -710,12 +775,13 @@ function render(v: View): void {
   for (const u of me.units) {
     const el = v.wheelEl.get(u.index)!;
     const pos = me.wheel.indexOf(u.index);
-    const ang = ((-150 + pos * 60) * Math.PI) / 180;
+    const shown = (((pos + v.preview) % 6) + 6) % 6;
+    const ang = ((-150 + shown * 60) * Math.PI) / 180;
     el.style.left = `${rad + R * Math.cos(ang)}px`;
     el.style.top = `${rad + R * Math.sin(ang)}px`;
     const label = `<b>${def(u).name.slice(0, 3)}</b><br><span class="num">${Math.round((u.sg * 100) / C.SG_FULL)}%</span>`;
     if (el.innerHTML !== label) el.innerHTML = label;
-    el.classList.toggle("front", pos < 3);
+    el.classList.toggle("front", shown < 3);
     el.classList.toggle("dead", !isAlive(u));
     el.classList.toggle("cursed", !!u.curse);
     el.classList.toggle("purifying", me.purify?.unit === u.index);
@@ -727,6 +793,7 @@ function render(v: View): void {
   cool.style.background = cd > 0 ? `conic-gradient(var(--lantern) ${cd * 360}deg, transparent 0)` : "transparent";
   cool.style.mask = "radial-gradient(circle, transparent 66%, #000 67%)";
 
+  r.wheel.classList.toggle("previewing", v.preview !== 0);
   r.controls.classList.toggle("zero", v.zero);
   r.bottom.classList.toggle("zero", v.zero);
   r.bUlt.textContent = v.zero ? "大奥義" : "奥義";
@@ -736,11 +803,56 @@ function render(v: View): void {
   renderOverlay(v);
 }
 
+/** だれがだれを狙っているか（§4.4 のねらい）。もうすぐ動くユニットほど濃く・太く */
+function drawArrows(v: View): void {
+  const svg = v.arrows;
+  if (!svg) return;
+  const box = v.refs.top.getBoundingClientRect();
+  svg.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
+  const center = (uid: number) => {
+    const r = v.unitEl.get(uid)!.getBoundingClientRect();
+    return { x: r.left - box.left + r.width / 2, y: r.top - box.top + r.height / 2, h: r.height };
+  };
+  const lines: string[] = [];
+  for (const pid of [0, 1] as const) {
+    const p = v.state.players[pid];
+    const e = v.state.players[1 - pid];
+    const t = pickEnemyTarget(p, e);
+    if (!t) continue;
+    const to = center(t.uid);
+    [0, 1, 2].forEach((pos, i) => {
+      const u = p.units[p.wheel[pos]];
+      if (!isAlive(u)) return;
+      const stance = p.stance?.unit === u.index;
+      const progress = Math.min(1, u.ag / Math.max(1, agNeeded(p, u)));
+      const from = center(u.uid);
+      const dx = (i - 1) * 10;
+      const y1 = from.y + (pid === 0 ? -from.h / 2 : from.h / 2);
+      const y2 = to.y + (pid === 0 ? to.h / 2 : -to.h / 2);
+      const color = stance ? "#f2a541" : pid === 0 ? "#5fb3d9" : "#e0655a";
+      const marker = stance ? "ah-u" : pid === 0 ? "ah-a" : "ah-f";
+      const op = stance ? 1 : 0.15 + 0.85 * progress * progress;
+      const w = stance ? 5 : 1.5 + 2.5 * progress;
+      lines.push(
+        `<line x1="${from.x + dx}" y1="${y1}" x2="${to.x + dx}" y2="${y2}" stroke="${color}" stroke-width="${w}" stroke-opacity="${op}" marker-end="url(#${marker})"${stance ? ' stroke-dasharray="8 5"' : ""}/>`,
+      );
+    });
+  }
+  const g = lines.join("");
+  let layer = svg.querySelector("g");
+  if (!layer) {
+    layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    svg.append(layer);
+  }
+  if (layer.innerHTML !== g) layer.innerHTML = g;
+}
+
 function hintText(v: View): string {
   const me = v.state.players[0];
   if (v.mode === "ult") return v.zero ? "大奥義を撃つ前衛を選ぶ（自分と両隣の妖気が満タン）" : "奥義を撃つ前衛を選ぶ（妖気が満タン）";
   if (v.mode === "purify") return "浄化する後衛（呪付のかかったユニット）を選ぶ";
   if (v.zero) return "ゼロ：光っている敵をクリックでつつき。奥義ボタンは大奥義になる";
+  if (v.preview !== 0) return `${Math.abs(v.preview)} つ分${v.preview > 0 ? "時計回り" : "反時計回り"}に回す（離すと決定）`;
   if (me.rotateCooldown > 0) return `回転まで ${secs(me.rotateCooldown)} 秒`;
   return "敵をクリックで標的。前衛の妖気が満タンならクリックで奥義";
 }

@@ -435,6 +435,18 @@ describe("回転（§8.1・§12.1）", () => {
     expect(s2.players[0].wheel).toEqual([1, 2, 3, 4, 5, 0]);
   });
 
+  it("1回で何つ分でも回せる（待ち時間は同じ 60 tick）", () => {
+    const s = battle();
+    ftick(s, [0, { t: "rotate", dir: "cw", steps: 3 }]);
+    expect(s.players[0].wheel).toEqual([3, 4, 5, 0, 1, 2]);
+    expect(s.players[0].rotateCooldown).toBe(59);
+    const s2 = battle();
+    ftick(s2, [0, { t: "rotate", dir: "ccw", steps: 2 }]);
+    expect(s2.players[0].wheel).toEqual([2, 3, 4, 5, 0, 1]);
+    // 0 や 6 以上は捨てる
+    expect(ofType(ftick(battle(), [0, { t: "rotate", dir: "cw", steps: 6 }]), "dropped").length).toBe(1);
+  });
+
   it("1回回すと 60 tick 回せない", () => {
     const s = battle();
     ftick(s, [0, { t: "rotate", dir: "cw" }]);
