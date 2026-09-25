@@ -24,6 +24,52 @@ import {
 import * as C from "../core/constants.js";
 import { createStream, nextU32 } from "../core/rng.js";
 import { randomTeam } from "../sim/teamgen.js";
+import * as M from "./motion.js";
+import * as S from "./sound.js";
+
+const TRIBE_COLOR: Record<string, string> = {
+  takeru: "#d9644a", ayashi: "#8a6ee0", tsuwamono: "#8f8a74", kage: "#4f9fb8",
+  nagomi: "#6fbf73", miyabi: "#d48ac0", tatari: "#7d5a9e", shizume: "#5f88c9",
+};
+
+// 最初に画面を触ったときに音を使えるようにする（ブラウザの決まり）
+for (const ev of ["pointerdown", "keydown"]) document.addEventListener(ev, () => S.unlockAudio(), { capture: true });
+
+/** 音の操作（効果音の ON/OFF と、手元の曲ファイルを BGM にする） */
+function audioBar(): HTMLElement {
+  const bar = h("div", "audio row");
+  const mute = h("button", "btn small", S.isMuted() ? "音：OFF" : "音：ON");
+  mute.onclick = () => {
+    S.setMuted(!S.isMuted());
+    mute.textContent = S.isMuted() ? "音：OFF" : "音：ON";
+  };
+  const label = h("label", "btn small", "BGM を選ぶ");
+  label.htmlFor = "bgm-file";
+  const file = h("input") as HTMLInputElement;
+  file.type = "file";
+  file.id = "bgm-file";
+  file.accept = "audio/*";
+  file.hidden = true;
+  const name = h("span", "muted small", bgmName || "BGM なし");
+  file.onchange = () => {
+    const f = file.files?.[0];
+    if (!f) return;
+    S.unlockAudio();
+    bgmName = S.playBgmFile(f);
+    name.textContent = `♪ ${bgmName}`;
+  };
+  const vol = h("input") as HTMLInputElement;
+  vol.type = "range";
+  vol.id = "bgm-volume";
+  vol.min = "0";
+  vol.max = "100";
+  vol.value = "35";
+  vol.title = "BGM の音量";
+  vol.oninput = () => S.setBgmVolume(Number(vol.value) / 100);
+  bar.append(mute, label, file, vol, name);
+  return bar;
+}
+let bgmName = "";
 
 const TRIBE: Record<string, string> = {
   takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮",
@@ -63,7 +109,7 @@ function showSetup(): void {
   app.replaceChildren();
   const title = h("h1", "", "妖怪大戦");
   title.append(h("small", "", "試作版（人 vs CPU）"));
-  app.append(title);
+  app.append(title, audioBar());
 
   const setup = h("section", "setup");
   const lead = h("p", "help");
@@ -144,7 +190,14 @@ function showSetup(): void {
     "<kbd>Z</kbd>（中央のゼロ）で 奥義↔大奥義・標的↔つつき を切り替え。後衛で呪付のかかったユニットをクリック（<kbd>4</kbd>〜<kbd>6</kbd>）で浄化。";
 
   setup.append(slots, actions, help, roster);
-  app.append(setup, h("footer", "", "見た目は仮（四角と文字）。戦闘のルールは BATTLE_SPEC v0.18。"));
+  app.append(
+    setup,
+    h(
+      "footer",
+      "",
+      "見た目は仮（四角と文字）。効果音はその場で合成している。BGM は手元の曲ファイルをこのブラウザの中だけで流す（どこにも送らない）。NCS の曲はゲームへの組み込みにライセンスが要るので、ゲームには入れていない。戦闘のルールは BATTLE_SPEC v0.18。",
+    ),
+  );
   if (picked.length === 0) picked = randomUnitIds(randomSeed());
   refresh();
 }
@@ -213,7 +266,7 @@ function buildBattle(v: View): void {
   app.replaceChildren();
   const title = h("h1", "", "妖怪大戦");
   title.append(h("small", "", "試作版"));
-  app.append(title);
+  app.append(title, audioBar());
 
   const battle = h("section", "battle");
   const screens = h("div", "screens");
@@ -229,17 +282,20 @@ function buildBattle(v: View): void {
   const allyLine = h("div", "line");
   const formation = h("div", "formation");
   top.append(hud, foeLine, allyLine, formation);
-  v.refs = { clock, foeRes, allyRes, foeLine, allyLine, formation };
+  v.refs = { clock, foeRes, allyRes, foeLine, allyLine, formation, top };
 
   for (const pid of [1, 0] as const) {
     for (const u of v.state.players[pid].units) {
       const el = h("button", "unit " + (pid === 0 ? "ally" : "foe"));
       el.dataset.uid = String(u.uid);
       el.innerHTML =
-        '<div class="nm"><span class="n"></span><span class="st"></span></div>' +
+        '<div class="nm"><span class="fig"></span><span class="n"></span><span class="st"></span></div>' +
         '<div class="bar hp"><i></i></div><div class="bar ag"><i></i></div><div class="bar sg"><i></i></div>' +
         '<div class="fx"></div>';
       el.onclick = () => onUnitClick(v, u);
+      const fig = el.querySelector(".fig") as HTMLElement;
+      fig.textContent = def(u).name.slice(0, 1);
+      fig.style.background = TRIBE_COLOR[def(u).tribe];
       v.unitEl.set(u.uid, el);
     }
   }
@@ -422,13 +478,92 @@ function float(v: View, uid: number, text: string, cls: string): void {
   const f = h("span", "float " + cls, text);
   el.append(f);
   setTimeout(() => f.remove(), 950);
-  if (cls === "dmg" || cls === "crit") {
-    el.classList.add("hit");
-    setTimeout(() => el.classList.remove("hit"), 120);
+
+}
+
+function figOf(v: View, uid: number): HTMLElement | null {
+  return (v.unitEl.get(uid)?.querySelector(".fig") as HTMLElement) ?? null;
+}
+
+/** モーションと効果音（画面だけのもの。戦闘は待たない） */
+function present(v: View, e: BattleEvent): void {
+  switch (e.t) {
+    case "action": {
+      const u = unitOf(v, e.uid);
+      const fig = figOf(v, e.uid);
+      if (!fig) return;
+      const kind = M.UNIT_MOTION[def(u).id] ?? "dash";
+      if (e.action === "attack") {
+        M.playAction(fig, kind, u.owner === 0, "attack");
+        S.sfxAttack(Math.min(1, def(u).attackPower / 150));
+      } else if (e.action === "skill") {
+        const color = M.ELEMENT_COLOR[def(u).skillElement];
+        M.playAction(fig, kind, u.owner === 0, "skill", color);
+        S.sfxSkill(def(u).skillElement);
+      } else if (e.action === "guard") {
+        M.playGuard(fig);
+        S.sfxGuard();
+      } else if (e.action === "loaf") {
+        M.playLoaf(fig);
+        S.sfxLoaf();
+      }
+      break;
+    }
+    case "curse": {
+      const fig = figOf(v, e.src);
+      if (fig) M.playCast(fig, "#b07ce0");
+      if (e.result === "hit") S.sfxCurse();
+      break;
+    }
+    case "bless": {
+      const fig = figOf(v, e.src);
+      if (fig) M.playCast(fig, "#4cc2a4");
+      S.sfxBless();
+      break;
+    }
+    case "ult": {
+      const u = unitOf(v, e.uid);
+      const fig = figOf(v, e.uid);
+      const ult = def(u).ult;
+      const color = "element" in ult && ult.element ? M.ELEMENT_COLOR[ult.element] : "#f2a541";
+      if (fig) M.playAction(fig, M.UNIT_MOTION[def(u).id] ?? "dash", u.owner === 0, e.grand ? "grand" : "ult", color);
+      M.flash(v.refs.top, color, e.grand);
+      S.sfxUlt(e.grand);
+      break;
+    }
+    case "damage": {
+      const fig = figOf(v, e.dst);
+      if (fig) M.playHit(fig, e.crit);
+      if (e.crit) S.sfxCrit();
+      else if (unitOf(v, e.dst).guarding && (e.source === "attack" || e.source === "skill")) S.sfxGuardedHit();
+      break;
+    }
+    case "heal":
+      if (e.amount >= 20) S.sfxHeal();
+      break;
+    case "ko": {
+      const fig = figOf(v, e.uid);
+      if (fig) M.playKo(fig);
+      S.sfxKo();
+      break;
+    }
+    case "rotate":
+    case "forcedRotate":
+      S.sfxRotate();
+      break;
+    case "stance":
+      S.sfxStance(e.player === 1);
+      break;
+    case "suddenDeath":
+      S.sfxAlarm();
+      break;
+    default:
+      break;
   }
 }
 
 function onEvent(v: View, e: BattleEvent): void {
+  present(v, e);
   const side = (uid: number) => (uid < 6 ? "a" : "f");
   switch (e.t) {
     case "damage":
@@ -669,6 +804,8 @@ function renderOverlay(v: View): void {
         const c = h("button", "cell");
         c.onpointerdown = (e) => {
           e.preventDefault();
+          const k = v.state.players[0].poke;
+          S.sfxPoke(!!k && k.weakCell === i);
           send(v, { t: "pokeTap", cell: i });
         };
         grid.append(c);
@@ -697,6 +834,7 @@ function showResult(v: View): void {
   const wrap = h("div", "result");
   const box = h("div", "box");
   const text = o.winner === 0 ? "勝ち" : o.winner === 1 ? "負け" : "引き分け";
+  S.sfxWin(o.winner === 0);
   box.append(h("div", "big", text));
   box.append(
     h(
