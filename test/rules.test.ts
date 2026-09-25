@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  actionPoints,
+  agNeeded,
   baseDamage,
+  chainLength,
+  formationPermil,
+  sgPerTurn,
   type BattleEvent,
   buildMember,
   createStream,
@@ -45,13 +50,13 @@ describe("編成（§2）", () => {
     const b = buildMember({ unit: "kamaitachi", effort: { hp: 0, atk: 20, spa: 0, def: 0, spd: 20 } });
     expect(b.atk).toBe(145);
     expect(b.spd).toBe(160);
-    expect(buildMember({ unit: "oni", effort: { hp: 10, atk: 0, spa: 0, def: 0, spd: 0 } }).maxHp).toBe(560);
+    expect(buildMember({ unit: "oni", effort: { hp: 10, atk: 0, spa: 0, def: 0, spd: 0 } }).maxHp).toBe(312 + 40);
   });
 
   it("装備のステ補正は努力ポイントの後に足す", () => {
     const b = buildMember({ unit: "oni", effort: { hp: 0, atk: 20, spa: 0, def: 0, spd: 0 }, equipment: "power_bangle" });
     expect(b.atk).toBe(135 + 20 + 15);
-    expect(buildMember({ unit: "oni", equipment: "life_jewel" }).maxHp).toBe(580);
+    expect(buildMember({ unit: "oni", equipment: "life_jewel" }).maxHp).toBe(312 + 60);
   });
 
   it("正しくない編成では試合を始められない", () => {
@@ -59,32 +64,106 @@ describe("編成（§2）", () => {
   });
 });
 
-describe("ゲージ（§4.1・§6.1）", () => {
-  it("開始時：前衛の AG は 300、後衛は 0。SG は全員 500", () => {
-    const s = battle();
-    expect(s.players[0].units.map((u) => u.ag)).toEqual([300, 300, 300, 0, 0, 0]);
-    expect(s.players[0].units.every((u) => u.sg === 500)).toBe(true);
+describe("行動ポイントと AG（§4.1）", () => {
+  it("原作の行動ポイントの式", () => {
+    expect(actionPoints(100)).toBe(270);
+    expect(actionPoints(171)).toBe(198);
+    expect(actionPoints(201)).toBe(180);
+    expect(actionPoints(210)).toBe(180); // 段々になる
+    expect(actionPoints(501)).toBe(90);
+    expect(actionPoints(900)).toBe(90);
+    expect(actionPoints(101)).toBe(actionPoints(99)); // 3 ずつ
+    expect(actionPoints(102)).toBe(actionPoints(99) - 3);
   });
 
-  it("前衛だけ AG = 5 + floor(SPD/10)、SG は妖気速度ランクの分だけ増える", () => {
+  it("開始時：前衛の AG は必要な量の 40〜60%、後衛は 0。SG は全員 0", () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const s = battle(seed);
+      const p = s.players[0];
+      for (const u of p.units.slice(0, 3)) {
+        const need = agNeeded(p, u);
+        expect(u.ag).toBeGreaterThanOrEqual(Math.floor(need * 0.4));
+        expect(u.ag).toBeLessThanOrEqual(Math.floor(need * 0.6));
+      }
+      expect(p.units.slice(3).map((u) => u.ag)).toEqual([0, 0, 0]);
+      expect(s.players.every((q) => q.units.every((u) => u.sg === 0))).toBe(true);
+    }
+  });
+
+  it("AG は前衛だけ 1 tick に 9 増える", () => {
     const s = battle();
+    const before = s.players[0].units.map((u) => u.ag);
     tick(s);
-    const [oni, yuki, , karakasa] = s.players[0].units;
-    expect(oni.ag).toBe(300 + 5 + 6); // SPD 60
-    expect(yuki.ag).toBe(300 + 5 + 10); // SPD 100
-    expect(oni.sg).toBe(503); // ランク 2
-    expect(yuki.sg).toBe(504); // ランク 3
-    expect(karakasa.ag).toBe(0); // 後衛は凍結
-    expect(karakasa.sg).toBe(500);
+    const after = s.players[0].units.map((u) => u.ag);
+    expect(after.map((a, i) => a - before[i])).toEqual([9, 9, 9, 0, 0, 0]);
   });
 
-  it("AG が 1000 を超えたら行動し、余りを持ち越す", () => {
+  it("必要な量に届いたら行動し、余りを持ち越す", () => {
     const s = battle();
     freezeAg(s);
-    s.players[0].units[0].ag = 990; // 鬼：+11
+    const p = s.players[0];
+    const need = agNeeded(p, p.units[0]); // 鬼：SPD 60 → 行動ポイント 309
+    expect(need).toBe(3090);
+    p.units[0].ag = need - 5;
     const ev = tick(s);
     expect(ofType(ev, "action").map((e) => e.uid)).toEqual([0]);
-    expect(s.players[0].units[0].ag).toBe(1);
+    expect(p.units[0].ag).toBe(4);
+  });
+});
+
+describe("妖気（§6.1）", () => {
+  it("だれかが1回行動すると、両チームの前衛全員の SG が1ターン分増える。後衛は増えない", () => {
+    const s = battle();
+    freezeAg(s);
+    const p = s.players[0];
+    p.units[0].ag = agNeeded(p, p.units[0]);
+    tick(s);
+    // 鬼 ランク2 → 33、雪女 ランク3 → 40、河童 ランク3 → 40
+    expect(p.units.map((u) => u.sg)).toEqual([33, 40, 40, 0, 0, 0]);
+    // 相手：天狗 ランク4 → 50、鎌鼬 ランク5 → 59、猫又 ランク4 → 50
+    expect(s.players[1].units.slice(0, 3).map((u) => u.sg)).toEqual([50, 59, 50]);
+  });
+
+  it("行動がなければ SG は増えない", () => {
+    const s = battle();
+    idle(s, 100);
+    expect(s.players[0].units.every((u) => u.sg === 0)).toBe(true);
+  });
+
+  it("封気の間は SG が増えない", () => {
+    const s = battle();
+    freezeAg(s);
+    const p = s.players[0];
+    p.units[1].curse = { kind: "seal", tier: 0, remaining: 300, elapsed: 0 };
+    p.units[0].ag = agNeeded(p, p.units[0]);
+    tick(s);
+    expect(p.units[1].sg).toBe(0);
+    expect(sgPerTurn(p.units[1])).toBe(0);
+  });
+
+  it("妖気の鈴と集気で1ターンの SG が +50%", () => {
+    const team = [{ unit: "oni", equipment: "spirit_bell" as const }, ...TEAM_A.slice(1)];
+    const s = battle(1, team, TEAM_B);
+    const [oni, yuki] = s.players[0].units;
+    expect(sgPerTurn(oni)).toBe(49); // 33 × 1.5
+    yuki.blessing = { kind: "gather", tier: 0, remaining: 300, elapsed: 0, wardCharges: 0 };
+    expect(sgPerTurn(yuki)).toBe(60); // 40 × 1.5
+  });
+
+  it("呪付のかかった敵を攻撃すると、攻撃した側に1ターン分の SG が足される", () => {
+    const run = (cursed: boolean) => {
+      const team = [{ unit: "oni", nature: "fierce" as const, equipment: "diligence_band" as const }, ...TEAM_A.slice(1)];
+      const s = battle(3, team, TEAM_B);
+      freezeAg(s);
+      if (cursed) for (const u of s.players[1].units) u.curse = { kind: "slow", tier: 0, remaining: 300, elapsed: 0 };
+      const p = s.players[0];
+      p.units[0].ag = agNeeded(p, p.units[0]);
+      const ev = tick(s);
+      expect(ofType(ev, "damage").length).toBe(1);
+      return p.units[0].sg;
+    };
+    expect(run(false)).toBe(33);
+    expect(run(true)).toBe(66);
   });
 });
 
@@ -119,7 +198,7 @@ describe("なまけ（§4.6）", () => {
     let acts = 0;
     for (let i = 0; i < 4000; i++) {
       freezeAg(s);
-      s.players[0].units[0].ag = 1000;
+      s.players[0].units[0].ag = agNeeded(s.players[0], s.players[0].units[0]);
       for (const e of tick(s)) {
         if (e.t === "action" && e.uid === 0) {
           acts++;
@@ -143,11 +222,12 @@ describe("なまけ（§4.6）", () => {
 });
 
 describe("ダメージ（§5）", () => {
-  it("原作の式：ATK 100・威力 30・DEF 100 → 40", () => {
+  it("原作の式：（ステ ＋ 威力）÷ 2 − まもり ÷ 4", () => {
     expect(baseDamage(100, 30, 100)).toBe(40);
+    expect(baseDamage(100, 90, 100)).toBe(70);
   });
 
-  it("クリティカルは通常攻撃の 2 倍（v0.15）", () => {
+  it("クリティカルは通常攻撃の 2 倍、64 回に1回くらい", () => {
     const team = [{ unit: "oni", nature: "fierce" as const }, ...TEAM_A.slice(1)];
     const s = battle(11, team, TEAM_B);
     for (const u of s.players[1].units) u.maxHp = u.hp = 10_000_000;
@@ -155,7 +235,7 @@ describe("ダメージ（§5）", () => {
     const crit: number[] = [];
     for (let i = 0; i < 3000; i++) {
       freezeAg(s);
-      s.players[0].units[0].ag = 1000;
+      s.players[0].units[0].ag = agNeeded(s.players[0], s.players[0].units[0]);
       for (const e of tick(s)) {
         // 天狗（uid 6）への通常攻撃だけ比べる
         if (e.t === "damage" && e.src === 0 && e.source === "attack" && e.dst === 6) (e.crit ? crit : normal).push(e.amount);
@@ -165,17 +245,47 @@ describe("ダメージ（§5）", () => {
     // 揺れ（±2%）の分だけ幅がある
     expect(Math.min(...crit)).toBeGreaterThanOrEqual(Math.floor(Math.min(...normal) * 2 * 0.96));
     expect(Math.max(...crit)).toBeLessThanOrEqual(Math.ceil(Math.max(...normal) * 2 * 1.04));
-    expect(crit.length / (crit.length + normal.length)).toBeLessThan(0.1);
+    const rate = crit.length / (crit.length + normal.length);
+    expect(rate).toBeGreaterThan(0.005);
+    expect(rate).toBeLessThan(0.03);
   });
 
-  it("陣：猛が前衛に2体で ATK +15%", () => {
+  it("陣：ホイールで隣り合った同じ種族がつながる。前衛にいる分だけ受ける", () => {
+    // 位置 0 鬼（猛）・1 唐傘（猛）・2 雪女（怪）
     const team = [{ unit: "oni" }, { unit: "karakasa" }, { unit: "yukionna" }, ...TEAM_A.slice(3)];
     const s = battle(1, team, TEAM_B);
     const p = s.players[0];
+    expect(chainLength(p, p.units[0])).toBe(2);
     expect(effectiveStat(p, p.units[0], "atk")).toBe(Math.floor((135 * 1150) / 1000));
-    expect(effectiveStat(p, p.units[2], "atk")).toBe(Math.floor((60 * 1150) / 1000));
-    // 後衛には効かない
-    expect(effectiveStat(p, p.units[3], "atk")).toBe(115);
+    expect(effectiveStat(p, p.units[1], "atk")).toBe(Math.floor((115 * 1150) / 1000));
+    // 種族が違う雪女には効かない
+    expect(effectiveStat(p, p.units[2], "atk")).toBe(60);
+  });
+
+  it("陣：位置 5 と位置 0 も隣。3体つながれば、前衛に1体でも 25%", () => {
+    // 位置 0 唐傘（猛）、位置 4・5 鬼…ではなく B の唐傘を後衛に2体（猛3体のつながり）
+    const team = [
+      { unit: "karakasa" },
+      { unit: "yukionna" },
+      { unit: "kappa" },
+      { unit: "zashiki" },
+      { unit: "karakasa" },
+      { unit: "karakasa" },
+    ];
+    const s = battle(1, team, TEAM_B);
+    const p = s.players[0];
+    expect(chainLength(p, p.units[0])).toBe(3);
+    expect(formationPermil(p, p.units[0])).toBe(250);
+    expect(formationPermil(p, p.units[5])).toBe(0); // 後衛は受けない
+  });
+
+  it("陣：戦闘不能のユニットはつながりを切る", () => {
+    const team = [{ unit: "oni" }, { unit: "karakasa" }, { unit: "yukionna" }, ...TEAM_A.slice(3)];
+    const s = battle(1, team, TEAM_B);
+    const p = s.players[0];
+    p.units[1].hp = 0;
+    expect(chainLength(p, p.units[0])).toBe(1);
+    expect(formationPermil(p, p.units[0])).toBe(0);
   });
 
   it("呪付と加護は足し算、下限は 100‰", () => {
@@ -353,17 +463,9 @@ describe("呪付・加護・浄化（§7）", () => {
     const oni = s.players[0].units[0];
     oni.curse = { kind: "poison", tier: 0, remaining: 300, elapsed: 0 };
     idle(s, 19);
-    expect(oni.hp).toBe(520);
+    expect(oni.hp).toBe(312);
     idle(s, 1);
-    expect(oni.hp).toBe(520 - 10);
-  });
-
-  it("封気の間は SG が増えない", () => {
-    const s = battle();
-    const oni = s.players[0].units[0];
-    oni.curse = { kind: "seal", tier: 0, remaining: 300, elapsed: 0 };
-    idle(s, 5);
-    expect(oni.sg).toBe(500);
+    expect(oni.hp).toBe(312 - 6);
   });
 
   it("浄化は 40 tick で呪付を消す", () => {
@@ -402,18 +504,44 @@ describe("呪付・加護・浄化（§7）", () => {
     expect(pickBlessTarget(p, "gather")).toBeNull();
   });
 
-  it("同じ加護がかかっている味方は飛ばす", () => {
+  it("まだ加護のない味方を優先する（種類は関係ない）", () => {
     const s = battle();
     const p = s.players[0];
-    p.units[2].blessing = { kind: "fortify", tier: 0, remaining: 100, elapsed: 0, wardCharges: 0 };
+    p.units[2].blessing = { kind: "rally", tier: 0, remaining: 100, elapsed: 0, wardCharges: 0 };
     expect(pickBlessTarget(p, "fortify")!.index).toBe(0); // 次に DEF が高い鬼（95）
+    p.units[0].blessing = { kind: "rally", tier: 0, remaining: 100, elapsed: 0, wardCharges: 0 };
+    p.units[1].blessing = { kind: "rally", tier: 0, remaining: 100, elapsed: 0, wardCharges: 0 };
+    // 全員にかかっていたら全員から選ぶ
+    expect(pickBlessTarget(p, "fortify")!.index).toBe(2);
+  });
+
+  it("ステータスを上げる加護は、加護込みの値で比べる", () => {
+    const s = battle();
+    const p = s.players[0];
+    // 鬼 DEF 95 に脆化…ではなく、雪女（DEF 75）に堅護（+30%）→ 97 で鬼（95）を超える。全員加護ありにする
+    p.units[1].blessing = { kind: "fortify", tier: 0, remaining: 100, elapsed: 0, wardCharges: 0 };
+    p.units[0].blessing = { kind: "rally", tier: 0, remaining: 100, elapsed: 0, wardCharges: 0 };
+    p.units[2].curse = { kind: "brittle", tier: 2, remaining: 100, elapsed: 0 }; // 河童 130 → 65
+    p.units[2].blessing = { kind: "rally", tier: 0, remaining: 100, elapsed: 0, wardCharges: 0 };
+    expect(pickBlessTarget(p, "fortify")!.index).toBe(1);
+  });
+
+  it("再生の相手はランダム（まだ加護のない味方から）", () => {
+    const s = battle();
+    const p = s.players[0];
+    const seen = new Set<number>();
+    for (let i = 0; i < 50; i++) seen.add(pickBlessTarget(p, "regen", p.units[0])!.index);
+    expect([...seen].sort()).toEqual([0, 1, 2]);
   });
 
   it("雅の陣でステータス低下系の呪付の成功率が上がる", () => {
     const miyabi2 = [{ unit: "bakedanuki" }, { unit: "rokurokubi" }, { unit: "oni" }, ...TEAM_A.slice(3)];
     const s = battle(1, miyabi2, TEAM_B);
-    expect(curseSuccessPermil(s.players[0], s.players[1], "slow")).toBe(900);
-    expect(curseSuccessPermil(s.players[0], s.players[1], "poison")).toBe(750);
+    const [me, foe] = s.players;
+    expect(curseSuccessPermil(me, me.units[0], foe, foe.units[0], "slow")).toBe(900);
+    expect(curseSuccessPermil(me, me.units[0], foe, foe.units[0], "poison")).toBe(750);
+    // 陣を受けていないユニット（鬼）には効かない
+    expect(curseSuccessPermil(me, me.units[2], foe, foe.units[0], "slow")).toBe(750);
   });
 });
 
@@ -442,7 +570,7 @@ describe("つつき（§8.4）", () => {
       ftick(s);
     }
     expect(success).toBe(true);
-    expect(tengu.hp).toBe(380 - 10 * 3); // 1回 最大HPの 1%
+    expect(tengu.hp).toBe(228 - 10 * 2); // 1回 最大HPの 1%
     expect(tengu.sg).toBeLessThan(1000 - 400 + 50);
     expect(s.players[0].pokeCooldown).toBeGreaterThan(0);
   });
@@ -482,6 +610,29 @@ describe("勝敗（§10）", () => {
     const ev = ftick(s);
     expect(s.outcome).toEqual({ winner: 0, reason: "ko" });
     expect(ofType(ev, "end").length).toBe(1);
+  });
+
+  it("5 分でサドンデス：通常攻撃のダメージが 999 になる", () => {
+    const s = battle();
+    s.tick = 5999;
+    freezeAg(s);
+    expect(ofType(tick(s), "suddenDeath").length).toBe(1);
+    freezeAg(s);
+    const p = s.players[0];
+    p.units[0].ag = agNeeded(p, p.units[0]);
+    p.units[0].nature = "fierce";
+    const dmg = ofType(tick(s), "damage");
+    expect(dmg.length).toBe(1);
+    expect(dmg[0].amount).toBe(999);
+  });
+
+  it("前衛が全滅したら、ホイールが半周して後衛が前に出る", () => {
+    const s = battle();
+    for (const i of [0, 1, 2]) s.players[1].units[i].hp = 0;
+    const ev = ftick(s);
+    expect(ofType(ev, "forcedRotate").length).toBe(1);
+    expect(s.players[1].wheel).toEqual([3, 4, 5, 0, 1, 2]);
+    expect(s.outcome).toBeNull();
   });
 
   it("時間切れは残り HP の割合の合計で決める", () => {

@@ -7,5 +7,6 @@ export * from "./input.js";
 export * from "./match.js";
 export * from "./rng.js";
 export * from "./state.js";
+export * from "./stats.js";
 export * from "./step.js";
 export * from "./team.js";

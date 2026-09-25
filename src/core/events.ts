@@ -10,6 +10,10 @@ export type DamageSource = "attack" | "skill" | "ult" | "poison" | "poke";
 export type BattleEvent =
   | { t: "dropped"; player: PlayerId; input: Input }
   | { t: "rotate"; player: PlayerId; dir: "cw" | "ccw" }
+  /** 前衛が全滅したときの強制回転（§12.2） */
+  | { t: "forcedRotate"; player: PlayerId }
+  /** サドンデスに入った（§10） */
+  | { t: "suddenDeath" }
   | { t: "target"; player: PlayerId; enemyUnit: number }
   | { t: "action"; uid: number; action: ActionKind | "loaf" }
   | { t: "damage"; src: number | null; dst: number; amount: number; source: DamageSource; crit: boolean }

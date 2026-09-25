@@ -5,18 +5,29 @@
 export const TICKS_PER_SEC = 20;
 
 // ---- 行動ゲージ（§4.1） ----
-export const AG_FULL = 1000;
-export const AG_BASE_PER_TICK = 5;
-export const AG_SPD_DIVISOR = 10;
-/** 開始時の前衛の AG */
-export const AG_START_FRONT = 300;
+/** 1 tick あたりの AG 増加（全員同じ）。行動に必要な AG = 行動ポイント × AG_PER_ACTION_POINT */
+export const AG_PER_TICK = 9;
+export const AG_PER_ACTION_POINT = 10;
+/** 開始時の前衛の AG = 必要な量 × この範囲（‰）。原作の初期前衛補正 0.4〜0.6 倍 */
+export const AG_START_FRONT_MIN = 400;
+export const AG_START_FRONT_MAX = 600;
+
+/** 【原作】行動後に入る行動ポイント（たくトンボ「育成の知識」） */
+export function actionPoints(spd: number): number {
+  if (spd <= 171) return 369 - Math.floor(spd / 3) * 3;
+  if (spd <= 201) return 198 - Math.floor((spd - 171) / 5) * 3;
+  if (spd <= 501) return 180 - Math.floor((spd - 201) / 10) * 3;
+  return 90;
+}
 
 // ---- なまけ・クリティカル（§4.6） ----
-export const CRIT_CHANCE_PERMIL = 50;
+/** 【原作】64 回に1回（約 1.56%）。なまけている相手には 4 倍 */
+export const CRIT_DENOM = 64;
+export const CRIT_CHANCE = 1;
+export const CRIT_CHANCE_VS_LOAFING = 4;
 export const CRIT_MULT = 2000;
 
-// ---- 行動の威力（§4.3） ----
-export const ATTACK_POWER = 30;
+// ---- 行動（§4.3） ----
 export const GUARD_MULT = 500;
 
 // ---- ダメージ（§5） ----
@@ -27,11 +38,10 @@ export const RESIST_MULT = 500;
 
 // ---- 妖気ゲージ（§6.1） ----
 export const SG_FULL = 1000;
-export const SG_START = 500;
-/** 妖気速度ランク 1〜6 の SG 増加/tick */
-export const SG_RATE_BY_RANK = [2, 3, 4, 5, 6, 7] as const;
-/** 被ダメージによる SG 増加：floor(ダメージ × これ / 最大HP) */
-export const SG_ON_HIT_FACTOR = 500;
+/** 【原作】開始時は 0（妖怪ウォッチ3 の公式ルール） */
+export const SG_START = 0;
+/** 妖気速度ランク 1〜6 の、1ターン（だれかが1回行動）ごとの SG 増加。= 5 × 1000 ÷ 原作の満タンの量（170・150・125・100・85・60） */
+export const SG_PER_TURN_BY_RANK = [29, 33, 40, 50, 59, 83] as const;
 
 // ---- 構え（§6.2〜6.3） ----
 export const CHARGE_TIERS: readonly { maxTick: number; mult: number }[] = [
@@ -52,10 +62,10 @@ export const ULT_LOCKOUT_TICKS = 60;
 
 // ---- 奥義（§6.4〜6.5） ----
 export const ULT_SINGLE_POWER = 150;
-export const ULT_ALL_POWER = 70;
-export const ULT_BREAK_POWER = 100;
-/** 回復の奥義：SPA × これ / 1000 */
-export const ULT_HEAL_PERMIL = 600;
+export const ULT_ALL_POWER = 130;
+export const ULT_BREAK_POWER = 130;
+/** 回復の奥義：floor((SPA + これ) / 2) */
+export const ULT_HEAL_POWER = 70;
 export const GRAND_MULT = 2000;
 
 // ---- 呪付・加護（§7） ----
@@ -72,8 +82,8 @@ export const TIER_DURATION_PERMIL = [1000, 1500, 2000] as const;
 export const POISON_PERMIL = [20, 26, 33] as const;
 /** 再生：1秒ごとに最大HPの何‰ */
 export const REGEN_PERMIL = [30, 40, 50] as const;
-/** 集気：SG の増加 +/tick */
-export const GATHER_BONUS = [3, 4, 5] as const;
+/** 集気：1ターンの SG 増加をこれだけ増やす（‰） */
+export const GATHER_BONUS_PERMIL = [500, 667, 833] as const;
 /** 蝕毒・再生が効く間隔 */
 export const DOT_INTERVAL = 20;
 /** 浄化にかかる時間（§7.3） */
@@ -88,7 +98,8 @@ export const TARGET_COOLDOWN = 20;
 // ---- 装備（§8.3） ----
 export const EQUIP_STAT_BONUS = 15;
 export const EQUIP_HP_BONUS = 60;
-export const EQUIP_SG_BONUS = 1;
+/** 妖気の鈴：1ターンの SG 増加をこれだけ増やす（‰） */
+export const EQUIP_SG_BONUS_PERMIL = 500;
 
 // ---- つつき（§8.4） ----
 export const POKE_TICKS = 60;
@@ -110,6 +121,9 @@ export const FORMATION_PERMIL_2 = 150;
 export const FORMATION_PERMIL_3 = 250;
 
 // ---- 勝敗（§10） ----
+/** これ以降、通常攻撃・術・奥義のダメージは 999 */
+export const SUDDEN_DEATH_TICKS = 6000;
+export const SUDDEN_DEATH_DAMAGE = 999;
 export const TIME_LIMIT_TICKS = 7200;
 
 // ---- 努力ポイント（§2.1） ----

@@ -44,15 +44,20 @@ const TRIBE_NAME: Record<Tribe, string> = {
   takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮",
 };
 
-/** 最初の前衛で組まれている陣 */
+/** 最初の前衛が受けている陣（ホイールで隣り合った同じ種族のつながり。§9） */
 function initialFormation(team: GeneratedMember[]): string {
-  const counts = new Map<Tribe, number>();
-  for (const m of team.slice(0, 3)) {
-    const t = UNITS.find((u) => u.id === m.unit)!.tribe;
-    counts.set(t, (counts.get(t) ?? 0) + 1);
+  const tribes = team.map((m) => UNITS.find((u) => u.id === m.unit)!.tribe);
+  const found = new Set<string>();
+  for (let pos = 0; pos < 3; pos++) {
+    const t = tribes[pos];
+    let right = 0;
+    while (right < 5 && tribes[(pos + right + 1) % 6] === t) right++;
+    let left = 0;
+    while (left < 5 - right && tribes[(pos - left - 1 + 6) % 6] === t) left++;
+    const n = 1 + right + left;
+    if (n >= 2) found.add(`${TRIBE_NAME[t]}${Math.min(n, 3)}`);
   }
-  for (const [t, n] of counts) if (n >= 2) return `${TRIBE_NAME[t]}${n}`;
-  return "なし";
+  return found.size ? [...found].sort().join("+") : "なし";
 }
 
 function main(): void {

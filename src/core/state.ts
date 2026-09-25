@@ -1,9 +1,10 @@
 // 戦闘の状態（BATTLE_SPEC §3〜§12）。
 // 状態は数値・配列・プレーンなオブジェクトだけで持つ（そのまま複製・比較・保存できるように）。
 
-import { AG_START_FRONT, SG_START, TEAM_SIZE } from "./constants.js";
+import { AG_START_FRONT_MAX, AG_START_FRONT_MIN, SG_START, TEAM_SIZE } from "./constants.js";
 import type { ActionKind, BlessingKind, CurseKind, EquipmentId, NatureId } from "./data.js";
-import { createStream, type RngState } from "./rng.js";
+import { createStream, randRange, type RngState } from "./rng.js";
+import { agNeeded } from "./stats.js";
 import { RNG_STREAM_POKE_BASE } from "./constants.js";
 import { buildMember, type TeamSpec, validateTeam } from "./team.js";
 
@@ -121,7 +122,7 @@ export function createBattle(seed: number, team0: TeamSpec, team1: TeamSpec): Ba
         def: b.def,
         spd: b.spd,
         hp: b.maxHp,
-        ag: i < 3 ? AG_START_FRONT : 0,
+        ag: 0,
         sg: SG_START,
         guarding: false,
         loafing: false,
@@ -147,6 +148,13 @@ export function createBattle(seed: number, team0: TeamSpec, team1: TeamSpec): Ba
     };
     return ps;
   });
+  // 【原作】初期前衛補正：開始時の前衛は、必要な AG の 400〜600‰ から始まる（§4.1）
+  for (const p of players) {
+    for (let pos = 0; pos < 3; pos++) {
+      const u = p.units[p.wheel[pos]];
+      u.ag = Math.floor((agNeeded(p, u) * randRange(u.rng, AG_START_FRONT_MIN, AG_START_FRONT_MAX)) / 1000);
+    }
+  }
   return { tick: 0, seed: seed >>> 0, players: players as [PlayerState, PlayerState], outcome: null };
 }
 

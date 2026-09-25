@@ -50,7 +50,10 @@ export interface UnitDef {
   sgRank: number;
   weak: Element | null;
   resist: Element | null;
+  /** 通常攻撃の威力（原作の技レベル MAX に合わせる。45〜150） */
+  attackPower: number;
   skillElement: Element;
+  /** 術の威力（90・110・120） */
   skillPower: number;
   curse: CurseKind;
   blessing: BlessingKind;
@@ -124,91 +127,91 @@ export const EQUIPMENT: readonly { id: EquipmentId; name: string }[] = [
   { id: "diligence_band", name: "精勤の鉢巻" },
 ];
 
-// ---- ユニット（UNITS.md v0.1） ----
+// ---- ユニット（UNITS.md v0.2） ----
 const LOAF = 25; // 2.5%（仮。全員同じ）
 
 export const UNITS: readonly UnitDef[] = [
   {
     id: "oni", name: "鬼", rank: "S", tribe: "takeru",
-    hp: 520, atk: 135, spa: 60, def: 95, spd: 60, sgRank: 2, weak: "ice", resist: "fire",
-    skillElement: "fire", skillPower: 45, curse: "weaken", blessing: "rally",
+    hp: 312, atk: 135, spa: 60, def: 95, spd: 60, sgRank: 2, weak: "ice", resist: "fire",
+    skillElement: "fire", attackPower: 135, skillPower: 120, curse: "weaken", blessing: "rally",
     ult: { kind: "break", stat: "atk", element: null }, ultName: "金棒砕き",
     loafPermil: LOAF, defaultNature: "fierce",
   },
   {
     id: "karakasa", name: "唐傘お化け", rank: "B", tribe: "takeru",
-    hp: 430, atk: 115, spa: 70, def: 90, spd: 105, sgRank: 4, weak: "fire", resist: "water",
-    skillElement: "water", skillPower: 35, curse: "brittle", blessing: "fortify",
+    hp: 258, atk: 115, spa: 70, def: 90, spd: 105, sgRank: 4, weak: "fire", resist: "water",
+    skillElement: "water", attackPower: 90, skillPower: 90, curse: "brittle", blessing: "fortify",
     ult: { kind: "all", stat: "atk", element: "water" }, ultName: "傘回し",
     loafPermil: LOAF, defaultNature: "wild",
   },
   {
     id: "yukionna", name: "雪女", rank: "A", tribe: "ayashi",
-    hp: 360, atk: 60, spa: 140, def: 75, spd: 100, sgRank: 3, weak: "fire", resist: "ice",
-    skillElement: "ice", skillPower: 50, curse: "seal", blessing: "gather",
+    hp: 216, atk: 60, spa: 140, def: 75, spd: 100, sgRank: 3, weak: "fire", resist: "ice",
+    skillElement: "ice", attackPower: 45, skillPower: 120, curse: "seal", blessing: "gather",
     ult: { kind: "single", stat: "spa", element: "ice" }, ultName: "氷華",
     loafPermil: LOAF, defaultNature: "arcane",
   },
   {
     id: "nekomata", name: "猫又", rank: "A", tribe: "ayashi",
-    hp: 390, atk: 85, spa: 125, def: 75, spd: 110, sgRank: 4, weak: "water", resist: "thunder",
-    skillElement: "thunder", skillPower: 45, curse: "poison", blessing: "haste",
+    hp: 234, atk: 85, spa: 125, def: 75, spd: 110, sgRank: 4, weak: "water", resist: "thunder",
+    skillElement: "thunder", attackPower: 67, skillPower: 120, curse: "poison", blessing: "haste",
     ult: { kind: "all", stat: "spa", element: "thunder" }, ultName: "二股雷",
     loafPermil: LOAF, defaultNature: "arcane",
   },
   {
     id: "kappa", name: "河童", rank: "A", tribe: "tsuwamono",
-    hp: 560, atk: 80, spa: 85, def: 130, spd: 65, sgRank: 3, weak: "thunder", resist: "fire",
-    skillElement: "water", skillPower: 40, curse: "slow", blessing: "regen",
+    hp: 336, atk: 80, spa: 85, def: 130, spd: 65, sgRank: 3, weak: "thunder", resist: "fire",
+    skillElement: "water", attackPower: 90, skillPower: 110, curse: "slow", blessing: "regen",
     ult: { kind: "heal" }, ultName: "皿の水",
     loafPermil: LOAF, defaultNature: "stalwart",
   },
   {
     id: "ogama", name: "大蝦蟇", rank: "B", tribe: "tsuwamono",
-    hp: 600, atk: 100, spa: 90, def: 110, spd: 50, sgRank: 2, weak: "thunder", resist: "water",
-    skillElement: "water", skillPower: 45, curse: "poison", blessing: "fortify",
+    hp: 360, atk: 100, spa: 90, def: 110, spd: 50, sgRank: 2, weak: "thunder", resist: "water",
+    skillElement: "water", attackPower: 90, skillPower: 120, curse: "poison", blessing: "fortify",
     ult: { kind: "all", stat: "spa", element: "water" }, ultName: "大毒霧",
     loafPermil: LOAF, defaultNature: "stalwart",
   },
   {
     id: "bakedanuki", name: "化け狸", rank: "B", tribe: "miyabi",
-    hp: 470, atk: 90, spa: 95, def: 100, spd: 80, sgRank: 5, weak: "ice", resist: "earth",
-    skillElement: "earth", skillPower: 40, curse: "slow", blessing: "gather",
+    hp: 282, atk: 90, spa: 95, def: 100, spd: 80, sgRank: 5, weak: "ice", resist: "earth",
+    skillElement: "earth", attackPower: 67, skillPower: 110, curse: "slow", blessing: "gather",
     ult: { kind: "curseAll", curse: "slow" }, ultName: "大化かし",
     loafPermil: LOAF, defaultNature: "hinder",
   },
   {
     id: "rokurokubi", name: "ろくろ首", rank: "B", tribe: "miyabi",
-    hp: 450, atk: 75, spa: 105, def: 95, spd: 85, sgRank: 6, weak: "earth", resist: "wind",
-    skillElement: "thunder", skillPower: 40, curse: "weaken", blessing: "ward",
+    hp: 270, atk: 75, spa: 105, def: 95, spd: 85, sgRank: 6, weak: "earth", resist: "wind",
+    skillElement: "thunder", attackPower: 67, skillPower: 110, curse: "weaken", blessing: "ward",
     ult: { kind: "single", stat: "spa", element: "thunder" }, ultName: "伸び噛み",
     loafPermil: LOAF, defaultNature: "hinder",
   },
   {
     id: "zashiki", name: "座敷童子", rank: "B", tribe: "nagomi",
-    hp: 400, atk: 60, spa: 115, def: 90, spd: 95, sgRank: 6, weak: "wind", resist: null,
-    skillElement: "earth", skillPower: 35, curse: "seal", blessing: "rally",
+    hp: 240, atk: 60, spa: 115, def: 90, spd: 95, sgRank: 6, weak: "wind", resist: null,
+    skillElement: "earth", attackPower: 45, skillPower: 90, curse: "seal", blessing: "rally",
     ult: { kind: "blessAll", blessing: "rally" }, ultName: "福招き",
     loafPermil: LOAF, defaultNature: "devoted",
   },
   {
     id: "kodama", name: "木霊", rank: "B", tribe: "nagomi",
-    hp: 420, atk: 55, spa: 110, def: 100, spd: 85, sgRank: 5, weak: "fire", resist: "earth",
-    skillElement: "earth", skillPower: 35, curse: "slow", blessing: "regen",
+    hp: 252, atk: 55, spa: 110, def: 100, spd: 85, sgRank: 5, weak: "fire", resist: "earth",
+    skillElement: "earth", attackPower: 45, skillPower: 90, curse: "slow", blessing: "regen",
     ult: { kind: "heal" }, ultName: "森の息吹",
     loafPermil: LOAF, defaultNature: "devoted",
   },
   {
     id: "tengu", name: "天狗", rank: "S", tribe: "kage",
-    hp: 380, atk: 95, spa: 110, def: 70, spd: 135, sgRank: 4, weak: "thunder", resist: "wind",
-    skillElement: "wind", skillPower: 40, curse: "brittle", blessing: "haste",
+    hp: 228, atk: 95, spa: 110, def: 70, spd: 135, sgRank: 4, weak: "thunder", resist: "wind",
+    skillElement: "wind", attackPower: 120, skillPower: 110, curse: "brittle", blessing: "haste",
     ult: { kind: "all", stat: "spa", element: "wind" }, ultName: "大団扇",
     loafPermil: LOAF, defaultNature: "balanced",
   },
   {
     id: "kamaitachi", name: "鎌鼬", rank: "A", tribe: "kage",
-    hp: 340, atk: 125, spa: 70, def: 65, spd: 140, sgRank: 5, weak: "earth", resist: "wind",
-    skillElement: "wind", skillPower: 35, curse: "brittle", blessing: "rally",
+    hp: 204, atk: 125, spa: 70, def: 65, spd: 140, sgRank: 5, weak: "earth", resist: "wind",
+    skillElement: "wind", attackPower: 132, skillPower: 90, curse: "brittle", blessing: "rally",
     ult: { kind: "single", stat: "atk", element: "wind" }, ultName: "三連斬",
     loafPermil: LOAF, defaultNature: "fierce",
   },
