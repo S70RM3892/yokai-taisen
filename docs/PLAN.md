@@ -185,6 +185,7 @@
 | 14 | キャラの量 | **公開時は48体**（6種族×8体、1種族あたり S2・A2・B4）。詳しくは §8 |
 | 15 | キャラの絵 | **まだ決めない**。P2 までは四角と文字で作る |
 | 16 | UI | **操作と画面の配置は本家と同じ**（上が戦闘・下がホイール）。見た目はオリジナル。[`UI_SPEC.md`](./UI_SPEC.md) |
+| 17 | ゼロ・つつき | **原作の零式を入れる**。ホイール中央のゼロで 奥義↔大奥義、標的↔つつき を切り替える。つつきは呪付のかかった敵を連打して妖気を奪う（`BATTLE_SPEC.md` §8.4） |
 
 → 技術スタックは **TypeScript（戦闘コア）+ ブラウザ描画** で確定。
 → 戦闘の詳細仕様は [`BATTLE_SPEC.md`](./BATTLE_SPEC.md)、ユニット数値は [`UNITS.md`](./UNITS.md)、画面は [`UI_SPEC.md`](./UI_SPEC.md)。
@@ -247,4 +248,5 @@
 - [Game8: 妖怪ウォッチ2 装備一覧](https://game8.jp/youkai-watch2/505503)
 - [Street Fighter 6 の登場キャラ（esports.gg）](https://esports.gg/news/street-fighter-6/sf6-roster-explained/)
 - [Clash Royale のカード一覧（noff.gg）](https://www.noff.gg/clash-royale/cards)
+- [Game8: 妖怪ウォッチ零式でできること（G技・つつく）](https://game8.jp/youkai-watch2/504889)
 - [Wikipedia: Yo-kai Watch 2](https://en.wikipedia.org/wiki/Yo-kai_Watch_2)
