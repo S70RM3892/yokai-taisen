@@ -72,8 +72,8 @@ describe("ゲージ（§4.1・§6.1）", () => {
     const [oni, yuki, , karakasa] = s.players[0].units;
     expect(oni.ag).toBe(300 + 5 + 6); // SPD 60
     expect(yuki.ag).toBe(300 + 5 + 10); // SPD 100
-    expect(oni.sg).toBe(505); // ランク 2
-    expect(yuki.sg).toBe(506); // ランク 3
+    expect(oni.sg).toBe(503); // ランク 2
+    expect(yuki.sg).toBe(504); // ランク 3
     expect(karakasa.ag).toBe(0); // 後衛は凍結
     expect(karakasa.sg).toBe(500);
   });
@@ -145,6 +145,27 @@ describe("なまけ（§4.6）", () => {
 describe("ダメージ（§5）", () => {
   it("原作の式：ATK 100・威力 30・DEF 100 → 40", () => {
     expect(baseDamage(100, 30, 100)).toBe(40);
+  });
+
+  it("クリティカルは通常攻撃の 2 倍（v0.15）", () => {
+    const team = [{ unit: "oni", nature: "fierce" as const }, ...TEAM_A.slice(1)];
+    const s = battle(11, team, TEAM_B);
+    for (const u of s.players[1].units) u.maxHp = u.hp = 10_000_000;
+    const normal: number[] = [];
+    const crit: number[] = [];
+    for (let i = 0; i < 3000; i++) {
+      freezeAg(s);
+      s.players[0].units[0].ag = 1000;
+      for (const e of tick(s)) {
+        // 天狗（uid 6）への通常攻撃だけ比べる
+        if (e.t === "damage" && e.src === 0 && e.source === "attack" && e.dst === 6) (e.crit ? crit : normal).push(e.amount);
+      }
+    }
+    expect(crit.length).toBeGreaterThan(0);
+    // 揺れ（±2%）の分だけ幅がある
+    expect(Math.min(...crit)).toBeGreaterThanOrEqual(Math.floor(Math.min(...normal) * 2 * 0.96));
+    expect(Math.max(...crit)).toBeLessThanOrEqual(Math.ceil(Math.max(...normal) * 2 * 1.04));
+    expect(crit.length / (crit.length + normal.length)).toBeLessThan(0.1);
   });
 
   it("陣：猛が前衛に2体で ATK +15%", () => {

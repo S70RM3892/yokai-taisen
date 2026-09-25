@@ -13,7 +13,7 @@ export const AG_START_FRONT = 300;
 
 // ---- なまけ・クリティカル（§4.6） ----
 export const CRIT_CHANCE_PERMIL = 50;
-export const CRIT_MULT = 1500;
+export const CRIT_MULT = 2000;
 
 // ---- 行動の威力（§4.3） ----
 export const ATTACK_POWER = 30;
@@ -29,7 +29,7 @@ export const RESIST_MULT = 500;
 export const SG_FULL = 1000;
 export const SG_START = 500;
 /** 妖気速度ランク 1〜6 の SG 増加/tick */
-export const SG_RATE_BY_RANK = [4, 5, 6, 7, 8, 10] as const;
+export const SG_RATE_BY_RANK = [2, 3, 4, 5, 6, 7] as const;
 /** 被ダメージによる SG 増加：floor(ダメージ × これ / 最大HP) */
 export const SG_ON_HIT_FACTOR = 500;
 
