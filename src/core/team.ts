@@ -45,7 +45,7 @@ export type TeamSpec = MemberSpec[];
 export function validateTeam(team: TeamSpec): string[] {
   const errors: string[] = [];
   if (team.length !== TEAM_SIZE) errors.push(`チームは ${TEAM_SIZE} 体（今は ${team.length} 体）`);
-  const rankCount = { S: 0, A: 0, B: 0 };
+  const rankCount = { S: 0, A: 0, B: 0, C: 0, D: 0, E: 0 };
   const groupCount = new Map<GroupId, number>();
   team.forEach((m, i) => {
     const def = UNITS.find((u) => u.id === m.unit);
@@ -76,7 +76,7 @@ export function validateTeam(team: TeamSpec): string[] {
     }
     if (sum > EFFORT_TOTAL) errors.push(`#${i}: 努力ポイントの合計は ${EFFORT_TOTAL} まで（今は ${sum}）`);
   });
-  for (const r of ["S", "A", "B"] as const) {
+  for (const r of ["S", "A", "B", "C", "D", "E"] as const) {
     if (rankCount[r] > RANK_LIMITS[r]) {
       errors.push(`${r} ランクは ${RANK_LIMITS[r]} 体まで（今は ${rankCount[r]} 体）`);
     }

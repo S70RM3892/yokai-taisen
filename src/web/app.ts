@@ -32,7 +32,7 @@ import * as S from "./sound.js";
 
 const TRIBE_COLOR: Record<string, string> = {
   takeru: "#d9644a", ayashi: "#8a6ee0", tsuwamono: "#8f8a74", kage: "#4f9fb8",
-  nagomi: "#6fbf73", miyabi: "#d48ac0", tatari: "#7d5a9e", shizume: "#5f88c9",
+  nagomi: "#6fbf73", miyabi: "#d48ac0", tatari: "#7d5a9e", shizume: "#5f88c9", maga: "#b0303a",
 };
 
 // 最初に画面を触ったときに音を使えるようにする（ブラウザの決まり）
@@ -75,11 +75,11 @@ function audioBar(): HTMLElement {
 let bgmName = "";
 
 const TRIBE: Record<string, string> = {
-  takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮",
+  takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮", maga: "禍",
 };
 const ELEMENT: Record<string, string> = { fire: "火", water: "水", thunder: "雷", earth: "土", ice: "氷", wind: "風" };
-const CURSE: Record<string, string> = { slow: "鈍重", weaken: "衰弱", brittle: "脆化", poison: "蝕毒", seal: "封気" };
-const BLESS: Record<string, string> = { rally: "鼓舞", fortify: "堅護", haste: "疾風", gather: "集気", regen: "再生", ward: "浄気" };
+const CURSE: Record<string, string> = { slow: "鈍重", weaken: "衰弱", brittle: "脆化", poison: "蝕毒", seal: "封気", stun: "行動停止", confuse: "混乱" };
+const BLESS: Record<string, string> = { rally: "鼓舞", fortify: "堅護", haste: "疾風", gather: "集気", regen: "再生", ward: "浄気", allUp: "万全", taunt: "挑発" };
 const ACTION: Record<string, string> = { attack: "攻撃", skill: "術", guard: "守り", curse: "呪付", bless: "加護", loaf: "なまけ" };
 const TIER: string[] = ["", "（超）", "（究極）"];
 
@@ -232,7 +232,7 @@ function showSetup(): void {
 
     // 公式ルールの枠（S・S・A・A）
     const ids = pickedIds();
-    const count = { S: 0, A: 0, B: 0 };
+    const count = { S: 0, A: 0, B: 0, C: 0, D: 0, E: 0 };
     let ogres = 0;
     for (const id of ids) {
       const d = unitDef(id)!;

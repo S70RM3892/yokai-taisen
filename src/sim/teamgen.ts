@@ -20,7 +20,7 @@ export interface GeneratedMember extends MemberSpec {
 }
 
 export function randomTeam(rng: RngState): GeneratedMember[] {
-  const count = { S: 0, A: 0, B: 0 };
+  const count = { S: 0, A: 0, B: 0, C: 0, D: 0, E: 0 };
   const groups = new Map<GroupId, number>();
   const team: GeneratedMember[] = [];
   while (team.length < 6) {

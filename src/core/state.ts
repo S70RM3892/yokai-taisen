@@ -53,8 +53,8 @@ export interface UnitState {
   /** 再構え制限の残り tick */
   ultLockout: number;
   dollUsed: boolean;
-  /** 特性「踏ん張り」を使ったか */
-  endureUsed: boolean;
+  /** 特性「踏ん張り」「二度の踏ん張り」で、あと何回耐えられるか */
+  endures: number;
   /** 特性「先駆け」を使ったか */
   firstStrikeUsed: boolean;
   /** 特性「勝ち鬨」で重なった回数 */
@@ -141,7 +141,7 @@ export function createBattle(seed: number, team0: TeamSpec, team1: TeamSpec): Ba
         blessing: null,
         ultLockout: 0,
         dollUsed: false,
-        endureUsed: false,
+        endures: 0,
         firstStrikeUsed: false,
         conquests: 0,
         pendingAction: null,
@@ -164,7 +164,10 @@ export function createBattle(seed: number, team0: TeamSpec, team1: TeamSpec): Ba
   });
   // 【原作】初期前衛補正：開始時の前衛は、行動ポイントが式の値の 400〜600‰（§4.1）。後衛は式の値のまま
   for (const p of players) {
-    for (const u of p.units) u.ap = apAfterAction(p, u);
+    for (const u of p.units) {
+      u.ap = apAfterAction(p, u);
+      u.endures = hasTrait(u, "doubleEndure") ? 2 : hasTrait(u, "endure") ? 1 : 0;
+    }
     for (let pos = 0; pos < 3; pos++) {
       const u = p.units[p.wheel[pos]];
       u.ap = Math.floor((u.ap * randRange(u.rng, AP_START_FRONT_MIN, AP_START_FRONT_MAX)) / 1000);

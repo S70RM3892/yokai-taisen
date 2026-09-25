@@ -94,8 +94,11 @@ export function pickEnemyTarget(me: PlayerState, enemy: PlayerState): UnitState 
     const t = enemy.units[me.target];
     if (isAlive(t) && isFront(enemy, t.index)) return t;
   }
-  // 特性「隠れ身」は、ほかに狙える敵がいれば選ばない（§8.5）
   const alive = [0, 1, 2].map((pos) => enemy.units[enemy.wheel[pos]]).filter(isAlive);
+  // 加護「挑発」がかかった敵がいれば、そちらを狙う（§7.2）
+  const taunting = alive.find((u) => u.blessing?.kind === "taunt");
+  if (taunting) return taunting;
+  // 特性「隠れ身」は、ほかに狙える敵がいれば選ばない（§8.5）
   const visible = alive.filter((u) => !hasTrait(u, "hidden"));
   const pool = visible.length > 0 ? visible : alive;
   let best: UnitState | null = null;
@@ -133,6 +136,10 @@ export function pickBlessTarget(p: PlayerState, kind: BlessingKind, caster?: Uni
         return u.sg;
       case "ward":
         return (u.curse ? 0 : 10000) + hpRatio(u);
+      case "allUp":
+        return -(["atk", "spa", "def", "spd"] as const).reduce((a, k) => a + effectiveStat(p, u, k), 0);
+      case "taunt":
+        return -(u.hp + effectiveStat(p, u, "def"));
     }
   };
   const ordered = cands
@@ -173,7 +180,12 @@ function hit(
   defender: UnitState,
   o: HitOptions,
 ): boolean {
-  const weakened = defender.loafing || defender.curse !== null;
+  // 特性「見切り」：奥義のダメージを受けない（§8.5）
+  if (o.source === "ult" && hasTrait(defender, "ultEvade")) {
+    events.push({ t: "evade", uid: defender.uid });
+    return false;
+  }
+  const weakened = atkP !== defP && (defender.loafing || defender.curse !== null);
   const a = effectiveStat(atkP, attacker, o.stat);
   const d = effectiveStat(defP, defender, "def");
   let dmg = baseDamage(a, o.power, d);
@@ -251,17 +263,27 @@ function applyDamage(
   src: number | null,
   source: DamageSource,
   crit: boolean,
+  covered = false,
 ): void {
   if (!isAlive(u)) return;
-  events.push({ t: "damage", src, dst: u.uid, amount, source, crit });
   const isAttack = source === "attack" || source === "skill" || source === "ult";
+  // 特性「かばい手」：倒れそうな前衛の味方の代わりに受ける（§8.5）
+  if (isAttack && !covered && u.hp - amount <= 0 && isFront(p, u.index)) {
+    const guard = aliveFront(p).find((v) => v !== u && hasTrait(v, "guardian"));
+    if (guard) {
+      events.push({ t: "cover", from: u.uid, to: guard.uid });
+      applyDamage(s, events, p, guard, amount, src, source, crit, true);
+      return;
+    }
+  }
+  events.push({ t: "damage", src, dst: u.uid, amount, source, crit });
   if (u.hp - amount <= 0 && isAttack && u.equipment === "stand_in_doll" && !u.dollUsed) {
     u.dollUsed = true;
     u.hp = 1;
     events.push({ t: "doll", uid: u.uid });
-  } else if (u.hp - amount <= 0 && hasTrait(u, "endure") && !u.endureUsed) {
-    // 特性「踏ん張り」（§8.5）
-    u.endureUsed = true;
+  } else if (u.hp - amount <= 0 && u.endures > 0) {
+    // 特性「踏ん張り」「二度の踏ん張り」（§8.5）
+    u.endures--;
     u.hp = 1;
     events.push({ t: "endure", uid: u.uid });
   } else {
@@ -696,6 +718,31 @@ export function rollAction(u: Pick<UnitState, "nature" | "rng">): ActionKind {
   return "attack";
 }
 
+/**
+ * 通常攻撃・術で実際に当てる相手（§7.2 混乱・§8.5 身代わり頼み）。
+ * 混乱なら半分の確率で自分以外の前衛の味方。狙った敵が「身代わり頼み」なら、隣の前衛の味方が受ける。
+ */
+function strikeTarget(
+  events: BattleEvent[],
+  p: PlayerState,
+  u: UnitState,
+  e: PlayerState,
+  t: UnitState,
+): { side: PlayerState; unit: UnitState } {
+  if (u.curse?.kind === "confuse" && randInt(u.rng, 1000) < C.CONFUSE_PERMIL) {
+    const allies = aliveFront(p).filter((v) => v !== u);
+    if (allies.length > 0) return { side: p, unit: allies[randInt(u.rng, allies.length)] };
+  }
+  if (hasTrait(t, "scapegoat")) {
+    const n = wheelNeighbors(e, t).find((v) => isAlive(v) && isFront(e, v.index));
+    if (n) {
+      events.push({ t: "cover", from: t.uid, to: n.uid });
+      return { side: e, unit: n };
+    }
+  }
+  return { side: e, unit: t };
+}
+
 /** 行動したら、その行動の種類（なまけも含む）。敵がいなくて待つときは null */
 function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[]): ActionKind | "loaf" | null {
   const p = s.players[pid];
@@ -706,6 +753,11 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
   if (action === null) {
     u.guarding = false;
     u.loafing = false;
+    // 呪付「行動停止」：何もしない（§7.2）
+    if (u.curse?.kind === "stun") {
+      events.push({ t: "action", uid: u.uid, action: "stunned" });
+      return "loaf";
+    }
     // なまけの判定は行動を選ぶ前（§4.6）
     if (u.equipment !== "diligence_band" && randInt(u.rng, 1000) < def.loafPermil) {
       u.loafing = true;
@@ -730,10 +782,11 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
   u.pendingAction = null;
   events.push({ t: "action", uid: u.uid, action });
 
+  const strike = action === "attack" || action === "skill" ? strikeTarget(events, p, u, e, enemyTarget!) : null;
   switch (action) {
     case "attack":
       if (
-        hit(s, events, p, u, e, enemyTarget!, {
+        hit(s, events, p, u, strike!.side, strike!.unit, {
         power: def.attackPower,
         stat: "atk",
         element: null,
@@ -749,7 +802,7 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
       return "attack";
     case "skill":
       if (
-        hit(s, events, p, u, e, enemyTarget!, {
+        hit(s, events, p, u, strike!.side, strike!.unit, {
         power: def.skillPower,
         stat: "spa",
         element: def.skillElement,

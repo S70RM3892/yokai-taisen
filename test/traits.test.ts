@@ -301,3 +301,100 @@ describe("特性（§8.5）", () => {
     expect(crit / total).toBeLessThan(0.41);
   });
 });
+
+describe("v0.21 で足した効果（§7.2・§8.5）", () => {
+  it("行動停止：番が来ても何もしない", () => {
+    const s = battle();
+    s.players[0].units[0].curse = { kind: "stun", tier: 0, remaining: 300, elapsed: 0 };
+    readyUnit(s, 0, 0);
+    const ev = tick(s);
+    expect(ofType(ev, "action")[0]).toMatchObject({ uid: 0, action: "stunned" });
+    expect(ofType(ev, "damage").length).toBe(0);
+  });
+
+  it("混乱：通常攻撃・術で味方を狙うことがある", () => {
+    const s = battle(1, [striker("oni"), ...FILL], TEAM_B);
+    for (const p of s.players) for (const u of p.units) u.hp = u.maxHp = 1_000_000;
+    let ally = 0;
+    let foe = 0;
+    for (let i = 0; i < 200; i++) {
+      s.players[0].units[0].curse = { kind: "confuse", tier: 0, remaining: 300, elapsed: 0 };
+      for (const e of actOnce(s, 0, 0)) {
+        if (e.t === "damage" && e.src === 0) (e.dst < 6 ? ally++ : foe++);
+      }
+    }
+    expect(ally).toBeGreaterThan(40);
+    expect(foe).toBeGreaterThan(40);
+  });
+
+  it("万全：ATK・SPA・DEF・SPD すべて +20%", () => {
+    const s = battle();
+    const p = s.players[0];
+    const oni = p.units[0];
+    oni.blessing = { kind: "allUp", tier: 0, remaining: 300, elapsed: 0, wardCharges: 0 };
+    expect(effectiveStat(p, oni, "atk")).toBe(Math.floor((135 * 1200) / 1000));
+    expect(effectiveStat(p, oni, "def")).toBe(Math.floor((95 * 1200) / 1000));
+  });
+
+  it("挑発：敵の自動のねらいが挑発のかかった味方に向く", () => {
+    const s = battle();
+    const [me, foe] = s.players;
+    foe.units[0].hp = 1; // ふつうなら一番 HP の割合が低い天狗を狙う
+    foe.units[2].blessing = { kind: "taunt", tier: 0, remaining: 300, elapsed: 0, wardCharges: 0 };
+    expect(pickEnemyTarget(me, foe)!.index).toBe(2);
+    me.target = 0; // 標的を刺していればそちら
+    expect(pickEnemyTarget(me, foe)!.index).toBe(0);
+  });
+
+  it("見切り：奥義のダメージを受けない", () => {
+    const run = () => {
+      const s = battle(3, TEAM_A, [{ unit: "tengu" }, ...TEAM_B.slice(1)]);
+      ftick(s, [0, { t: "target", enemyUnit: 0 }]);
+      s.players[0].units[1].sg = 1000;
+      ftick(s, [0, { t: "ultStart", allySlot: 1, grand: false }]);
+      return ftick(s, [0, { t: "ultRelease" }]);
+    };
+    const ev = withTrait("tengu", "ultEvade", run);
+    expect(ofType(ev, "evade").length).toBe(1);
+    expect(ofType(ev, "damage").length).toBe(0);
+  });
+
+  it("二度の踏ん張り：2回まで HP 1 で耐える", () => {
+    const u = withTrait("nurikabe", "doubleEndure", () => battle(1, [{ unit: "nurikabe" }, ...TEAM_A.slice(1)], TEAM_B));
+    const v = u.players[0].units[0];
+    expect(v.endures).toBe(2);
+  });
+
+  it("身代わり頼み：狙われたら隣の前衛の味方が受ける", () => {
+    const foe = [{ unit: "karakasa" }, { unit: "ogama" }, { unit: "komainu" }, ...FILL.slice(0, 3)];
+    const ev = withTrait("ogama", "scapegoat", () => {
+      const s = battle(1, [striker("oni"), ...FILL], foe);
+      ftick(s, [0, { t: "target", enemyUnit: 1 }]);
+      return firstEvents(s);
+    });
+    expect(ofType(ev, "cover").length).toBe(1);
+    const d = ofType(ev, "damage").find((e) => e.src === 0)!;
+    expect(d.dst).not.toBe(7);
+  });
+
+  it("かばい手：倒れそうな前衛の味方の代わりに受ける", () => {
+    const foe = [{ unit: "karakasa" }, { unit: "ogama" }, { unit: "komainu" }, ...FILL.slice(0, 3)];
+    const ev = withTrait("ogama", "guardian", () => {
+      const s = battle(1, [striker("oni"), ...FILL], foe);
+      s.players[1].units[0].hp = 1;
+      ftick(s, [0, { t: "target", enemyUnit: 0 }]);
+      return firstEvents(s);
+    });
+    expect(ofType(ev, "cover")[0]).toMatchObject({ from: 6, to: 7 });
+    expect(ofType(ev, "ko").length).toBe(0);
+  });
+});
+
+/** 通常攻撃が出るまで回して、そのときのイベント */
+function firstEvents(s: BattleState): BattleEvent[] {
+  for (let i = 0; i < 200; i++) {
+    const ev = actOnce(s, 0, 0);
+    if (ofType(ev, "damage").some((e) => e.src === 0 && e.source === "attack")) return ev;
+  }
+  throw new Error("no attack");
+}

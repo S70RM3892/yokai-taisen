@@ -41,7 +41,7 @@ function parseArgs(argv: string[]): { matches: number; seed: number; json: boole
 }
 
 const TRIBE_NAME: Record<Tribe, string> = {
-  takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮",
+  takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮", maga: "禍",
 };
 
 /** 最初の前衛が受けている陣（ホイールで隣り合った同じ種族のつながり。§9） */

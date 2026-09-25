@@ -55,6 +55,7 @@ export function chainLength(p: PlayerState, u: UnitState): number {
  */
 export function formationPermil(p: PlayerState, u: UnitState, tribe?: Tribe): number {
   if (!isFront(p, u.index)) return 0;
+  if (tribeOf(u) === "maga") return 0; // 禍には陣がない
   if (tribe !== undefined && tribeOf(u) !== tribe) return 0;
   const n = chainLength(p, u);
   if (n >= 3) return C.FORMATION_PERMIL_3;
@@ -71,6 +72,7 @@ export function effectiveStat(p: PlayerState, u: UnitState, stat: StatName): num
   if (stat === "atk" && hasTrait(u, "conqueror")) permil += C.TRAIT_CONQUEROR_ATK * u.conquests;
   if (stat === "spd" && isFront(p, u.index) && backHasTrait(p, "tailwind")) permil += C.TRAIT_TAILWIND_SPD;
   const b = u.blessing;
+  if (b?.kind === "allUp") permil += C.TIER_ALLUP_PERMIL[b.tier];
   if (b) {
     if (
       (b.kind === "rally" && (stat === "atk" || stat === "spa")) ||

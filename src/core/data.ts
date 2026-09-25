@@ -9,13 +9,15 @@ export type Tribe =
   | "nagomi" // 和
   | "miyabi" // 雅
   | "tatari" // 祟
-  | "shizume"; // 鎮
-export type Rank = "S" | "A" | "B";
+  | "shizume" // 鎮
+  | "maga"; // 禍（原作の怪魔に当たる特別な枠。陣はない）
+/** 原作と同じ6段階 */
+export type Rank = "S" | "A" | "B" | "C" | "D" | "E";
 
-export type CurseKind = "slow" | "weaken" | "brittle" | "poison" | "seal";
-// 鈍重・衰弱・脆化・蝕毒・封気
-export type BlessingKind = "rally" | "fortify" | "haste" | "gather" | "regen" | "ward";
-// 鼓舞・堅護・疾風・集気・再生・浄気
+export type CurseKind = "slow" | "weaken" | "brittle" | "poison" | "seal" | "stun" | "confuse";
+// 鈍重・衰弱・脆化・蝕毒・封気・行動停止・混乱
+export type BlessingKind = "rally" | "fortify" | "haste" | "gather" | "regen" | "ward" | "allUp" | "taunt";
+// 鼓舞・堅護・疾風・集気・再生・浄気・万全・挑発
 
 /** 雅の陣が効くのはステータス低下系、祟の陣が効くのは状態異常系（§9） */
 export const CURSE_CATEGORY: Record<CurseKind, "stat" | "status"> = {
@@ -24,6 +26,8 @@ export const CURSE_CATEGORY: Record<CurseKind, "stat" | "status"> = {
   brittle: "stat",
   poison: "status",
   seal: "status",
+  stun: "status",
+  confuse: "status",
 };
 
 export type StatKey = "atk" | "spa";
@@ -65,7 +69,11 @@ export type TraitId =
   | "prayer" // 祈り
   | "benchHeal" // 後見
   | "conqueror" // 勝ち鬨
-  | "critEye"; // 一閃
+  | "critEye" // 一閃
+  | "ultEvade" // 見切り
+  | "doubleEndure" // 二度の踏ん張り
+  | "scapegoat" // 身代わり頼み
+  | "guardian"; // かばい手
 
 export const TRAIT_NAMES: Record<TraitId, string> = {
   guardBreak: "破甲",
@@ -95,6 +103,10 @@ export const TRAIT_NAMES: Record<TraitId, string> = {
   benchHeal: "後見",
   conqueror: "勝ち鬨",
   critEye: "一閃",
+  ultEvade: "見切り",
+  doubleEndure: "二度の踏ん張り",
+  scapegoat: "身代わり頼み",
+  guardian: "かばい手",
 };
 
 /** 「〇の心得」の特性が強くする属性 */

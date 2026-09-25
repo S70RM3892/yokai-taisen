@@ -15,7 +15,11 @@ export type BattleEvent =
   /** サドンデスに入った（§10） */
   | { t: "suddenDeath" }
   | { t: "target"; player: PlayerId; enemyUnit: number }
-  | { t: "action"; uid: number; action: ActionKind | "loaf" }
+  | { t: "action"; uid: number; action: ActionKind | "loaf" | "stunned" }
+  /** 特性「見切り」で奥義をよけた */
+  | { t: "evade"; uid: number }
+  /** 特性「身代わり頼み」「かばい手」で、代わりに受けた */
+  | { t: "cover"; from: number; to: number }
   | { t: "damage"; src: number | null; dst: number; amount: number; source: DamageSource; crit: boolean }
   | { t: "heal"; src: number | null; dst: number; amount: number }
   | { t: "curse"; src: number; dst: number; kind: CurseKind; tier: number; result: "hit" | "miss" | "warded" | "immune" }

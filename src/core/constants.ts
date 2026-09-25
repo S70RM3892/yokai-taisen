@@ -78,6 +78,10 @@ export const CURSE_SUCCESS_MAX = 1000;
 export const EFFECT_DURATION = 300;
 /** 効果の段階。0 = 大（ふつう）、1 = 超（奥義）、2 = 究極（大奥義） */
 export const TIER_STAT_PERMIL = [300, 400, 500] as const;
+/** 万全（全ステ）の段階ごとの強さ（‰）。1つのステを上げる加護より弱い */
+export const TIER_ALLUP_PERMIL = [200, 267, 333] as const;
+/** 混乱：通常攻撃・術で味方を狙ってしまう確率（‰） */
+export const CONFUSE_PERMIL = 500;
 /** 段階ごとの効果時間の倍率（‰） */
 export const TIER_DURATION_PERMIL = [1000, 1500, 2000] as const;
 /** 蝕毒：1秒ごとに最大HPの何‰（段階ごと。大の 2% を基準に比例させた仮の値） */
@@ -164,7 +168,7 @@ export const EFFORT_HP_PER_POINT = 4;
 
 // ---- チーム（§2.2） ----
 export const TEAM_SIZE = 6;
-export const RANK_LIMITS = { S: 2, A: 2, B: 6 } as const;
+export const RANK_LIMITS = { S: 2, A: 2, B: 6, C: 6, D: 6, E: 6 } as const;
 
 // ---- 乱数の流れの番号（§4.5） ----
 /** 0〜11 はユニット、12・13 は各プレイヤーのつつき */
