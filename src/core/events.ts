@@ -5,7 +5,7 @@ import type { Input } from "./input.js";
 import type { Outcome, PlayerId } from "./state.js";
 
 export type Quality = "perfect" | "good" | "miss";
-export type DamageSource = "attack" | "skill" | "ult" | "poison" | "poke";
+export type DamageSource = "attack" | "skill" | "ult" | "poison" | "poke" | "trait";
 
 export type BattleEvent =
   | { t: "dropped"; player: PlayerId; input: Input }
@@ -18,10 +18,14 @@ export type BattleEvent =
   | { t: "action"; uid: number; action: ActionKind | "loaf" }
   | { t: "damage"; src: number | null; dst: number; amount: number; source: DamageSource; crit: boolean }
   | { t: "heal"; src: number | null; dst: number; amount: number }
-  | { t: "curse"; src: number; dst: number; kind: CurseKind; tier: number; result: "hit" | "miss" | "warded" }
+  | { t: "curse"; src: number; dst: number; kind: CurseKind; tier: number; result: "hit" | "miss" | "warded" | "immune" }
   | { t: "bless"; src: number; dst: number; kind: BlessingKind; tier: number }
   | { t: "curseCleared"; uid: number; by: "purify" | "ward" | "expire" }
   | { t: "doll"; uid: number }
+  /** 特性「踏ん張り」で耐えた */
+  | { t: "endure"; uid: number }
+  /** 特性「先駆け」ですぐに行動できるようになった */
+  | { t: "firstStrike"; uid: number }
   | { t: "ko"; uid: number }
   | { t: "stance"; player: PlayerId; uid: number; grand: boolean }
   | { t: "stanceCancel"; player: PlayerId; uid: number; grand: boolean; reason: "input" | "rotate" | "ko" }

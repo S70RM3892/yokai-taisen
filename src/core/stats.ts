@@ -1,7 +1,7 @@
 // ステータスの計算（陣・呪付・加護）と、行動に必要な AG（BATTLE_SPEC §4.1・§9・§12.4）。
 
 import * as C from "./constants.js";
-import { type Tribe, UNITS } from "./data.js";
+import { type TraitId, type Tribe, UNITS } from "./data.js";
 import { isAlive, isFront, positionOf, type PlayerState, type UnitState } from "./state.js";
 
 export type StatName = "atk" | "spa" | "def" | "spd";
@@ -15,6 +15,22 @@ const STAT_TRIBE: Record<StatName, Tribe> = {
 
 export function tribeOf(u: UnitState): Tribe {
   return UNITS[u.defIndex].tribe;
+}
+
+/** 生きていて、その特性を持っているか（§8.5） */
+export function hasTrait(u: UnitState, t: TraitId): boolean {
+  return isAlive(u) && UNITS[u.defIndex].trait === t;
+}
+
+/** ホイールで隣の2体（位置 p−1 と p+1） */
+export function wheelNeighbors(p: PlayerState, u: UnitState): UnitState[] {
+  const pos = positionOf(p, u.index);
+  return [p.units[p.wheel[(pos + 5) % 6]], p.units[p.wheel[(pos + 1) % 6]]];
+}
+
+/** 後衛にいる味方にその特性を持つものがいるか */
+export function backHasTrait(p: PlayerState, t: TraitId): boolean {
+  return [3, 4, 5].some((pos) => hasTrait(p.units[p.wheel[pos]], t));
 }
 
 /** ホイールで隣り合って同じ種族がつながっている数（自分も含む。戦闘不能はつながりを切る） */
@@ -49,6 +65,11 @@ export function formationPermil(p: PlayerState, u: UnitState, tribe?: Tribe): nu
 /** 陣・加護・呪付で増減したあとのステ（§12.4） */
 export function effectiveStat(p: PlayerState, u: UnitState, stat: StatName): number {
   let permil = 1000 + formationPermil(p, u, STAT_TRIBE[stat]);
+  // 特性（§8.5）
+  if (stat === "def" && hasTrait(u, "keystone") && positionOf(p, u.index) === 1) permil += C.TRAIT_KEYSTONE_DEF;
+  if (stat === "atk" && hasTrait(u, "rage") && u.hp * 1000 <= u.maxHp * C.TRAIT_RAGE_HP) permil += C.TRAIT_RAGE_ATK;
+  if (stat === "atk" && hasTrait(u, "conqueror")) permil += C.TRAIT_CONQUEROR_ATK * u.conquests;
+  if (stat === "spd" && isFront(p, u.index) && backHasTrait(p, "tailwind")) permil += C.TRAIT_TAILWIND_SPD;
   const b = u.blessing;
   if (b) {
     if (

@@ -102,6 +102,35 @@ export const EQUIP_HP_BONUS = 60;
 /** 妖気の鈴：1ターンの SG 増加をこれだけ増やす（‰） */
 export const EQUIP_SG_BONUS_PERMIL = 500;
 
+// ---- 特性（§8.5） ----
+export const TRAIT_KEYSTONE_DEF = 300;
+/** 〇の心得：その属性のダメージ ×1.25 */
+export const TRAIT_ADEPT_MULT = 1250;
+export const TRAIT_TAILWIND_SPD = 100;
+/** 屍喰い：敵を倒すと最大 HP のこれだけ回復（‰） */
+export const TRAIT_DEVOUR_HEAL = 200;
+/** 怨念：倒した相手に、その相手の最大 HP のこれだけのダメージ（‰） */
+export const TRAIT_GRUDGE_DAMAGE = 250;
+/** 毒の肌：受けたダメージの 1/4 を返す */
+export const TRAIT_THORNS_DIV = 4;
+/** 鏡返し：受けたダメージの 1/2 を返す */
+export const TRAIT_MIRROR_DIV = 2;
+/** 逆上：HP がこれ以下（‰）の間 ATK + TRAIT_RAGE_ATK */
+export const TRAIT_RAGE_HP = 250;
+export const TRAIT_RAGE_ATK = 500;
+export const TRAIT_IRON_GUARD_MULT = 250;
+/** 吸精：与えたダメージのこれだけ回復（‰） */
+export const TRAIT_DRAIN = 250;
+export const TRAIT_SPIRIT_SMOKE = 500;
+/** 祈り：隣の味方が行動するたびに最大 HP のこれだけ回復（‰） */
+export const TRAIT_PRAYER_HEAL = 20;
+/** 後見：前衛の味方が行動するたびに最大 HP のこれだけ回復（‰） */
+export const TRAIT_BENCH_HEAL = 10;
+export const TRAIT_CONQUEROR_ATK = 150;
+export const TRAIT_CONQUEROR_MAX = 3;
+/** 一閃：クリティカルが CRIT_DENOM 回にこれだけ */
+export const TRAIT_CRIT_EYE_CHANCE = 22;
+
 // ---- つつき（§8.4） ----
 export const POKE_TICKS = 60;
 export const POKE_CELLS = 16;

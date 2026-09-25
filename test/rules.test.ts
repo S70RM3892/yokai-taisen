@@ -138,16 +138,16 @@ describe("妖気（§6.1）", () => {
     p.units[0].ag = agNeeded(p, p.units[0]);
     tick(s);
     expect(p.units[1].sg).toBe(0);
-    expect(sgPerTurn(p.units[1])).toBe(0);
+    expect(sgPerTurn(p, p.units[1])).toBe(0);
   });
 
   it("妖気の鈴と集気で1ターンの SG が +50%", () => {
     const team = [{ unit: "oni", equipment: "spirit_bell" as const }, ...TEAM_A.slice(1)];
     const s = battle(1, team, TEAM_B);
     const [oni, yuki] = s.players[0].units;
-    expect(sgPerTurn(oni)).toBe(49); // 33 × 1.5
+    expect(sgPerTurn(s.players[0], oni)).toBe(49); // 33 × 1.5
     yuki.blessing = { kind: "gather", tier: 0, remaining: 300, elapsed: 0, wardCharges: 0 };
-    expect(sgPerTurn(yuki)).toBe(60); // 40 × 1.5
+    expect(sgPerTurn(s.players[0], yuki)).toBe(60); // 40 × 1.5
   });
 
   it("呪付のかかった敵を攻撃すると、攻撃した側に1ターン分の SG が足される", () => {

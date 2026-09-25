@@ -4,7 +4,7 @@
 import { AG_START_FRONT_MAX, AG_START_FRONT_MIN, SG_START, TEAM_SIZE } from "./constants.js";
 import type { ActionKind, BlessingKind, CurseKind, EquipmentId, NatureId } from "./data.js";
 import { createStream, randRange, type RngState } from "./rng.js";
-import { agNeeded } from "./stats.js";
+import { agNeeded, hasTrait } from "./stats.js";
 import { RNG_STREAM_POKE_BASE } from "./constants.js";
 import { buildMember, type TeamSpec, validateTeam } from "./team.js";
 
@@ -52,6 +52,12 @@ export interface UnitState {
   /** 再構え制限の残り tick */
   ultLockout: number;
   dollUsed: boolean;
+  /** 特性「踏ん張り」を使ったか */
+  endureUsed: boolean;
+  /** 特性「先駆け」を使ったか */
+  firstStrikeUsed: boolean;
+  /** 特性「勝ち鬨」で重なった回数 */
+  conquests: number;
   /** 敵がいなくて待っている行動（§12.2） */
   pendingAction: ActionKind | null;
   rng: RngState;
@@ -130,6 +136,9 @@ export function createBattle(seed: number, team0: TeamSpec, team1: TeamSpec): Ba
         blessing: null,
         ultLockout: 0,
         dollUsed: false,
+        endureUsed: false,
+        firstStrikeUsed: false,
+        conquests: 0,
         pendingAction: null,
         rng: createStream(seed, uid),
       };
@@ -153,6 +162,11 @@ export function createBattle(seed: number, team0: TeamSpec, team1: TeamSpec): Ba
     for (let pos = 0; pos < 3; pos++) {
       const u = p.units[p.wheel[pos]];
       u.ag = Math.floor((agNeeded(p, u) * randRange(u.rng, AG_START_FRONT_MIN, AG_START_FRONT_MAX)) / 1000);
+      // 特性「先駆け」：すぐに行動できる（§8.5）
+      if (hasTrait(u, "firstStrike")) {
+        u.ag = agNeeded(p, u);
+        u.firstStrikeUsed = true;
+      }
     }
   }
   return { tick: 0, seed: seed >>> 0, players: players as [PlayerState, PlayerState], outcome: null };

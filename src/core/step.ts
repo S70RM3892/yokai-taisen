@@ -3,6 +3,7 @@
 import * as C from "./constants.js";
 import {
   ACTION_ORDER,
+  ADEPT_ELEMENT,
   type ActionKind,
   type BlessingKind,
   CURSE_CATEGORY,
@@ -15,7 +16,7 @@ import {
 import type { BattleEvent, DamageSource, Quality } from "./events.js";
 import { type Input, inputCategory, type PlayerInput } from "./input.js";
 import { randInt, randRange } from "./rng.js";
-import { agNeeded, effectiveStat, formationPermil } from "./stats.js";
+import { agNeeded, backHasTrait, effectiveStat, formationPermil, hasTrait, wheelNeighbors } from "./stats.js";
 import {
   aliveFront,
   type BattleState,
@@ -95,11 +96,13 @@ export function pickEnemyTarget(me: PlayerState, enemy: PlayerState): UnitState 
     const t = enemy.units[me.target];
     if (isAlive(t) && isFront(enemy, t.index)) return t;
   }
+  // 特性「隠れ身」は、ほかに狙える敵がいれば選ばない（§8.5）
+  const alive = [0, 1, 2].map((pos) => enemy.units[enemy.wheel[pos]]).filter(isAlive);
+  const visible = alive.filter((u) => !hasTrait(u, "hidden"));
+  const pool = visible.length > 0 ? visible : alive;
   let best: UnitState | null = null;
   let bestRatio = 0;
-  for (let pos = 0; pos < 3; pos++) {
-    const u = enemy.units[enemy.wheel[pos]];
-    if (!isAlive(u)) continue;
+  for (const u of pool) {
     const r = hpRatio(u);
     if (best === null || r < bestRatio) {
       best = u;
@@ -177,7 +180,8 @@ function hit(
   const d = effectiveStat(defP, defender, "def");
   let dmg = baseDamage(a, o.power, d);
   let crit = false;
-  const critChance = defender.loafing ? C.CRIT_CHANCE_VS_LOAFING : C.CRIT_CHANCE;
+  let critChance = defender.loafing ? C.CRIT_CHANCE_VS_LOAFING : C.CRIT_CHANCE;
+  if (hasTrait(attacker, "critEye")) critChance = Math.max(critChance, C.TRAIT_CRIT_EYE_CHANCE);
   if (o.canCrit && randInt(attacker.rng, C.CRIT_DENOM) < critChance) {
     // 【原作】クリティカルは守りを無視して 1.5 倍（§4.6）
     crit = true;
@@ -187,8 +191,12 @@ function hit(
   if (o.element !== null) {
     if (o.element === def.weak) dmg = mul(dmg, C.WEAK_MULT);
     else if (o.element === def.resist) dmg = mul(dmg, C.RESIST_MULT);
+    if (ADEPT_ELEMENT[UNITS[attacker.defIndex].trait] === o.element) dmg = mul(dmg, C.TRAIT_ADEPT_MULT);
   }
-  if (defender.guarding && !o.ignoreGuard) dmg = mul(dmg, C.GUARD_MULT);
+  const ignoreGuard = o.ignoreGuard || (o.source === "attack" && hasTrait(attacker, "guardBreak"));
+  if (defender.guarding && !ignoreGuard) {
+    dmg = mul(dmg, hasTrait(defender, "ironGuard") ? C.TRAIT_IRON_GUARD_MULT : C.GUARD_MULT);
+  }
   dmg = mul(dmg, o.chargeMult);
   dmg = mul(dmg, o.qualityMult);
   dmg = mul(dmg, o.grandMult);
@@ -196,15 +204,36 @@ function hit(
   if (dmg < 1) dmg = 1;
   // 【原作】サドンデス：与えるダメージが 999 になる（§10）
   if (s.tick >= C.SUDDEN_DEATH_TICKS) dmg = C.SUDDEN_DEATH_DAMAGE;
+  // 特性「水喰い」：水属性のダメージは回復になる
+  if (o.element === "water" && hasTrait(defender, "waterEater")) {
+    heal(events, defender, dmg, attacker.uid);
+    return weakened;
+  }
   applyDamage(s, events, defP, defender, dmg, attacker.uid, o.source, crit);
+  // 特性：吸精・毒の肌・鏡返し（§8.5）
+  if ((o.source === "attack" || o.source === "skill") && hasTrait(attacker, "drain")) {
+    heal(events, attacker, Math.floor((dmg * C.TRAIT_DRAIN) / 1000), attacker.uid);
+  }
+  const inStance = defP.stance?.unit === defender.index;
+  if (o.source === "attack" && hasTrait(defender, "thorns") && !inStance) {
+    applyDamage(s, events, atkP, attacker, Math.floor(dmg / C.TRAIT_THORNS_DIV), defender.uid, "trait", false);
+  }
+  if (o.source === "skill" && hasTrait(defender, "mirror")) {
+    applyDamage(s, events, atkP, attacker, Math.floor(dmg / C.TRAIT_MIRROR_DIV), defender.uid, "trait", false);
+  }
   return weakened;
 }
 
+function unitByUid(s: BattleState, uid: number): UnitState {
+  return s.players[uid < C.TEAM_SIZE ? 0 : 1].units[uid % C.TEAM_SIZE];
+}
+
 /** 1ターン（だれかが1回行動）で増える SG（§6.1） */
-export function sgPerTurn(u: UnitState): number {
+export function sgPerTurn(p: PlayerState, u: UnitState): number {
   if (u.curse?.kind === "seal") return 0;
   const base: number = C.SG_PER_TURN_BY_RANK[UNITS[u.defIndex].sgRank - 1];
   let permil = 1000;
+  if (wheelNeighbors(p, u).some((v) => hasTrait(v, "spiritSmoke"))) permil += C.TRAIT_SPIRIT_SMOKE;
   if (u.blessing?.kind === "gather") permil += C.GATHER_BONUS_PERMIL[u.blessing.tier];
   if (u.equipment === "spirit_bell") permil += C.EQUIP_SG_BONUS_PERMIL;
   return mul(base, permil);
@@ -232,17 +261,34 @@ function applyDamage(
     u.dollUsed = true;
     u.hp = 1;
     events.push({ t: "doll", uid: u.uid });
+  } else if (u.hp - amount <= 0 && hasTrait(u, "endure") && !u.endureUsed) {
+    // 特性「踏ん張り」（§8.5）
+    u.endureUsed = true;
+    u.hp = 1;
+    events.push({ t: "endure", uid: u.uid });
   } else {
     u.hp = Math.max(0, u.hp - amount);
   }
-  if (u.hp === 0) knockOut(s, events, p, u);
+  if (u.hp > 0) return;
+  const grudge = UNITS[u.defIndex].trait === "grudge";
+  knockOut(s, events, p, u);
+  if (src === null || src === u.uid) return;
+  const killer = unitByUid(s, src);
+  if (!isAlive(killer)) return;
+  // 特性：屍喰い・勝ち鬨・怨念（§8.5）
+  if (hasTrait(killer, "devour")) heal(events, killer, Math.floor((killer.maxHp * C.TRAIT_DEVOUR_HEAL) / 1000), killer.uid);
+  if (hasTrait(killer, "conqueror")) killer.conquests = Math.min(C.TRAIT_CONQUEROR_MAX, killer.conquests + 1);
+  if (grudge) {
+    const kp = s.players[killer.owner];
+    applyDamage(s, events, kp, killer, Math.floor((killer.maxHp * C.TRAIT_GRUDGE_DAMAGE) / 1000), u.uid, "trait", false);
+  }
 }
 
 function heal(events: BattleEvent[], u: UnitState, amount: number, src: number | null): void {
   if (!isAlive(u)) return;
   const before = u.hp;
   u.hp = Math.min(u.maxHp, u.hp + amount);
-  events.push({ t: "heal", src, dst: u.uid, amount: u.hp - before });
+  if (u.hp > before) events.push({ t: "heal", src, dst: u.uid, amount: u.hp - before });
 }
 
 function knockOut(s: BattleState, events: BattleEvent[], p: PlayerState, u: UnitState): void {
@@ -287,8 +333,14 @@ function applyCurse(
   tier: number,
   roll: boolean,
 ): void {
+  // 特性「呪詛の才」：味方がかける呪付が1段強くなる（§8.5）
+  if (srcP.units.some((v) => hasTrait(v, "curseMaster"))) tier = Math.min(2, tier + 1);
   if (roll && randInt(src.rng, 1000) >= curseSuccessPermil(srcP, src, dstP, dst, kind)) {
     events.push({ t: "curse", src: src.uid, dst: dst.uid, kind, tier, result: "miss" });
+    return;
+  }
+  if (hasTrait(dst, "unbreakable")) {
+    events.push({ t: "curse", src: src.uid, dst: dst.uid, kind, tier, result: "immune" });
     return;
   }
   const b = dst.blessing;
@@ -419,10 +471,23 @@ function rotate(s: BattleState, pid: PlayerId, dir: "cw" | "ccw", events: Battle
   p.wheel = next;
   p.rotateCooldown = C.ROTATE_COOLDOWN;
   events.push({ t: "rotate", player: pid, dir });
+  triggerFirstStrike(p, events);
   const st = p.stance;
   // 大奥義は回すとキャンセル。普通の構えは構えたユニットが後衛に行ったらキャンセル（§6.5・§8.1）
   if (st && (st.grand || !isFront(p, st.unit))) cancelStance(s, pid, events, "rotate");
   if (p.purify && isFront(p, p.purify.unit)) p.purify = null;
+}
+
+/** 特性「先駆け」：初めて前衛に出たら、すぐに行動できる（§8.5） */
+function triggerFirstStrike(p: PlayerState, events: BattleEvent[]): void {
+  for (let pos = 0; pos < 3; pos++) {
+    const u = p.units[p.wheel[pos]];
+    if (hasTrait(u, "firstStrike") && !u.firstStrikeUsed) {
+      u.firstStrikeUsed = true;
+      u.ag = Math.max(u.ag, agNeeded(p, u));
+      events.push({ t: "firstStrike", uid: u.uid });
+    }
+  }
 }
 
 function cancelStance(s: BattleState, pid: PlayerId, events: BattleEvent[], reason: "input" | "rotate" | "ko"): void {
@@ -491,7 +556,7 @@ function fireUlt(
       const t = pickEnemyTarget(p, e);
       if (!t) return;
       const bonus = hit(s, events, p, u, e, t, {
-        power: ult.kind === "single" ? C.ULT_SINGLE_POWER : C.ULT_BREAK_POWER,
+        power: ult.power ?? (ult.kind === "single" ? C.ULT_SINGLE_POWER : C.ULT_BREAK_POWER),
         stat: ult.stat,
         element: ult.element,
         source: "ult",
@@ -501,7 +566,7 @@ function fireUlt(
         qualityMult,
         grandMult,
       });
-      if (bonus) addSg(u, sgPerTurn(u));
+      if (bonus) addSg(u, sgPerTurn(p, u));
       return;
     }
     case "all": {
@@ -509,7 +574,7 @@ function fireUlt(
       for (const t of aliveFront(e)) {
         if (!isAlive(t)) continue;
         const b = hit(s, events, p, u, e, t, {
-          power: C.ULT_ALL_POWER,
+          power: ult.power ?? C.ULT_ALL_POWER,
           stat: ult.stat,
           element: ult.element,
           source: "ult",
@@ -521,7 +586,7 @@ function fireUlt(
         });
         bonus = bonus || b;
       }
-      if (bonus) addSg(u, sgPerTurn(u));
+      if (bonus) addSg(u, sgPerTurn(p, u));
       return;
     }
     case "heal": {
@@ -568,12 +633,24 @@ function addAg(s: BattleState, pid: PlayerId): void {
   }
 }
 
+/** 特性「祈り」「後見」：行動した味方の HP を回復する（§8.5） */
+function afterOwnAction(p: PlayerState, u: UnitState, events: BattleEvent[]): void {
+  if (!isAlive(u) || !isFront(p, u.index)) return;
+  for (const v of wheelNeighbors(p, u)) {
+    if (hasTrait(v, "prayer")) heal(events, u, Math.floor((u.maxHp * C.TRAIT_PRAYER_HEAL) / 1000), v.uid);
+  }
+  for (const pos of [3, 4, 5]) {
+    const v = p.units[p.wheel[pos]];
+    if (hasTrait(v, "benchHeal")) heal(events, u, Math.floor((u.maxHp * C.TRAIT_BENCH_HEAL) / 1000), v.uid);
+  }
+}
+
 /** だれかが1回行動した：両チームの前衛で生きているユニット全員の SG が増える（§6.1） */
 function passTurn(s: BattleState): void {
   for (const p of s.players) {
     for (let pos = 0; pos < 3; pos++) {
       const u = p.units[p.wheel[pos]];
-      addSg(u, sgPerTurn(u));
+      addSg(u, sgPerTurn(p, u));
     }
   }
 }
@@ -601,7 +678,10 @@ function resolveActions(s: BattleState, events: BattleEvent[]): void {
     const p = s.players[r.pid];
     if (!isAlive(r.u) || !isFront(p, r.u.index) || r.u.ag < agNeeded(p, r.u)) continue;
     if (frozenUnits(p).includes(r.u.index)) continue;
-    if (act(s, r.pid, r.u, events)) passTurn(s);
+    if (act(s, r.pid, r.u, events)) {
+      afterOwnAction(p, r.u, events);
+      passTurn(s);
+    }
   }
 }
 
@@ -670,7 +750,7 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
         grandMult: 1000,
       })
       )
-        addSg(u, sgPerTurn(u));
+        addSg(u, sgPerTurn(p, u));
       return true;
     case "skill":
       if (
@@ -686,7 +766,7 @@ function act(s: BattleState, pid: PlayerId, u: UnitState, events: BattleEvent[])
         grandMult: 1000,
       })
       )
-        addSg(u, sgPerTurn(u));
+        addSg(u, sgPerTurn(p, u));
       return true;
     case "guard":
       u.guarding = true;
@@ -820,6 +900,7 @@ function forcedRotation(s: BattleState, pid: PlayerId, events: BattleEvent[]): v
   const old = p.wheel;
   p.wheel = [old[3], old[4], old[5], old[0], old[1], old[2]];
   events.push({ t: "forcedRotate", player: pid });
+  triggerFirstStrike(p, events);
   const st = p.stance;
   if (st) cancelStance(s, pid, events, "rotate");
   if (p.purify && isFront(p, p.purify.unit)) p.purify = null;

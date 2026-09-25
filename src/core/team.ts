@@ -9,7 +9,16 @@ import {
   RANK_LIMITS,
   TEAM_SIZE,
 } from "./constants.js";
-import { type EquipmentId, type NatureId, UNITS, unitIndexById, natureById, EQUIPMENT } from "./data.js";
+import {
+  EQUIPMENT,
+  type EquipmentId,
+  GROUP_LIMITS,
+  type GroupId,
+  type NatureId,
+  natureById,
+  UNITS,
+  unitIndexById,
+} from "./data.js";
 
 export interface Effort {
   hp: number;
@@ -37,6 +46,7 @@ export function validateTeam(team: TeamSpec): string[] {
   const errors: string[] = [];
   if (team.length !== TEAM_SIZE) errors.push(`チームは ${TEAM_SIZE} 体（今は ${team.length} 体）`);
   const rankCount = { S: 0, A: 0, B: 0 };
+  const groupCount = new Map<GroupId, number>();
   team.forEach((m, i) => {
     const def = UNITS.find((u) => u.id === m.unit);
     if (!def) {
@@ -44,6 +54,7 @@ export function validateTeam(team: TeamSpec): string[] {
       return;
     }
     rankCount[def.rank]++;
+    if (def.group) groupCount.set(def.group, (groupCount.get(def.group) ?? 0) + 1);
     if (m.nature !== undefined) {
       try {
         natureById(m.nature);
@@ -69,6 +80,10 @@ export function validateTeam(team: TeamSpec): string[] {
     if (rankCount[r] > RANK_LIMITS[r]) {
       errors.push(`${r} ランクは ${RANK_LIMITS[r]} 体まで（今は ${rankCount[r]} 体）`);
     }
+  }
+  for (const [g, n] of groupCount) {
+    const { name, limit } = GROUP_LIMITS[g];
+    if (n > limit) errors.push(`${name}は ${limit} 体まで（今は ${n} 体）`);
   }
   return errors;
 }

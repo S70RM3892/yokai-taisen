@@ -1,7 +1,7 @@
 // シミュレーター用のランダム編成。ランク制限（§2.2）を守る。
 
 import { RANK_LIMITS } from "../core/constants.js";
-import { EQUIPMENT, type EquipmentId, NATURES, UNITS } from "../core/data.js";
+import { EQUIPMENT, type EquipmentId, GROUP_LIMITS, type GroupId, NATURES, UNITS } from "../core/data.js";
 import { randInt, type RngState } from "../core/rng.js";
 import type { Effort, MemberSpec, TeamSpec } from "../core/team.js";
 
@@ -21,11 +21,14 @@ export interface GeneratedMember extends MemberSpec {
 
 export function randomTeam(rng: RngState): GeneratedMember[] {
   const count = { S: 0, A: 0, B: 0 };
+  const groups = new Map<GroupId, number>();
   const team: GeneratedMember[] = [];
   while (team.length < 6) {
     const def = UNITS[randInt(rng, UNITS.length)];
     if (count[def.rank] >= RANK_LIMITS[def.rank]) continue;
+    if (def.group && (groups.get(def.group) ?? 0) >= GROUP_LIMITS[def.group].limit) continue;
     count[def.rank]++;
+    if (def.group) groups.set(def.group, (groups.get(def.group) ?? 0) + 1);
     const preset = EFFORT_PRESETS[randInt(rng, EFFORT_PRESETS.length)];
     const eqIndex = randInt(rng, EQUIPMENT.length + 1);
     const equipment: EquipmentId | null = eqIndex === EQUIPMENT.length ? null : EQUIPMENT[eqIndex].id;
