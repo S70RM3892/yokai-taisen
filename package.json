@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node tools/build.mjs",
+    "build": "node tools/check_names.mjs && node tools/build.mjs",
     "test": "node tools/build.mjs --engine-only && node tests/sim.mjs"
   },
   "devDependencies": {

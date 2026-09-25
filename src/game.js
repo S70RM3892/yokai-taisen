@@ -31859,6 +31859,8 @@ void main() {
       revision: "169"
     }
   })), typeof window < "u" && (window.__THREE__ ? console.warn("WARNING: Multiple instances of Three.js being imported.") : window.__THREE__ = "169");
+  /*@@include ext/models3d.js@@*/
+  var ALLY_YAW = Math.PI - 0.95;
   var Q1 = [-2.6, 0, 2.6],
     K1 = -2.2,
     J1 = 2.4,
@@ -31984,15 +31986,10 @@ void main() {
       resize(e, t) {
         this.renderer.setSize(e, t, !1), this.camera.aspect = e / t, this.camera.updateProjectionMatrix()
       }
-      addFigure(e, t, a, r, i) {
-        let n = i2(a, t ? r : null),
-          s = new An({
-            map: n,
-            transparent: !0,
-            depthWrite: !1
-          }),
-          l = new Rl(s);
-        l.scale.set(1.9, 1.9, 1), l.position.y = .95;
+      addFigure(e, t, a, r, i, def) {
+        // 2D の絵の代わりに、1 体ずつの 3D モデルを置く
+        let l = buildYokaiModel(def);
+        l.rotation.y = t ? ALLY_YAW : 0;
         let u = new pt(new b1(.62, 24), new Aa({
           color: 0,
           transparent: !0,
@@ -32013,7 +32010,7 @@ void main() {
           uid: e,
           ally: t,
           root: d,
-          sprite: l,
+          model: l,
           shadow: u,
           ring: o,
           home: new D,
@@ -32135,6 +32132,7 @@ void main() {
           y: 0,
           visible: !1
         };
+        t = t * a.model.userData.height / 1.9;
         let r = a.root.position.clone().setY(a.root.position.y + t).project(this.camera),
           i = this.canvas.clientWidth,
           n = this.canvas.clientHeight;
@@ -32270,9 +32268,8 @@ void main() {
             l = 1 + Math.sin(a * 2.2) * .03, s = 1 - Math.sin(a * 2.2) * .02
         } else u = 1.4, n = -.5;
         e.shake > 0 && (r.x += Math.sin(this.clock * 70) * e.shake * .12, e.shake = Math.max(0, e.shake - t * 3)), e.flash = Math.max(0, e.flash - t * 4);
-        let d = e.sprite.material,
-          c = 1 + e.flash * 2;
-        d.color.setRGB(c, c, c), d.opacity = o, d.rotation = e.ally ? -u : u, e.sprite.scale.set(1.9 * s, 1.9 * l, 1), e.sprite.position.y = .95 * l + n;
+        let d = e.model;
+        setModelLook(d, e.flash, o), d.rotation.z = e.ally ? -u : u, d.scale.set(s, l, s), d.position.y = n, e.alive && animateModel(d, a);
         let h = e.shadow.material;
         h.opacity = e.alive ? .35 - Math.min(.2, n * .2) : .1, e.ring.material.opacity > 0 && (e.ring.rotation.z += t * 2)
       }
@@ -33106,7 +33103,7 @@ void main() {
     };
     for (let N of [0, 1])
       for (let W of e.state.players[N].units)
-        if (e.scene.addFigure(W.uid, N === 0, da(Ze(W).id, Ze(W).name.slice(0, 1)), Pi[Ze(W).tribe], p0(Ze(W).id)), N === 1) {
+        if (e.scene.addFigure(W.uid, N === 0, da(Ze(W).id, Ze(W).name.slice(0, 1)), Pi[Ze(W).tribe], p0(Ze(W).id), Ze(W)), N === 1) {
           let L = q("div", "foebar");
           L.innerHTML = '<span class="n"></span><div class="bar hp"><i></i></div><div class="fxs"></div>', e.foeBars.set(W.uid, L), n.append(L)
         } for (let N = 0; N < 3; N++) {
@@ -33815,5 +33812,6 @@ void main() {
       a.remove(), Ga = null, Sd()
     }, c.append(h, f), c.style.justifyContent = "center", r.append(c), a.append(r), document.body.append(a)
   }
-  Sd()
+  /*@@include ext/gallery.js@@*/
+  location.hash.startsWith("#gallery") ? showGallery() : Sd()
 })();
