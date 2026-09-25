@@ -32654,6 +32654,7 @@ void main() {
     return s0(ni(e, 77)).map(t => t.unit)
   }
 
+  /*@@include ext/builder_ui.js@@*/
   function Sd() {
     Kr.replaceChildren();
     let e = q("h1", "", "妖怪大戦");
@@ -32672,8 +32673,9 @@ void main() {
       d = q("div", "b-bar");
     n.append(s, l, u, o, d);
     let c = q("div", "b-rules"),
-      h = q("div", "b-sets");
-    l.append(B2(), c, h);
+      h = q("div", "b-sets"),
+      bagBox = q("div", "b-rules b-bag");
+    l.append(B2(), c, bagBox, h);
     let f = Ke("svg", {
       class: "b-wheel",
       viewBox: "-160 -160 320 320"
@@ -32689,7 +32691,7 @@ void main() {
       p = q("button", "b-shoulder r", "回す ⟳"),
       y = X => {
         let te = bt.slice();
-        bt = te.map((_e, oe) => te[(oe - X + 6) % 6]), t = (t + X + 6) % 6, Me()
+        bt = te.map((_e, oe) => te[(oe - X + 6) % 6]), loRotate(X), t = (t + X + 6) % 6, Me()
       };
     m.onclick = () => y(-1), p.onclick = () => y(1);
     let b = q("div", "b-wheelwrap");
@@ -32721,21 +32723,23 @@ void main() {
     B.append(G, _, E);
     let F = q("div", "b-count"),
       V = q("div", "b-list"),
-      N = q("div", "b-detail");
-    o.append(B, F, V, N);
+      N = q("div", "b-detail"),
+      detailSlot = null;
+    o.append(B, F, V), n.append(N), V.onpointerleave = () => { DETAIL_FOR && (DETAIL_FOR = null, i && renderDetail(N, detailSlot ?? t, Me)) };
     let W = q("button", "b-btn", "もどす");
     W.title = "選んでいる枠を空にする（Backspace）";
     let L = q("button", "b-btn", "いどう");
     L.title = "2つの枠を入れ替える（M）";
-    let ee = q("button", "b-btn", "きりかえ");
-    ee.title = "リストとくわしい情報を切り替える（Tab）";
+    let ee = q("button", "b-btn", "くわしく");
+    ee.title = "くわしい情報（3D・能力・装備）を出す／しまう（Tab）";
     let H = q("button", "b-btn", "おまかせ"),
       re = q("button", "b-btn go", "けってい");
     re.title = "この6体で対戦する（Enter）", d.append(W, L, ee, H, re);
     let ce = X => X ? ct.find(te => te.id === X) : null;
 
     function Re(X) {
-      bt[t] = X;
+      DETAIL_FOR = null, detailSlot = t;
+      bt[t] !== X && loReset(t), bt[t] = X;
       let te = bt.findIndex(_e => _e === null);
       te >= 0 && (t = te), Me()
     }
@@ -32777,7 +32781,7 @@ void main() {
           Ue.textContent = "＋", S.append(Ue)
         }
         S.addEventListener("click", () => {
-          r ? a === null ? a = ne : ([bt[a], bt[ne]] = [bt[ne], bt[a]], a = null, r = !1) : t = ne, Me()
+          r ? a === null ? a = ne : ([bt[a], bt[ne]] = [bt[ne], bt[a]], loSwap(a, ne), a = null, r = !1) : (t = ne, detailSlot = ne), DETAIL_FOR = null, Me()
         }), g.append(S)
       }
       let X = Ln(),
@@ -32801,17 +32805,16 @@ void main() {
           he = q("div", "b-set"),
           S = q("button", "b-mini", ve ? ve.map(Ue => (ce(Ue)?.name ?? "?").slice(0, 2)).join("・") : `セット ${ne+1}（空き）`);
         S.disabled = !ve, S.onclick = () => {
-          ve && (bt = ve.slice(), Me())
+          ve && (bt = ve.slice(), SLOT_LOADOUT = (setLoadout(ne) ?? bt.map(defaultLoadout)).map(x => ({ ...defaultLoadout(), ...x })), setBag(ne) && (BAG = validBag(setBag(ne))), saveLoadout(), Me())
         };
         let je = q("button", "b-mini save", "保存");
         je.disabled = X.length !== 6, je.onclick = () => {
-          D2(ne, bt), Me()
+          D2(ne, bt), saveStored(`setlo:${ne}`, { lo: SLOT_LOADOUT, bag: BAG }), Me()
         }, he.append(S, je), h.append(he)
       }
-      let ye = X.length === 6 ? Yn(X.map(ne => ({
-        unit: ne
-      }))) : [];
-      if (A.textContent = r ? a === null ? "いどう：1つめの枠を選ぶ" : "いどう：入れ替える枠を選ぶ" : X.length < 6 ? `あと ${6-X.length} 体（${t<3?"前衛":"後衛"}の枠を選択中）` : ye.length ? ye.join(" / ") : "この6体で対戦できる", A.classList.toggle("bad", ye.length > 0), re.disabled = X.length !== 6 || ye.length > 0, L.classList.toggle("on", r), V.hidden = !i, B.hidden = !i, F.hidden = !i, N.hidden = i, i) {
+      let ye = X.length === 6 ? Yn(teamMembers()) : [];
+      renderBag(bagBox, Me);
+      if (A.textContent = r ? a === null ? "いどう：1つめの枠を選ぶ" : "いどう：入れ替える枠を選ぶ" : X.length < 6 ? `あと ${6-X.length} 体（${t<3?"前衛":"後衛"}の枠を選択中）` : ye.length ? ye.join(" / ") : "この6体で対戦できる", A.classList.toggle("bad", ye.length > 0), re.disabled = X.length !== 6 || ye.length > 0, L.classList.toggle("on", r), N.hidden = !i, i && renderDetail(N, detailSlot ?? t, Me), !0) {
         V.replaceChildren();
         let ne = ce(bt[t]);
         _.querySelectorAll(".b-chip").forEach(he => he.classList.toggle("on", he.dataset.v === I)), E.querySelectorAll(".b-chip").forEach(he => he.classList.toggle("on", he.dataset.v === x));
@@ -32829,30 +32832,32 @@ void main() {
             })))).length > 0,
             Ue = q("button", "b-item" + (je ? " ng" : "") + (ne?.id === he.id ? " cur" : "")),
             He = q("span", "b-pic");
-          He.innerHTML = da(he.id, he.name.slice(0, 1)), He.style.background = Pi[he.tribe], Ue.append(He, q("span", "b-nm", he.name), q("span", "b-r r" + he.rank, he.group ? "大" : he.rank)), Ue.title = `${he.name}（${he.rank}・${Hl[he.tribe]}）特性：${wu[he.trait]}`, Ue.onclick = () => Re(he.id), V.append(Ue)
+          He.innerHTML = da(he.id, he.name.slice(0, 1)), He.style.background = Pi[he.tribe], Ue.append(He, q("span", "b-nm", he.name), q("span", "b-r r" + he.rank, he.group ? "大" : he.rank)), Ue.title = `${he.name}（${he.rank}・${Hl[he.tribe]}）特性：${traitOf(he).name}\n${traitOf(he).desc}`, Ue.onclick = () => Re(he.id), Ue.onpointerenter = X => { X.pointerType === "mouse" && i && DETAIL_FOR !== he.id && (DETAIL_FOR = he.id, renderDetail(N, detailSlot ?? t, Me)) }, V.append(Ue)
         }
-      } else {
-        let ne = ce(bt[t]);
-        N.innerHTML = ne ? `<div class="b-dhead"><span class="b-dpic" style="background:${Pi[ne.tribe]}">${da(ne.id,"")}</span><div><b>${ne.name}</b> <span class="rank ${ne.rank}">${ne.group?ne.rank+"・大物":ne.rank}</span><br><span class="tag">${Hl[ne.tribe]}・${qn(ne.defaultNature).name}</span></div></div><div class="trait">特性：${wu[ne.trait]}</div><div class="stats num">HP ${ne.hp}　ATK ${ne.atk}　SPA ${ne.spa}<br>DEF ${ne.def}　SPD ${ne.spd}　妖気 ${ne.sgRank}</div><div class="stats">術：${Gl[ne.skillElement]} ${ne.skillPower}　通常攻撃 ${ne.attackPower}</div><div class="stats">奥義：${ne.ultName}</div><div class="stats">弱点 ${ne.weak?Gl[ne.weak]:"なし"}・耐性 ${ne.resist?Gl[ne.resist]:"なし"}</div>` : '<div class="muted">この枠は空き。「きりかえ」でリストに戻って選ぶ。</div>'
       }
     }
     W.onclick = () => {
-      bt[t] = null, Me()
+      bt[t] = null, loReset(t), Me()
     }, L.onclick = () => {
       r = !r, a = null, Me()
     }, ee.onclick = () => {
       i = !i, Me()
     }, H.onclick = () => {
-      bt = $l(Xl()), Me()
+      let X = s0(ni(Xl(), 77));
+      bt = X.map(te => te.unit), loFromMembers(X), Me()
     }, re.onclick = () => {
-      re.disabled || (document.removeEventListener("keydown", $), Fd(Ln().map(X => ({
-        unit: X
-      }))))
+      re.disabled || openConfirm(teamMembers(), BAG.slice(), () => {
+        document.removeEventListener("keydown", $), Fd(teamMembers(), BAG.slice())
+      })
     };
     let $ = X => {
+      if (document.querySelector(".result") || /INPUT|SELECT|TEXTAREA/.test(X.target.tagName)) return;
       Ga || (X.key === "Enter" ? re.click() : X.key === "Tab" ? (X.preventDefault(), ee.click()) : X.key.toLowerCase() === "m" ? L.click() : X.key === "Backspace" ? W.click() : X.key === "ArrowLeft" || X.key.toLowerCase() === "q" ? y(-1) : (X.key === "ArrowRight" || X.key.toLowerCase() === "e") && y(1))
     };
-    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じにして、色・絵・言葉はオリジナル。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && (bt = $l(Xl())), Me()
+    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じにして、色・絵・言葉はオリジナル。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && (() => {
+      let X = s0(ni(Xl(), 77));
+      bt = X.map(te => te.unit), loFromMembers(X)
+    })(), Me()
   }
 
   function R2(e) {
@@ -33013,13 +33018,18 @@ void main() {
     }
   }
 
-  function Fd(e) {
+  function Fd(e, bag = []) {
     let t = Xl(),
       a = ni(t, 5),
-      r = $l(Wn(a)).map(l => ({
-        unit: l
+      r = s0(ni(Wn(a), 77)).map(l => ({
+        unit: l.unit,
+        nature: l.nature,
+        effort: l.effort,
+        equipment: l.equipment
       })),
-      i = Rh(t, e, r);
+      i = Rh(t, e, r, {
+        bags: [bag, randomBag(ni(t, 9))]
+      });
     Kr.replaceChildren();
     let n = q("canvas", "stage"),
       s = new e2(n);
@@ -33803,9 +33813,7 @@ void main() {
     let c = q("div", "row"),
       h = q("button", "btn primary", "同じチームでもう一度");
     h.onclick = () => {
-      a.remove(), Fd(Ln().map(g => ({
-        unit: g
-      })))
+      a.remove(), Fd(teamMembers(), BAG.slice())
     };
     let f = q("button", "btn", "編成に戻る");
     f.onclick = () => {

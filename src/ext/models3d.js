@@ -1033,8 +1033,8 @@ function showPreview(host, def) {
     P.scene.add(P.model);
     P.id = def.id;
     const h = P.model.userData.height;
-    P.camera.position.set(0, h * 0.62, h * 2.35 + 1.2);
-    P.camera.lookAt(0, h * 0.48, 0);
+    P.camera.position.set(0, h * 0.7, h * 3.1 + 0.3);
+    P.camera.lookAt(0, h * 0.5, 0);
   }
   const size = () => {
     const w = host.clientWidth || 200, hh = host.clientHeight || 200;

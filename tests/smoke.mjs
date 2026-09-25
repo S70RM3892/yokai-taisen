@@ -29,6 +29,9 @@ for (const s of steps) {
 }
 
 await page.click(".b-btn.go");
+await page.waitForTimeout(500);
+await page.screenshot({ path: `${out}/1c-confirm.png` });
+await page.click(".confirm .btn.primary");
 await page.waitForTimeout(4000);
 await page.screenshot({ path: `${out}/2-battle.png` });
 await page.waitForTimeout(8000);
