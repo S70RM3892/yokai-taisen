@@ -10999,7 +10999,7 @@
         poke: null,
         pokeCooldown: 0,
         pokeRng: ni(e, Eh + n),
-        bag: opts.noItems ? [] : validBag(opts.bags?.[n]),
+        bag: validBag(opts.bags?.[n]),
         itemCooldown: 0,
         mgRng: ni(e, 30 + n)
       }
@@ -33763,7 +33763,7 @@ void main() {
     });
     let i = t.rotateCooldown / cu,
       n = 2 * Math.PI * 152;
-    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? "アイテム禁止" : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
+    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? `アイテム禁止（${t.bag.length}）` : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
   }
 
   function Z2(e) {

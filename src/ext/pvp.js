@@ -9,7 +9,7 @@
 //
 // 通信：WebRTC のデータチャネル（サーバーなし。招待コード → 返事コードを LINE などで手渡しする）、
 //       または同じブラウザの別タブ・別ウィンドウ（BroadcastChannel。部屋番号で入る）。
-// 対人戦ではアイテムを使えない（エンジンの state.noItems。持ち物も空にする）。
+// 対人戦では持ち物は持ち込めるが、対戦中は使えない（エンジンの state.noItems）。
 // ============================================================================
 
 var NET_VER = 1;
@@ -255,10 +255,10 @@ function netLost(e) {
 }
 
 // 対戦を始める（ホストもゲストも同じ種と同じ 2 チームから作る）
-function startPvpBattle(net, seed, teams) {
+function startPvpBattle(net, seed, teams, bags = [[], []]) {
   document.querySelector(".result")?.remove();
   document.querySelector(".pvp-lobby")?.remove();
-  const canon = Rh(seed, teams[0], teams[1], { noItems: !0 });
+  const canon = Rh(seed, teams[0], teams[1], { noItems: !0, bags: bags.map(b => validBag(Array.isArray(b) ? b : [])) });
   const guest = net.role === "guest";
   net.inbox = [], net.stream = [], net.resyncs = 0, net.gaps = 0, net.wantAgain = !1, net.peerAgain = !1;
   Kr.replaceChildren();
@@ -293,13 +293,13 @@ function startPvpBattle(net, seed, teams) {
   O2(Ga, canvas);
   const foe = Ga.state.players[1].units.map(u => ct[u.defIndex].name).join("・");
   Rt(Ga, `相手：${net.peerName}（${foe}）`, "f");
-  Rt(Ga, "対人戦：アイテムは使えない", "a");
+  Rt(Ga, "対人戦：持ち物は持っているが、対戦中は使えない", "a");
   xd(), requestAnimationFrame(Ud);
 }
 
 // 接続できたあと：名前とチームを送りあい、ホストが種を決めて始める
-function pvpSession(link, role, name, team, status) {
-  const net = { link, role, name, team, peerName: "相手", peerTeam: null };
+function pvpSession(link, role, name, team, bag, status) {
+  const net = { link, role, name, team, bag, peerName: "相手", peerTeam: null, peerBag: [] };
   PVP = net;
   link.onclose = () => {
     net.closed = !0;
@@ -314,13 +314,14 @@ function pvpSession(link, role, name, team, status) {
         if (bad.length) { status?.(`相手の編成が正しくない：${bad.join(" / ")}`, "bad"); link.close(); return; }
         net.peerName = String(m.name ?? "相手").slice(0, 12) || "相手";
         net.peerTeam = m.team;
+        net.peerBag = validBag(Array.isArray(m.bag) ? m.bag : []);
         status?.(`${net.peerName} とつながった。対戦を始める…`, "ok");
         if (role === "host" && Ga?.net !== net) pvpHostStart(net);
         break;
       }
       case "start":
         if (role === "guest" && !(Ga?.net === net && Ga.running) && Array.isArray(m.teams) && m.teams.length === 2) {
-          try { startPvpBattle(net, m.seed >>> 0, m.teams); } catch (err) { status?.(`始められなかった：${err.message}`, "bad"); link.close(); }
+          try { startPvpBattle(net, m.seed >>> 0, m.teams, Array.isArray(m.bags) ? m.bags : undefined); } catch (err) { status?.(`始められなかった：${err.message}`, "bad"); link.close(); }
         }
         break;
       case "in":
@@ -340,14 +341,14 @@ function pvpSession(link, role, name, team, status) {
         break;
     }
   });
-  link.send({ k: "hello", v: NET_VER, name, team });
+  link.send({ k: "hello", v: NET_VER, name, team, bag });
 }
 
 function pvpHostStart(net) {
   const seed = Xl();
-  const teams = [net.team, net.peerTeam];
-  net.link.send({ k: "start", seed, teams });
-  startPvpBattle(net, seed, teams);
+  const teams = [net.team, net.peerTeam], bags = [net.bag, net.peerBag];
+  net.link.send({ k: "start", seed, teams, bags });
+  startPvpBattle(net, seed, teams, bags);
 }
 
 // 結果画面のボタンを対人戦用にする
@@ -376,7 +377,7 @@ function pvpResultButtons(e, wrap, again, back) {
 // ---- ロビー（編成画面から開く） ----
 function pvpEntryButton() {
   const b = q("button", "btn pvp-entry", "対人戦（人 vs 人）");
-  b.title = "友だちと対戦する。アイテムは使えない";
+  b.title = "友だちと対戦する。持ち物は持てるが、対戦中は使えない";
   b.onclick = () => openPvpLobby();
   return b;
 }
@@ -389,7 +390,7 @@ function openPvpLobby(joinCode = "") {
   wrap.append(box);
   box.append(q("div", "big", "対人戦"));
   const note = q("div", "pvp-note");
-  note.innerHTML = "いまの編成（6 体・性格・装備・育成）で戦う。<b>対人戦ではアイテムは使えない</b>。";
+  note.innerHTML = "いまの編成（6 体・性格・装備・育成）と持ち物で戦う。<b>持ち物は持っていけるが、対人戦の対戦中は使えない</b>。";
   box.append(note);
   const faces = q("div", "pvp-team");
   for (const m of team) {
@@ -421,7 +422,7 @@ function openPvpLobby(joinCode = "") {
     pending?.cancel?.(), pending = null, say("");
     tabs.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.m === mode));
     body.replaceChildren();
-    const connected = link => { pending = null; say("接続できた。相手を待っています…", "ok"); pvpSession(link, link.role, nameIn.value.trim() || "プレイヤー", team, say); };
+    const connected = link => { pending = null; say("接続できた。相手を待っています…", "ok"); pvpSession(link, link.role, nameIn.value.trim() || "プレイヤー", team, BAG.slice(), say); };
     if (mode === "host") {
       const go = q("button", "btn primary", "招待コードを作る");
       body.append(q("div", "help", "① 招待コードを作って相手に送る → ② 相手から届いた返事コードを貼る。サーバーは使わない（WebRTC）。"), go);
