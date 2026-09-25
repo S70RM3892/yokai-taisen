@@ -1,0 +1,727 @@
+// ブラウザ版の試作（P2）：人 vs CPU。四角と文字だけの見た目（UI_SPEC.md）。
+// 戦闘の中身は src/core（決定論）。ここは描画と入力だけ。
+
+import {
+  type BattleEvent,
+  type BattleState,
+  createBattle,
+  cpuThink,
+  createCpu,
+  type Cpu,
+  formationPermil,
+  hpRatio,
+  type Input,
+  isAlive,
+  natureById,
+  type PlayerInput,
+  stepInPlace,
+  type TeamSpec,
+  TRAIT_NAMES,
+  type UnitState,
+  UNITS,
+  validateTeam,
+} from "../core/index.js";
+import * as C from "../core/constants.js";
+import { createStream, nextU32 } from "../core/rng.js";
+import { randomTeam } from "../sim/teamgen.js";
+
+const TRIBE: Record<string, string> = {
+  takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮",
+};
+const ELEMENT: Record<string, string> = { fire: "火", water: "水", thunder: "雷", earth: "土", ice: "氷", wind: "風" };
+const CURSE: Record<string, string> = { slow: "鈍重", weaken: "衰弱", brittle: "脆化", poison: "蝕毒", seal: "封気" };
+const BLESS: Record<string, string> = { rally: "鼓舞", fortify: "堅護", haste: "疾風", gather: "集気", regen: "再生", ward: "浄気" };
+const ACTION: Record<string, string> = { attack: "攻撃", skill: "術", guard: "守り", curse: "呪付", bless: "加護", loaf: "なまけ" };
+const TIER: string[] = ["", "（超）", "（究極）"];
+
+const app = document.getElementById("app")!;
+const h = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""): HTMLElementTagNameMap[K] => {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (text) el.textContent = text;
+  return el;
+};
+const secs = (ticks: number) => (ticks / C.TICKS_PER_SEC).toFixed(1);
+const def = (u: UnitState) => UNITS[u.defIndex];
+
+// =====================================================================
+// 編成画面
+// =====================================================================
+
+let picked: string[] = [];
+
+function randomSeed(): number {
+  // 試合のシードは画面側で決める（戦闘コアの中では Math.random を使わない）
+  return (Math.random() * 0x100000000) >>> 0;
+}
+
+function randomUnitIds(seed: number): string[] {
+  return randomTeam(createStream(seed, 77)).map((m) => m.unit);
+}
+
+function showSetup(): void {
+  app.replaceChildren();
+  const title = h("h1", "", "妖怪大戦");
+  title.append(h("small", "", "試作版（人 vs CPU）"));
+  app.append(title);
+
+  const setup = h("section", "setup");
+  const lead = h("p", "help");
+  lead.innerHTML =
+    "6体を選んで対戦する。<b>並び順がホイールの最初の並び</b>（1〜3番目が前衛）。S ランクは2体まで、A ランクは2体まで、大物はチームに1体まで。";
+  setup.append(lead);
+
+  const slots = h("div", "slots");
+  const errors = h("div", "errors");
+  const start = h("button", "btn primary", "対戦開始");
+  const refresh = () => {
+    slots.replaceChildren();
+    for (let i = 0; i < 6; i++) {
+      const id = picked[i];
+      const b = h("button", "slot" + (id ? " filled" : ""));
+      b.append(h("span", "pos", i < 3 ? `前衛 ${i + 1}` : `後衛 ${i + 1}`));
+      if (id) {
+        const d = UNITS.find((u) => u.id === id)!;
+        b.append(h("b", "", d.name), h("span", "tag", `${d.rank}・${TRIBE[d.tribe]}`));
+        b.title = "クリックで外す";
+        b.onclick = () => {
+          picked.splice(i, 1);
+          refresh();
+        };
+      } else {
+        b.append(h("span", "muted", "空き"));
+        b.disabled = true;
+      }
+      slots.append(b);
+    }
+    const errs = picked.length === 6 ? validateTeam(picked.map((unit) => ({ unit }))) : [];
+    errors.textContent = picked.length < 6 ? `あと ${6 - picked.length} 体` : errs.join(" / ");
+    start.disabled = picked.length !== 6 || errs.length > 0;
+  };
+
+  const roster = h("div", "roster");
+  for (const d of UNITS) {
+    const card = h("button", "card");
+    const head = h("div", "head");
+    head.append(h("span", "name", d.name), h("span", "rank " + d.rank, d.group ? `${d.rank}・大物` : d.rank));
+    head.append(h("span", "tag", `${TRIBE[d.tribe]}・${natureById(d.defaultNature).name}`));
+    card.append(head);
+    card.append(h("span", "trait", `特性：${TRAIT_NAMES[d.trait]}`));
+    card.append(
+      h(
+        "span",
+        "stats num",
+        `HP ${d.hp}　ATK ${d.atk}　SPA ${d.spa}　DEF ${d.def}　SPD ${d.spd}　妖気 ${d.sgRank}`,
+      ),
+    );
+    card.append(h("span", "stats", `奥義：${d.ultName}　弱点 ${d.weak ? ELEMENT[d.weak] : "なし"}`));
+    card.onclick = () => {
+      if (picked.length >= 6) return;
+      picked.push(d.id);
+      refresh();
+    };
+    roster.append(card);
+  }
+
+  const actions = h("div", "row");
+  const rnd = h("button", "btn", "おまかせ");
+  rnd.onclick = () => {
+    picked = randomUnitIds(randomSeed());
+    refresh();
+  };
+  const clear = h("button", "btn", "全部外す");
+  clear.onclick = () => {
+    picked = [];
+    refresh();
+  };
+  start.onclick = () => startBattle(picked.map((unit) => ({ unit })));
+  actions.append(start, rnd, clear, errors);
+
+  const help = h("div", "help");
+  help.innerHTML =
+    "操作：ホイールをドラッグ、または <kbd>Q</kbd>/<kbd>E</kbd> で回す（3秒に1回）。" +
+    "敵をクリックで標的。<kbd>1</kbd>〜<kbd>3</kbd> で前衛の奥義（妖気が満タンのとき）→ <kbd>Space</kbd> で解放、<kbd>Esc</kbd> でキャンセル。" +
+    "<kbd>Z</kbd>（中央のゼロ）で 奥義↔大奥義・標的↔つつき を切り替え。後衛で呪付のかかったユニットをクリック（<kbd>4</kbd>〜<kbd>6</kbd>）で浄化。";
+
+  setup.append(slots, actions, help, roster);
+  app.append(setup, h("footer", "", "見た目は仮（四角と文字）。戦闘のルールは BATTLE_SPEC v0.18。"));
+  if (picked.length === 0) picked = randomUnitIds(randomSeed());
+  refresh();
+}
+
+// =====================================================================
+// バトル
+// =====================================================================
+
+interface View {
+  state: BattleState;
+  cpu: Cpu;
+  pending: Input[];
+  zero: boolean;
+  mode: "none" | "ult" | "purify";
+  unitEl: Map<number, HTMLElement>;
+  wheelEl: Map<number, HTMLElement>;
+  logEl: HTMLElement;
+  running: boolean;
+  lastFrame: number;
+  acc: number;
+  refs: Record<string, HTMLElement>;
+}
+
+let view: View | null = null;
+
+function startBattle(team: TeamSpec): void {
+  const seed = randomSeed();
+  const gen = createStream(seed, 5);
+  const cpuTeam: TeamSpec = randomUnitIds(nextU32(gen)).map((unit) => ({ unit }));
+  const state = createBattle(seed, team, cpuTeam);
+  view = {
+    state,
+    cpu: createCpu(1, nextU32(gen)),
+    pending: [],
+    zero: false,
+    mode: "none",
+    unitEl: new Map(),
+    wheelEl: new Map(),
+    logEl: h("div", "log"),
+    running: true,
+    lastFrame: performance.now(),
+    acc: 0,
+    refs: {},
+  };
+  buildBattle(view);
+  log(view, `相手：${cpuTeam.map((m) => UNITS.find((u) => u.id === m.unit)!.name).join("・")}`, "f");
+  requestAnimationFrame(frame);
+}
+
+function unitName(v: View, uid: number): string {
+  const p = v.state.players[uid < 6 ? 0 : 1];
+  return (uid < 6 ? "" : "敵の") + def(p.units[uid % 6]).name;
+}
+
+function log(v: View, text: string, cls = ""): void {
+  const p = h("p", cls, text);
+  v.logEl.prepend(p);
+  while (v.logEl.childElementCount > 120) v.logEl.lastElementChild!.remove();
+}
+
+function send(v: View, input: Input): void {
+  v.pending.push(input);
+}
+
+function buildBattle(v: View): void {
+  app.replaceChildren();
+  const title = h("h1", "", "妖怪大戦");
+  title.append(h("small", "", "試作版"));
+  app.append(title);
+
+  const battle = h("section", "battle");
+  const screens = h("div", "screens");
+
+  // ---- 上画面 ----
+  const top = h("div", "top");
+  const hud = h("div", "hud");
+  const foeRes = h("div", "reserve");
+  const clock = h("div", "clock num");
+  const allyRes = h("div", "reserve");
+  hud.append(foeRes, clock, allyRes);
+  const foeLine = h("div", "line");
+  const allyLine = h("div", "line");
+  const formation = h("div", "formation");
+  top.append(hud, foeLine, allyLine, formation);
+  v.refs = { clock, foeRes, allyRes, foeLine, allyLine, formation };
+
+  for (const pid of [1, 0] as const) {
+    for (const u of v.state.players[pid].units) {
+      const el = h("button", "unit " + (pid === 0 ? "ally" : "foe"));
+      el.dataset.uid = String(u.uid);
+      el.innerHTML =
+        '<div class="nm"><span class="n"></span><span class="st"></span></div>' +
+        '<div class="bar hp"><i></i></div><div class="bar ag"><i></i></div><div class="bar sg"><i></i></div>' +
+        '<div class="fx"></div>';
+      el.onclick = () => onUnitClick(v, u);
+      v.unitEl.set(u.uid, el);
+    }
+  }
+
+  // ---- 下画面 ----
+  const bottom = h("div", "bottom");
+  const controls = h("div", "controls");
+  const bUlt = h("button", "corner");
+  const bTarget = h("button", "corner");
+  const bPurify = h("button", "corner", "浄化");
+  const bEmpty = h("button", "corner", "―");
+  bEmpty.disabled = true;
+  bEmpty.style.opacity = ".3";
+  const wheel = h("div", "wheel");
+  wheel.append(h("div", "cool"), h("div", "ring"), h("div", "half"));
+  const z = h("button", "zbtn", "ゼロ");
+  z.onclick = () => toggleZero(v);
+  const rl = h("button", "rot l", "⟲");
+  rl.title = "反時計回り（Q）";
+  rl.onclick = () => send(v, { t: "rotate", dir: "ccw" });
+  const rr = h("button", "rot r", "⟳");
+  rr.title = "時計回り（E）";
+  rr.onclick = () => send(v, { t: "rotate", dir: "cw" });
+  for (const u of v.state.players[0].units) {
+    const s = h("button", "wslot");
+    s.onclick = () => onWheelClick(v, u);
+    v.wheelEl.set(u.index, s);
+    wheel.append(s);
+  }
+  wheel.append(z, rl, rr);
+  bindWheelDrag(v, wheel);
+  bUlt.onclick = () => {
+    v.mode = v.mode === "ult" ? "none" : "ult";
+  };
+  bTarget.onclick = () => {
+    v.mode = "none";
+  };
+  bPurify.onclick = () => {
+    v.mode = v.mode === "purify" ? "none" : "purify";
+  };
+  controls.append(bUlt, wheel, bTarget, bPurify, bEmpty);
+  // 位置：左上・右上・左下・右下
+  bUlt.style.gridArea = "1 / 1";
+  bTarget.style.gridArea = "1 / 3";
+  bPurify.style.gridArea = "2 / 1";
+  bEmpty.style.gridArea = "2 / 3";
+  const hint = h("div", "hint");
+  const overlay = h("div", "overlay");
+  overlay.hidden = true;
+  bottom.append(controls, hint, overlay);
+  v.refs = { ...v.refs, bottom, controls, bUlt, bTarget, hint, overlay, wheel };
+
+  screens.append(top, bottom);
+  battle.append(screens, v.logEl);
+  app.append(battle);
+}
+
+function toggleZero(v: View): void {
+  v.zero = !v.zero;
+  v.mode = "none";
+}
+
+function onUnitClick(v: View, u: UnitState): void {
+  const me = v.state.players[0];
+  if (u.owner === 1) {
+    if (v.zero) send(v, { t: "pokeStart", enemyUnit: u.index });
+    else send(v, { t: "target", enemyUnit: u.index });
+    return;
+  }
+  const pos = me.wheel.indexOf(u.index);
+  if (pos < 3) tryUlt(v, pos);
+}
+
+function onWheelClick(v: View, u: UnitState): void {
+  const pos = v.state.players[0].wheel.indexOf(u.index);
+  if (pos >= 3) {
+    send(v, { t: "purify", allySlot: pos });
+    v.mode = "none";
+  } else {
+    tryUlt(v, pos);
+  }
+}
+
+function tryUlt(v: View, pos: number): void {
+  send(v, { t: "ultStart", allySlot: pos, grand: v.zero });
+  v.mode = "none";
+  if (v.zero) v.zero = false;
+}
+
+function bindWheelDrag(v: View, wheel: HTMLElement): void {
+  let startAngle: number | null = null;
+  const angle = (e: PointerEvent) => {
+    const r = wheel.getBoundingClientRect();
+    return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
+  };
+  wheel.addEventListener("pointerdown", (e) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    startAngle = angle(e);
+    wheel.setPointerCapture(e.pointerId);
+  });
+  wheel.addEventListener("pointermove", (e) => {
+    if (startAngle === null) return;
+    let d = angle(e) - startAngle;
+    if (d > Math.PI) d -= 2 * Math.PI;
+    if (d < -Math.PI) d += 2 * Math.PI;
+    if (Math.abs(d) > 0.5) {
+      send(v, { t: "rotate", dir: d > 0 ? "cw" : "ccw" });
+      startAngle = null;
+    }
+  });
+  const end = () => {
+    startAngle = null;
+  };
+  wheel.addEventListener("pointerup", end);
+  wheel.addEventListener("pointercancel", end);
+}
+
+document.addEventListener("keydown", (e) => {
+  const v = view;
+  if (!v || !v.running) return;
+  const k = e.key.toLowerCase();
+  const me = v.state.players[0];
+  if (k === "q") send(v, { t: "rotate", dir: "ccw" });
+  else if (k === "e") send(v, { t: "rotate", dir: "cw" });
+  else if (k === "z") toggleZero(v);
+  else if (k === " ") {
+    e.preventDefault();
+    send(v, { t: "ultRelease" });
+  } else if (k === "escape") {
+    if (me.poke) send(v, { t: "pokeStop" });
+    else send(v, { t: "ultCancel" });
+    v.mode = "none";
+  } else if (k >= "1" && k <= "3") tryUlt(v, Number(k) - 1);
+  else if (k >= "4" && k <= "6") send(v, { t: "purify", allySlot: Number(k) - 1 });
+  else if (k === "tab") {
+    e.preventDefault();
+    const foe = v.state.players[1];
+    const front = [0, 1, 2].map((p) => foe.units[foe.wheel[p]]).filter(isAlive);
+    if (front.length === 0) return;
+    const cur = front.findIndex((u) => u.index === me.target);
+    const next = front[(cur + 1) % front.length];
+    send(v, v.zero ? { t: "pokeStart", enemyUnit: next.index } : { t: "target", enemyUnit: next.index });
+  }
+});
+
+// ---- ゲームの進行（1 tick = 50ms） ----
+
+function frame(now: number): void {
+  const v = view;
+  if (!v || !v.running) return;
+  v.acc += Math.min(now - v.lastFrame, 250);
+  v.lastFrame = now;
+  let steps = 0;
+  while (v.acc >= 50 && steps < 5 && !v.state.outcome) {
+    stepOnce(v);
+    v.acc -= 50;
+    steps++;
+  }
+  render(v);
+  if (v.state.outcome) {
+    v.running = false;
+    showResult(v);
+    return;
+  }
+  requestAnimationFrame(frame);
+}
+
+function stepOnce(v: View): void {
+  const inputs: PlayerInput[] = v.pending.map((input) => ({ player: 0, input }));
+  v.pending = [];
+  for (const input of cpuThink(v.cpu, v.state)) inputs.push({ player: 1, input });
+  const events: BattleEvent[] = [];
+  stepInPlace(v.state, inputs, events);
+  for (const e of events) onEvent(v, e);
+}
+
+function float(v: View, uid: number, text: string, cls: string): void {
+  const el = v.unitEl.get(uid);
+  if (!el) return;
+  const f = h("span", "float " + cls, text);
+  el.append(f);
+  setTimeout(() => f.remove(), 950);
+  if (cls === "dmg" || cls === "crit") {
+    el.classList.add("hit");
+    setTimeout(() => el.classList.remove("hit"), 120);
+  }
+}
+
+function onEvent(v: View, e: BattleEvent): void {
+  const side = (uid: number) => (uid < 6 ? "a" : "f");
+  switch (e.t) {
+    case "damage":
+      float(v, e.dst, String(e.amount), e.crit ? "crit" : "dmg");
+      if (e.crit) log(v, `${unitName(v, e.src ?? e.dst)} のクリティカル！ ${e.amount}`, side(e.src ?? e.dst));
+      if (e.source === "trait") log(v, `${unitName(v, e.dst)} に特性のダメージ ${e.amount}`, side(e.dst));
+      break;
+    case "heal":
+      if (e.amount > 0) float(v, e.dst, "+" + e.amount, "heal");
+      break;
+    case "action":
+      if (e.action === "loaf") {
+        float(v, e.uid, "なまけ", "info");
+        log(v, `${unitName(v, e.uid)} はなまけている`, side(e.uid));
+      } else if (e.action === "guard") float(v, e.uid, "守り", "info");
+      break;
+    case "curse":
+      if (e.result === "hit") {
+        float(v, e.dst, CURSE[e.kind] + TIER[e.tier], "info");
+        log(v, `${unitName(v, e.src)} → ${unitName(v, e.dst)} に ${CURSE[e.kind]}${TIER[e.tier]}`, side(e.src));
+      } else {
+        float(v, e.dst, e.result === "miss" ? "呪付 失敗" : "呪付 無効", "info");
+      }
+      break;
+    case "bless":
+      float(v, e.dst, BLESS[e.kind] + TIER[e.tier], "info");
+      break;
+    case "ko":
+      log(v, `${unitName(v, e.uid)} が倒れた`, side(e.uid));
+      break;
+    case "ult": {
+      const q = e.quality === "perfect" ? "Perfect" : e.quality === "good" ? "Good" : "Miss";
+      log(v, `${unitName(v, e.uid)} の${e.grand ? "大奥義" : "奥義"}「${def(unitOf(v, e.uid)).ultName}」 ${q}`, side(e.uid));
+      break;
+    }
+    case "stance":
+      if (e.player === 1) log(v, `${unitName(v, e.uid)} が${e.grand ? "大奥義" : "奥義"}を構えた！`, "f");
+      break;
+    case "stanceCancel":
+      if (e.player === 0 && e.reason !== "input") log(v, "構えがキャンセルされた", "a");
+      break;
+    case "doll":
+      log(v, `${unitName(v, e.uid)} は身代わり人形で耐えた`, side(e.uid));
+      break;
+    case "endure":
+      float(v, e.uid, "踏ん張り", "info");
+      log(v, `${unitName(v, e.uid)} は踏ん張った`, side(e.uid));
+      break;
+    case "firstStrike":
+      float(v, e.uid, "先駆け", "info");
+      break;
+    case "forcedRotate":
+      log(v, `${e.player === 0 ? "こちら" : "相手"}の前衛が全滅して、ホイールが回った`, e.player === 0 ? "a" : "f");
+      break;
+    case "suddenDeath":
+      log(v, "サドンデス！ ダメージが全部 999 になる", "f");
+      break;
+    case "pokeEnd":
+      if (e.player === 0) log(v, e.result === "success" ? "つつき成功：妖気を吸った" : "つつき終了", "a");
+      break;
+    case "curseCleared":
+      if (e.by === "purify") log(v, `${unitName(v, e.uid)} の呪付を浄化した`, side(e.uid));
+      break;
+    default:
+      break;
+  }
+}
+
+function unitOf(v: View, uid: number): UnitState {
+  return v.state.players[uid < 6 ? 0 : 1].units[uid % 6];
+}
+
+// ---- 描画 ----
+
+function pct(n: number, d: number): string {
+  return `${Math.max(0, Math.min(100, (n * 100) / d))}%`;
+}
+
+function renderUnit(v: View, u: UnitState, el: HTMLElement): void {
+  const p = v.state.players[u.owner];
+  const me = v.state.players[0];
+  const d = def(u);
+  (el.querySelector(".n") as HTMLElement).textContent = d.name;
+  const st = el.querySelector(".st") as HTMLElement;
+  st.textContent = `HP ${u.hp}/${u.maxHp}`;
+  (el.querySelector(".hp i") as HTMLElement).style.width = pct(u.hp, u.maxHp);
+  el.querySelector(".hp")!.classList.toggle("low", hpRatio(u) <= 250);
+  const need = Math.max(1, C.actionPoints(u.spd) * C.AG_PER_ACTION_POINT);
+  (el.querySelector(".ag i") as HTMLElement).style.width = pct(u.ag, need);
+  (el.querySelector(".sg i") as HTMLElement).style.width = pct(u.sg, C.SG_FULL);
+  el.querySelector(".sg")!.classList.toggle("full", u.sg >= C.SG_FULL);
+  const fx = el.querySelector(".fx") as HTMLElement;
+  const chips: string[] = [];
+  if (u.curse) chips.push(`<span class="chip c">${CURSE[u.curse.kind]}${TIER[u.curse.tier]} ${secs(u.curse.remaining)}</span>`);
+  if (u.blessing) chips.push(`<span class="chip b">${BLESS[u.blessing.kind]} ${secs(u.blessing.remaining)}</span>`);
+  if (u.guarding) chips.push('<span class="chip g">守り</span>');
+  if (u.loafing) chips.push('<span class="chip l">なまけ中</span>');
+  const html = chips.join("");
+  if (fx.innerHTML !== html) fx.innerHTML = html;
+  el.classList.toggle("dead", !isAlive(u));
+  const st2 = p.stance;
+  el.classList.toggle("stance", !!st2 && (st2.unit === u.index || st2.partners.includes(u.index)));
+  el.classList.toggle("grand", !!st2 && st2.grand);
+  el.classList.toggle("targeted", u.owner === 1 && me.target === u.index);
+  el.classList.toggle("pokeable", u.owner === 1 && v.zero && isAlive(u) && (u.curse !== null || u.loafing));
+  el.classList.toggle("pick", u.owner === 0 && v.mode === "ult" && u.sg >= C.SG_FULL && isAlive(u));
+}
+
+function render(v: View): void {
+  const s = v.state;
+  const r = v.refs;
+  // 時計
+  const left = s.tick < C.SUDDEN_DEATH_TICKS ? C.SUDDEN_DEATH_TICKS - s.tick : C.TIME_LIMIT_TICKS - s.tick;
+  const sec = Math.max(0, Math.ceil(left / C.TICKS_PER_SEC));
+  r.clock.textContent = `${s.tick >= C.SUDDEN_DEATH_TICKS ? "サドンデス " : ""}${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+  r.clock.classList.toggle("sudden", s.tick >= C.SUDDEN_DEATH_TICKS);
+  // 前衛
+  for (const pid of [0, 1] as const) {
+    const p = s.players[pid];
+    const line = pid === 0 ? r.allyLine : r.foeLine;
+    const want = [0, 1, 2].map((pos) => v.unitEl.get(p.units[p.wheel[pos]].uid)!);
+    if (want.some((el, i) => line.children[i] !== el)) line.replaceChildren(...want);
+    for (const el of want) renderUnit(v, unitOf(v, Number(el.dataset.uid)), el);
+    // 後衛の SG
+    const res = pid === 0 ? r.allyRes : r.foeRes;
+    const back = [3, 4, 5].map((pos) => p.units[p.wheel[pos]]);
+    res.innerHTML = back
+      .map((u) => `<span class="${isAlive(u) ? "" : "dead"}" title="${def(u).name}"><i style="width:${pct(u.sg, C.SG_FULL)}"></i></span>`)
+      .join("");
+  }
+  // 陣
+  const me = s.players[0];
+  const forms = new Set<string>();
+  for (let pos = 0; pos < 3; pos++) {
+    const u = me.units[me.wheel[pos]];
+    const f = formationPermil(me, u);
+    if (f > 0) forms.add(`${TRIBE[def(u).tribe]}の陣 +${f / 10}%`);
+  }
+  r.formation.textContent = forms.size ? `こちらの陣：${[...forms].join("・")}` : "";
+
+  // ホイール
+  const rad = r.wheel.clientWidth / 2;
+  const R = rad - 32;
+  for (const u of me.units) {
+    const el = v.wheelEl.get(u.index)!;
+    const pos = me.wheel.indexOf(u.index);
+    const ang = ((-150 + pos * 60) * Math.PI) / 180;
+    el.style.left = `${rad + R * Math.cos(ang)}px`;
+    el.style.top = `${rad + R * Math.sin(ang)}px`;
+    const label = `<b>${def(u).name.slice(0, 3)}</b><br><span class="num">${Math.round((u.sg * 100) / C.SG_FULL)}%</span>`;
+    if (el.innerHTML !== label) el.innerHTML = label;
+    el.classList.toggle("front", pos < 3);
+    el.classList.toggle("dead", !isAlive(u));
+    el.classList.toggle("cursed", !!u.curse);
+    el.classList.toggle("purifying", me.purify?.unit === u.index);
+    el.classList.toggle("pick", (v.mode === "purify" && pos >= 3 && !!u.curse) || (v.mode === "ult" && pos < 3 && u.sg >= C.SG_FULL));
+    el.title = `${def(u).name}　HP ${u.hp}/${u.maxHp}${u.curse ? "　" + CURSE[u.curse.kind] : ""}`;
+  }
+  const cool = r.wheel.querySelector(".cool") as HTMLElement;
+  const cd = me.rotateCooldown / C.ROTATE_COOLDOWN;
+  cool.style.background = cd > 0 ? `conic-gradient(var(--lantern) ${cd * 360}deg, transparent 0)` : "transparent";
+  cool.style.mask = "radial-gradient(circle, transparent 66%, #000 67%)";
+
+  r.controls.classList.toggle("zero", v.zero);
+  r.bottom.classList.toggle("zero", v.zero);
+  r.bUlt.textContent = v.zero ? "大奥義" : "奥義";
+  r.bTarget.textContent = v.zero ? "つつき" : "標的";
+  r.bUlt.classList.toggle("on", v.mode === "ult");
+  r.hint.textContent = hintText(v);
+  renderOverlay(v);
+}
+
+function hintText(v: View): string {
+  const me = v.state.players[0];
+  if (v.mode === "ult") return v.zero ? "大奥義を撃つ前衛を選ぶ（自分と両隣の妖気が満タン）" : "奥義を撃つ前衛を選ぶ（妖気が満タン）";
+  if (v.mode === "purify") return "浄化する後衛（呪付のかかったユニット）を選ぶ";
+  if (v.zero) return "ゼロ：光っている敵をクリックでつつき。奥義ボタンは大奥義になる";
+  if (me.rotateCooldown > 0) return `回転まで ${secs(me.rotateCooldown)} 秒`;
+  return "敵をクリックで標的。前衛の妖気が満タンならクリックで奥義";
+}
+
+function renderOverlay(v: View): void {
+  const me = v.state.players[0];
+  const ov = v.refs.overlay;
+  if (me.stance) {
+    ov.hidden = false;
+    const st = me.stance;
+    const charge = v.state.tick - st.startTick;
+    const cursor = charge % C.SKILL_CURSOR_PERIOD;
+    const tier = charge <= 9 ? 1 : charge <= 19 ? 2 : 3;
+    const mult = ["1.0", "1.1", "1.2"][tier - 1];
+    const key = `stance:${st.unit}:${st.grand}`;
+    if (ov.dataset.key !== key) {
+      ov.dataset.key = key;
+      ov.replaceChildren();
+      const title = h("div", "title", `${def(me.units[st.unit]).name} の${st.grand ? "大奥義" : "奥義"}「${def(me.units[st.unit]).ultName}」`);
+      const chargeEl = h("div", "charge");
+      const ring = h("button", "skill");
+      ring.title = "クリックで解放（Space）";
+      ring.onclick = () => send(v, { t: "ultRelease" });
+      for (let i = 0; i < C.SKILL_CURSOR_PERIOD; i++) {
+        const seg = h("span", "seg" + (C.PERFECT_CELLS.includes(i) ? " perfect" : C.GOOD_CELLS.includes(i) ? " good" : ""));
+        const a = ((-90 + (i * 360) / C.SKILL_CURSOR_PERIOD) * Math.PI) / 180;
+        seg.style.transform = `translate(${60 * Math.cos(a)}px, ${60 * Math.sin(a)}px)`;
+        ring.append(seg);
+      }
+      ring.append(h("span", "face", "解放"));
+      const row = h("div", "row");
+      const rel = h("button", "btn primary", "解放（Space）");
+      rel.onclick = () => send(v, { t: "ultRelease" });
+      const can = h("button", "btn", "キャンセル（Esc）");
+      can.onclick = () => send(v, { t: "ultCancel" });
+      row.append(rel, can);
+      const note = h("div", "help", "橙が Perfect、緑が Good。溜めるほど強いが、2秒を超えると自動で Miss。");
+      ov.append(title, chargeEl, ring, row, note);
+    }
+    const chargeEl = ov.querySelector(".charge") as HTMLElement;
+    chargeEl.innerHTML =
+      `溜め ${[1, 2, 3].map((t) => `<span class="${t <= tier ? "on" : ""}"></span>`).join("")} ×${mult}` +
+      `　残り ${secs(Math.max(0, C.CHARGE_MAX_TICKS - charge))} 秒`;
+    ov.querySelectorAll(".seg").forEach((seg, i) => seg.classList.toggle("cur", i === cursor));
+    return;
+  }
+  if (me.poke) {
+    ov.hidden = false;
+    const k = me.poke;
+    const target = v.state.players[1].units[k.target];
+    const key = `poke:${k.target}`;
+    if (ov.dataset.key !== key) {
+      ov.dataset.key = key;
+      ov.replaceChildren();
+      const title = h("div", "title", `${def(target).name} をつつく`);
+      const gauge = h("div", "gauge");
+      gauge.append(h("i"));
+      const info = h("div", "help num");
+      const grid = h("div", "grid4");
+      for (let i = 0; i < C.POKE_CELLS; i++) {
+        const c = h("button", "cell");
+        c.onpointerdown = (e) => {
+          e.preventDefault();
+          send(v, { t: "pokeTap", cell: i });
+        };
+        grid.append(c);
+      }
+      const stop = h("button", "btn", "やめる（Esc）");
+      stop.onclick = () => send(v, { t: "pokeStop" });
+      ov.append(title, gauge, info, grid, stop);
+    }
+    (ov.querySelector(".gauge i") as HTMLElement).style.width = pct(k.gauge, C.POKE_GAUGE_GOAL);
+    (ov.querySelector(".help") as HTMLElement).textContent =
+      `残り ${secs(C.POKE_TICKS - k.elapsed)} 秒　ゲージ ${k.gauge}/${C.POKE_GAUGE_GOAL}（★を連打）`;
+    ov.querySelectorAll(".cell").forEach((c, i) => {
+      c.classList.toggle("weak", i === k.weakCell);
+      c.textContent = i === k.weakCell ? "★" : "";
+    });
+    return;
+  }
+  if (!ov.hidden) {
+    ov.hidden = true;
+    ov.dataset.key = "";
+  }
+}
+
+function showResult(v: View): void {
+  const o = v.state.outcome!;
+  const wrap = h("div", "result");
+  const box = h("div", "box");
+  const text = o.winner === 0 ? "勝ち" : o.winner === 1 ? "負け" : "引き分け";
+  box.append(h("div", "big", text));
+  box.append(
+    h(
+      "div",
+      "muted",
+      `${o.reason === "ko" ? "全滅" : "時間切れ（残り HP の割合）"}・${Math.floor(v.state.tick / C.TICKS_PER_SEC)} 秒`,
+    ),
+  );
+  const row = h("div", "row");
+  const again = h("button", "btn primary", "同じチームでもう一度");
+  again.onclick = () => {
+    wrap.remove();
+    startBattle(picked.map((unit) => ({ unit })));
+  };
+  const back = h("button", "btn", "編成に戻る");
+  back.onclick = () => {
+    wrap.remove();
+    view = null;
+    showSetup();
+  };
+  row.append(again, back);
+  row.style.justifyContent = "center";
+  box.append(row);
+  wrap.append(box);
+  document.body.append(wrap);
+}
+
+showSetup();

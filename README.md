@@ -16,7 +16,10 @@ npm install
 npm test                 # 単体テスト
 npm run typecheck        # 型チェック
 npm run sim -- --matches 10000 --seed 1   # CPU どうしで試合を回して集計（--json で JSON）
+npm run build:web        # ブラウザ版（人 vs CPU）を dist/yokai-taisen.html に書き出す
 ```
+
+ブラウザ版は1つの HTML ファイルなので、`dist/yokai-taisen.html` をブラウザで開けば遊べる。
 
 ## 構成
 
@@ -29,4 +32,5 @@ npm run sim -- --matches 10000 --seed 1   # CPU どうしで試合を回して�
 | `src/core/cpu.ts` | シミュレーター用の CPU（BATTLE_SPEC §12.8） |
 | `src/core/match.ts` | 試合を最後まで回す・リプレイの再生 |
 | `src/sim/` | CLI シミュレーター |
+| `src/web/` | ブラウザ版の試作（P2）。画面と入力だけで、戦闘は `src/core` を使う |
 | `test/` | 単体テスト（vitest） |
