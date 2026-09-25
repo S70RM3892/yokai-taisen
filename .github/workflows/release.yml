@@ -1,12 +1,14 @@
-# 妖怪大戦を GitHub Pages に公開し、v で始まるタグを押したら GitHub Release も作る。
-#   main に push      → テスト → ビルド → Pages に公開（https://<owner>.github.io/<repo>/）
-#   タグ v* を push   → 上に加えて、dist/index.html を添付した Release を作る
+# 妖怪大戦を公開する。
+#   main に push → テスト → ビルド →
+#     ・package.json の version の Release（v1.0.0 など）がまだ無ければ作り、yokai-taisen.html を添付
+#     ・GitHub Pages に公開（https://<owner>.github.io/<repo>/）
+#       ※ 初回だけ、リポジトリの Settings → Pages → Source を「GitHub Actions」にする
+# 版を上げるときは package.json の version を上げて main に入れる。
 name: release
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -15,7 +17,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: release
   cancel-in-progress: false
 
 jobs:
@@ -30,31 +32,50 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - name: Pages 用にまとめる
+      - name: 公開するファイルをまとめる
         run: |
           mkdir -p _site
           cp dist/index.html _site/index.html
           touch _site/.nojekyll
-      - uses: actions/configure-pages@v5
+          cp dist/index.html yokai-taisen.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yokai-taisen
+          path: yokai-taisen.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
-      - name: Release（タグのときだけ）
-        if: startsWith(github.ref, 'refs/tags/v')
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: yokai-taisen
+      - name: Release を作る（同じ版がまだ無いときだけ）
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp dist/index.html yokai-taisen.html
-          gh release create "$GITHUB_REF_NAME" yokai-taisen.html \
-            --title "妖怪大戦 $GITHUB_REF_NAME" \
-            --notes "ブラウザで開くだけで遊べる 1 ファイル版（yokai-taisen.html）。オンライン版：https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
+          VER="v$(node -p "require('./package.json').version")"
+          if gh release view "$VER" >/dev/null 2>&1; then
+            echo "$VER はもうある"
+          else
+            gh release create "$VER" yokai-taisen.html --target "$GITHUB_SHA" \
+              --title "妖怪大戦 $VER" \
+              --notes "yokai-taisen.html をダウンロードしてブラウザで開くだけで遊べる（1 ファイル）。オンライン版：https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
+          fi
 
-  deploy:
+  pages:
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - id: deployment
         uses: actions/deploy-pages@v4

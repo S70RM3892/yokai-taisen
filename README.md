@@ -15,8 +15,9 @@
 - オンライン版：<https://s70rm3892.github.io/yokai-taisen/>（GitHub Pages）
 - 1 ファイル版：[Releases](https://github.com/s70rm3892/yokai-taisen/releases) の `yokai-taisen.html` をダウンロードしてブラウザで開く
 
-`main` に push すると GitHub Actions（`.github/workflows/release.yml`）がテスト → ビルド → Pages へ公開する。
-`v` で始まるタグ（例 `v1.0.0`）を push すると、`yokai-taisen.html` を添付した Release も作る。
+`main` に push すると GitHub Actions（`.github/workflows/release.yml`）がテスト → ビルド → Pages へ公開し、
+`package.json` の version（例 1.0.0 → `v1.0.0`）の Release がまだ無ければ `yokai-taisen.html` を添付して作る。
+版を上げるときは version を上げて main に入れる。Pages を使うには、初回だけリポジトリの Settings → Pages → Source を「GitHub Actions」にする。
 
 ## 作り方
 
