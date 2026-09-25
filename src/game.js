@@ -10827,6 +10827,7 @@
   /*@@include ext/traits.js@@*/
   /*@@include ext/loadout.js@@*/
   /*@@include ext/engine_fx.js@@*/
+  /*@@include ext/engine_minigames.js@@*/
   Ni.push(...HONKE_EQUIP);
 
   function Ah(e) {
@@ -10999,7 +11000,8 @@
         pokeCooldown: 0,
         pokeRng: ni(e, Eh + n),
         bag: validBag(opts.bags?.[n]),
-        itemCooldown: 0
+        itemCooldown: 0,
+        mgRng: ni(e, 30 + n)
       }
     });
     for (let i of r) {
@@ -11083,9 +11085,7 @@
       }
       return i
     }
-    a.stance ? (e.releaseAt === null && (e.releaseAt = gt(e.rng, 1e3) < e.params.perfectPermil ? Zn[gt(e.rng, Zn.length)] : Mu[gt(e.rng, Mu.length)]), t.tick - a.stance.startTick >= e.releaseAt && i.push({
-      t: "ultRelease"
-    })) : e.releaseAt = null;
+    cpuChargeInputs(e, t, i);
     let n = [0, 1, 2].map(c => a.units[a.wheel[c]]),
       s = [3, 4, 5].map(c => a.units[a.wheel[c]]),
       l = n.some(li) && s.some(Se);
@@ -11167,8 +11167,11 @@
         return 2;
       case "ultStart":
       case "ultRelease":
+      case "ultCharge":
       case "ultCancel":
         return 3;
+      case "purifyTap":
+        return 2;
       case "pokeStart":
       case "pokeTap":
       case "pokeStop":
@@ -11478,7 +11481,8 @@
         let l = i.units[i.wheel[a.allySlot]];
         return !Se(l) || !l.curse ? !1 : (i.purify = {
           unit: l.index,
-          progress: 0
+          progress: 0,
+          game: PURIFY_KEYS[gt(i.mgRng, PURIFY_KEYS.length)]
         }, r.push({
           t: "purifyStart",
           player: t,
@@ -11501,16 +11505,23 @@
           startTick: e.tick,
           grand: a.grand === !0,
           partners: u,
-          releaseRequested: !1
+          releaseRequested: !1,
+          game: CHARGE_KEYS[gt(i.mgRng, CHARGE_KEYS.length)],
+          power: 0
         }, r.push({
           t: "stance",
           player: t,
           uid: l.uid,
-          grand: a.grand === !0
+          grand: a.grand === !0,
+          game: i.stance.game
         }), !0
       }
       case "ultRelease":
-        return s || !i.stance || i.stance.releaseRequested ? !1 : (i.stance.releaseRequested = !0, !0);
+        return s || !i.stance ? !1 : awaseroPress(e, i);
+      case "ultCharge":
+        return s ? !1 : chargeInput(i, a.amount);
+      case "purifyTap":
+        return purifyInput(i, a.amount);
       case "ultCancel":
         return s || !i.stance ? !1 : (Ii(e, t, r, "input"), !0);
       case "pokeStart": {
@@ -11594,19 +11605,10 @@
       i = r.stance;
     if (!i) return;
     let n = e.tick - i.startTick,
-      s = !i.releaseRequested && n > ru;
-    if (!i.releaseRequested && !s) return;
-    let l = Hn[Hn.length - 1].mult;
-    for (let c of Hn)
-      if (n <= c.maxTick) {
-        l = c.mult;
-        break
-      } let u = "miss";
-    if (!s) {
-      let c = n % Di;
-      iu.includes(c) ? u = "perfect" : nu.includes(c) && (u = "good")
-    }
-    let o = u === "perfect" ? Mc : u === "good" ? Ac : Sc,
+      cr0 = chargeResult(e, i);
+    if (!cr0) return;
+    let [u, l, s] = cr0,
+      o = u === "perfect" ? Mc : u === "good" ? Ac : Sc,
       d = r.units[i.unit];
     d.sg = 0;
     for (let c of i.partners) r.units[c].sg = 0;
@@ -11868,7 +11870,7 @@
       r.purify = null;
       return
     }
-    i.progress += 1e3 + (n.fx.purifyFast ?? 0), i.progress >= Hc * 1e3 && (n.curse = null, r.purify = null, a.push({
+    i.progress += Math.floor(PURIFY_IDLE * (1e3 + (n.fx.purifyFast ?? 0)) / 1e3), i.progress >= PURIFY_FULL && (n.curse = null, r.purify = null, a.push({
       t: "curseCleared",
       uid: n.uid,
       by: "purify"
@@ -33147,7 +33149,9 @@ void main() {
       e.mode = "none"
     }, h[2].onclick = () => {
       e.mode = e.mode === "purify" ? "none" : "purify"
-    }, h[3].disabled = !0;
+    }, h[3].onclick = () => {
+      e.mode = e.mode === "item" || e.mode === "itemTarget" ? "none" : "item", e.fleeArm = null
+    };
     let f = q("div", "wheelbox"),
       g = Ke("svg", {
         class: "wheel3d",
@@ -33196,7 +33200,7 @@ void main() {
         r: 10,
         class: "wsoul",
         transform: `rotate(-90 ${L} ${ee})`
-      })), W.addEventListener("click", () => V2(e, N)), p.append(W)
+      })), p.append(W)
     }
     let y = Ke("g", {
       class: "dial"
@@ -33318,6 +33322,14 @@ void main() {
   }
 
   function V2(e, t) {
+    if (e.mode === "itemTarget") {
+      zt(e, {
+        t: "item",
+        slot: e.itemSlot,
+        allySlot: t
+      }), e.mode = "none";
+      return
+    }
     performance.now() - Cd < 300 || (t >= 3 ? (zt(e, {
       t: "purify",
       allySlot: t
@@ -33347,7 +33359,11 @@ void main() {
     } : {
       t: "target",
       enemyUnit: s.index
-    }) : Yl(e, e.state.players[0].wheel.indexOf(s.index))
+    }) : e.mode === "itemTarget" ? (zt(e, {
+      t: "item",
+      slot: e.itemSlot,
+      allySlot: e.state.players[0].wheel.indexOf(s.index)
+    }), e.mode = "none") : Yl(e, e.state.players[0].wheel.indexOf(s.index))
   }
 
   function Un(e, t) {
@@ -33369,7 +33385,8 @@ void main() {
   }
 
   function G2(e, t) {
-    let a = !1,
+    let noSpin = !1,
+      a = !1,
       r = 0,
       i = 0,
       n = l => {
@@ -33378,15 +33395,29 @@ void main() {
       };
     t.addEventListener("pointerdown", l => {
       let u = t.getBoundingClientRect();
-      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || e.state.players[0].rotateCooldown > 0 || (a = !0, e.svg.rotor.setAttribute("data-drag", "1"), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
+      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.state.players[0].rotateCooldown > 0 || e.mode !== "none", noSpin || e.svg.rotor.setAttribute("data-drag", "1"), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
     }), t.addEventListener("pointermove", l => {
-      if (!a) return;
+      if (!a || noSpin) return;
       let u = n(l),
         o = u - r;
       o > Math.PI && (o -= 2 * Math.PI), o < -Math.PI && (o += 2 * Math.PI), i += o, r = u, e.preview = Math.max(-5, Math.min(5, Math.round(i / (Math.PI / 3)))), e.svg.rotor.setAttribute("transform", `rotate(${i*180/Math.PI})`)
     });
-    let s = () => {
-      a && (a = !1, e.svg.rotor.removeAttribute("data-drag"), Math.abs(i) > .2 && (Cd = performance.now()), Ld(e))
+    let s = l => {
+      if (!a) return;
+      a = !1, e.svg.rotor.removeAttribute("data-drag");
+      if (Math.abs(i) > .2) Cd = performance.now(), Ld(e);
+      else {
+        // ほとんど動かしていなければ「タップ」：押した場所の枠を選ぶ
+        e.preview = 0, e.svg.rotor.removeAttribute("transform");
+        let u = t.getBoundingClientRect(),
+          dx = l.clientX - (u.left + u.width / 2),
+          dy = l.clientY - (u.top + u.height / 2),
+          rr = Math.hypot(dx, dy) / (u.width / 2) * 160;
+        if (l.type === "pointerup" && rr > 62 && rr < 158) {
+          let deg = Math.atan2(dy, dx) * 180 / Math.PI;
+          V2(e, ((Math.round((deg + 150) / 60) % 6) + 6) % 6)
+        }
+      }
     };
     t.addEventListener("pointerup", s), t.addEventListener("pointercancel", s)
   }
@@ -33398,6 +33429,7 @@ void main() {
     if (a === "q") Un(t, -1);
     else if (a === "e") Un(t, 1);
     else if (a === "z") Bd(t);
+    else if (a === "i") t.mode = t.mode === "item" || t.mode === "itemTarget" ? "none" : "item";
     else if (a === " ") e.preventDefault(), zt(t, {
       t: "ultRelease"
     });
@@ -33506,7 +33538,7 @@ void main() {
         ma(e, t.dst, "+" + t.amount, "heal"), t.amount >= 20 && f2();
         break;
       case "curse":
-        t.result === "hit" ? (r.cast(t.src, 11566304), ma(e, t.dst, Wl[t.kind] + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${Wl[t.kind]}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "呪付 失敗" : "呪付 無効", "info");
+        t.result === "hit" ? (r.cast(t.src, 11566304), ma(e, t.dst, Wl[t.kind] + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${Wl[t.kind]}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "呪付 失敗" : t.result === "resisted" ? "ふせいだ" : "呪付 無効", "info");
         break;
       case "bless":
         r.cast(t.src, 5030564), ma(e, t.dst, Ad[t.kind] + Bn[t.tier], "info"), g2();
@@ -33555,7 +33587,24 @@ void main() {
         t.player === 0 && t.result === "success" && Jr(e, "吸収！", "good", "妖気を吸った", 900), t.player === 0 && Rt(e, t.result === "success" ? "つつき成功：妖気を吸った" : "つつき終了", "a");
         break;
       case "curseCleared":
-        t.by === "purify" && Rt(e, `${la(e,t.uid)} の呪付を浄化した`, a(t.uid));
+        t.by === "purify" && (Rt(e, `${la(e,t.uid)} の呪付を浄化した`, a(t.uid)), t.uid < 6 && Jr(e, "おはらい成功！", "good", "", 800));
+        break;
+      case "purifyStart":
+        t.player === 0 && (e.purifyHidden = null);
+        break;
+      case "item": {
+        let it = battleItem(t.item);
+        ma(e, t.uid, it.name + (t.fav ? "（好物！）" : ""), "info"), f2(), Rt(e, `${t.player === 0 ? "こちら" : "相手"}は ${it.name} を${it.kind === "flee" ? "使った" : ` ${la(e, t.uid)} に使った`}${t.fav ? "（好物！）" : ""}`, t.player === 0 ? "a" : "f");
+        break
+      }
+      case "revive":
+        ma(e, t.uid, "復活！", "heal"), g2(), Rt(e, `${la(e,t.uid)} が復活した（HP ${t.amount}）`, a(t.uid));
+        break;
+      case "evade":
+        ma(e, t.uid, "かわした", "info");
+        break;
+      case "sgSteal":
+        ma(e, t.dst, `妖気 -${t.amount}`, "info");
         break;
       default:
         break
@@ -33644,7 +33693,7 @@ void main() {
 
   function Hd(e) {
     let t = [];
-    return e.curse && t.push(`<span class="chip c">${Wl[e.curse.kind]}${Bn[e.curse.tier]} ${Ti(e.curse.remaining)}</span>`), e.blessing && t.push(`<span class="chip b">${Ad[e.blessing.kind]} ${Ti(e.blessing.remaining)}</span>`), e.guarding && t.push('<span class="chip g">守り</span>'), e.loafing && t.push('<span class="chip l">なまけ中</span>'), t.join("")
+    return e.curse && t.push(`<span class="chip c">${Wl[e.curse.kind]}${Bn[e.curse.tier]} ${Ti(e.curse.remaining)}</span>`), e.blessing && t.push(`<span class="chip b">${Ad[e.blessing.kind]} ${Ti(e.blessing.remaining)}</span>`), e.talisman && t.push(`<span class="chip b">札 ${STAT_JA[e.talisman.stat]} ${Ti(e.talisman.remaining)}</span>`), e.guarding && t.push('<span class="chip g">守り</span>'), e.loafing && t.push('<span class="chip l">なまけ中</span>'), t.join("")
   }
 
   function j2(e, t) {
@@ -33687,60 +33736,26 @@ void main() {
     }), r.removeAttribute("transform")), e.preview !== 0 && !r.hasAttribute("data-drag") ? r.setAttribute("transform", `rotate(${e.preview*60})`) : e.preview === 0 && !r.hasAttribute("data-drag") && r.removeAttribute("transform"), r.querySelectorAll(".wedge").forEach(s => {
       let l = Number(s.dataset.pos),
         u = t.units[t.wheel[l]];
-      s.classList.toggle("front", l < 3), s.classList.toggle("dead", !Se(u)), s.classList.toggle("cursed", !!u.curse), s.classList.toggle("purifying", t.purify?.unit === u.index), s.classList.toggle("pick", e.mode === "purify" && l >= 3 && !!u.curse || e.mode === "ult" && l < 3 && u.sg >= Nt && Se(u));
+      s.classList.toggle("front", l < 3), s.classList.toggle("dead", !Se(u)), s.classList.toggle("cursed", !!u.curse), s.classList.toggle("purifying", t.purify?.unit === u.index), s.classList.toggle("pick", e.mode === "purify" && l >= 3 && !!u.curse || e.mode === "ult" && l < 3 && u.sg >= Nt && Se(u) || e.mode === "itemTarget" && canUseItem(t, e.itemSlot, l));
       let o = s.querySelector(".wsoul"),
         d = 2 * Math.PI * 10;
       o.setAttribute("stroke-dasharray", `${d*u.sg/Nt} ${d}`), o.classList.toggle("full", u.sg >= Nt)
     });
     let i = t.rotateCooldown / cu,
       n = 2 * Math.PI * 152;
-    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = "", e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
+    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
   }
 
   function Z2(e) {
     let t = e.state.players[0];
-    return e.mode === "ult" ? e.zero ? "大奥義を撃つ前衛を選ぶ（自分と両隣の妖気が満タン）" : "奥義を撃つ前衛を選ぶ（妖気が満タン）" : e.mode === "purify" ? "浄化する後衛（呪付のかかったユニット）を選ぶ" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "ゼロ：光っている敵をタップでつつき" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "ホイールをなぞって回す・敵をタップで標的"
+    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をホイールで選ぶ` : e.mode === "item" ? "持ち物から選ぶ" : e.mode === "ult" ? e.zero ? "大奥義を撃つ前衛を選ぶ（自分と両隣の妖気が満タン）" : "奥義を撃つ前衛を選ぶ（妖気が満タン）" : e.mode === "purify" ? "浄化する後衛（呪付のかかったユニット）を選ぶ" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "ゼロ：光っている敵をタップでつつき" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "ホイールをなぞって回す・敵をタップで標的"
   }
 
+  /*@@include ext/battle_ui.js@@*/
   function Q2(e) {
     let t = e.state.players[0],
       a = e.refs.overlay;
-    if (t.stance) {
-      a.hidden = !1;
-      let r = t.stance,
-        i = e.state.tick - r.startTick,
-        n = i % Di,
-        s = i <= 9 ? 1 : i <= 19 ? 2 : 3,
-        l = ["1.0", "1.1", "1.2"][s - 1],
-        u = `stance:${r.unit}:${r.grand}`;
-      if (a.dataset.key !== u) {
-        a.dataset.key = u, a.replaceChildren();
-        let o = q("div", "title", `${Ze(t.units[r.unit]).name} の${r.grand?"大奥義":"奥義"}「${Ze(t.units[r.unit]).ultName}」`),
-          d = q("div", "charge"),
-          c = q("button", "skill");
-        c.title = "タップで解放（Space）", c.onclick = () => zt(e, {
-          t: "ultRelease"
-        });
-        for (let m = 0; m < Di; m++) {
-          let p = q("span", "seg" + (iu.includes(m) ? " perfect" : nu.includes(m) ? " good" : "")),
-            y = (-90 + m * 360 / Di) * Math.PI / 180;
-          p.style.transform = `translate(${70*Math.cos(y)}px, ${70*Math.sin(y)}px)`, c.append(p)
-        }
-        let h = q("span", "face");
-        h.innerHTML = da(Ze(t.units[r.unit]).id, ""), c.append(h);
-        let f = q("div", "row"),
-          g = q("button", "btn primary", "解放");
-        g.onclick = () => zt(e, {
-          t: "ultRelease"
-        });
-        let k = q("button", "btn", "キャンセル");
-        k.onclick = () => zt(e, {
-          t: "ultCancel"
-        }), f.append(g, k), a.append(o, d, c, f)
-      }
-      a.querySelector(".charge").innerHTML = `溜め ${[1,2,3].map(o=>`<span class="${o<=s?"on":""}"></span>`).join("")} ×${l}　残り ${Ti(Math.max(0,ru-i))} 秒`, a.querySelectorAll(".seg").forEach((o, d) => o.classList.toggle("cur", d === n));
-      return
-    }
+    if (bottomOverlay(e)) return;
     if (t.poke) {
       a.hidden = !1;
       let r = t.poke,
@@ -33786,7 +33801,7 @@ void main() {
       i = t.winner === 0 ? "勝ち" : t.winner === 1 ? "負け" : "引き分け";
     y2(t.winner === 0);
     let n = Rd(e.diff);
-    t.winner === 0 ? (n.w++, n.streak++, n.best = Math.max(n.best, n.streak)) : (t.winner === 1 ? n.l++ : n.d++, n.streak = 0), Td("rec:" + e.diff, n), r.append(q("div", "big" + (t.winner === 1 ? " lose" : t.winner === 0 ? "" : " draw"), i)), r.append(q("div", "muted", `${or[e.diff].name}・${t.reason==="ko"?"全滅":"時間切れ（残り HP の割合）"}・${Math.floor(e.state.tick/20)} 秒`));
+    t.winner === 0 ? (n.w++, n.streak++, n.best = Math.max(n.best, n.streak)) : (t.winner === 1 ? n.l++ : n.d++, n.streak = 0), Td("rec:" + e.diff, n), r.append(q("div", "big" + (t.winner === 1 ? " lose" : t.winner === 0 ? "" : " draw"), i)), r.append(q("div", "muted", `${or[e.diff].name}・${t.reason==="ko"?"全滅":t.reason==="flee"?(t.by===0?"逃げた":"相手が逃げた"):"時間切れ（残り HP の割合）"}・${Math.floor(e.state.tick/20)} 秒`));
     let s = null,
       l = 0;
     for (let [g, k] of e.stats.dealt) g < 6 && k > l && (s = g, l = k);
@@ -33821,5 +33836,5 @@ void main() {
     }, c.append(h, f), c.style.justifyContent = "center", r.append(c), a.append(r), document.body.append(a)
   }
   /*@@include ext/gallery.js@@*/
-  location.hash.startsWith("#gallery") ? showGallery() : Sd()
+  debugHook(), location.hash.startsWith("#gallery") ? showGallery() : Sd()
 })();

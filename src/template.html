@@ -492,6 +492,56 @@ body { margin: 0; }
 .cf-line small { color: var(--muted); }
 .cf-bag { font-size: 13px; }
 
+/* ===== 対戦：アイテム・パワーチャージ・おはらい ===== */
+.bottom3d .overlay.mg { place-items: stretch; align-content: start; gap: 6px; padding: 8px 10px; overflow: hidden; }
+.mg-head { text-align: center; display: grid; gap: 1px; }
+.mg-name { font-family: var(--display); font-size: 22px; color: var(--lantern); letter-spacing: .06em; }
+.mg-name.purify { color: var(--bless); font-size: 18px; }
+.mg-head .title { font-size: 12px; }
+.mg-head .help { font-size: 11px; color: var(--muted); }
+.mg-stage { position: relative; width: min(100%, 250px); aspect-ratio: 1; margin-inline: auto; border-radius: 50%; background: radial-gradient(circle, #2a2f52 0%, #151a2c 70%); border: 2px solid #3b4468; touch-action: none; user-select: none; overflow: hidden; }
+.mg-stage.purify { border-radius: 18px; background: radial-gradient(circle, #283a44 0%, #121a22 75%); border-color: #3a6a6a; }
+.mg-face { position: absolute; inset: 30%; opacity: .5; pointer-events: none; }
+.mg-ring { position: absolute; inset: 8%; border-radius: 50%; border: 3px dashed #f2a54188; pointer-events: none; }
+.mg-arrow { position: absolute; left: 50%; top: 4%; margin-left: -14px; width: 28px; height: 92%; text-align: center; font-size: 26px; color: var(--lantern); transform-origin: 50% 50%; pointer-events: none; }
+.mg-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mg-path { fill: none; stroke: #f2a54166; stroke-width: 5; stroke-linejoin: round; }
+.mg-pt { fill: #262a42; stroke: #5b6690; stroke-width: 2; }
+.mg-pt.next { fill: var(--lantern); stroke: #fff; animation: mg-blink .5s infinite alternate; }
+@keyframes mg-blink { to { r: 12; } }
+.mg-mark { fill: #262a42; stroke: #5b6690; stroke-width: 2; }
+.mg-mark.near { fill: #3d5a37; }
+.mg-mark.lit { fill: var(--lantern); stroke: #fff; }
+.mg-num { fill: var(--lantern); font-family: var(--display); font-size: 16px; }
+.mg-needle { stroke: #f2d15c; stroke-width: 5; stroke-linecap: round; }
+.mg-hub { fill: #f2d15c; }
+.mg-judge { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); font-family: var(--display); font-size: 20px; pointer-events: none; animation: rise .6s ease-out forwards; }
+.mg-judge.perfect { color: var(--sg); } .mg-judge.good { color: var(--good); } .mg-judge.miss { color: var(--muted); }
+.mg-ball { position: absolute; width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6b0, #f2c21a); border: 2px solid #fff8; box-shadow: 0 0 10px #f2d15c; }
+.mg-ball.hit { background: radial-gradient(circle at 35% 35%, #fff, #d8dce8); box-shadow: 0 0 14px #fff; pointer-events: none; }
+.mg-gauge { width: min(100%, 250px); margin-inline: auto; height: 10px; }
+.mg-gauge i { background: var(--lantern); transition: width .08s; }
+.mg-gauge.fast i { background: linear-gradient(90deg, var(--lantern), var(--sg)); }
+.mg-gauge.purify i { background: var(--bless); }
+.overlay.mg .row { justify-content: center; }
+.mg-time { font-size: 12px; color: var(--muted); min-width: 8em; text-align: center; }
+.mg-chains { position: absolute; inset: 22%; border-radius: 50%; border: 6px dotted #b07ce0aa; pointer-events: none; transform: rotate(calc(var(--rub, 0) * 1deg)); }
+.mg-bubble { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffffffcc, #9ad0ff55 60%, #9ad0ff22); border: 2px solid #cfe8ff; animation: mg-pop-in .25s ease-out; }
+.mg-bubble.pop { transform: scale(1.6); opacity: 0; transition: .15s; pointer-events: none; }
+.mg-spot { position: absolute; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: radial-gradient(circle, #fff6c0, #f2a54188 60%, transparent 70%); border: 0; animation: mg-glow .6s infinite alternate; }
+.mg-spot.tap { animation: mg-tap .15s; }
+@keyframes mg-pop-in { from { transform: scale(.2); } }
+@keyframes mg-glow { to { filter: brightness(1.5); } }
+@keyframes mg-tap { 50% { transform: scale(.8); } }
+.mg-crack { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.mg-crack polyline { fill: none; stroke: #f2d15c; stroke-width: 2.5; stroke-dasharray: 4 3; filter: drop-shadow(0 0 3px #f2a541); }
+.it-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; overflow-y: auto; max-height: 72%; }
+.it-btn { display: flex; gap: 6px; align-items: center; text-align: left; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 5px 7px; font-size: 12px; }
+.it-btn small { display: block; color: var(--muted); font-size: 10px; }
+.it-btn:disabled { opacity: .4; }
+.it-btn.arm { border-color: var(--foe); }
+.it-btn.arm small { color: var(--foe); }
+
 </style>
 </head>
 <body>
