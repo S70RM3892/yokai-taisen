@@ -6,9 +6,9 @@ const E = require("../dist/engine.cjs");
 
 const games = Number(process.argv[2] ?? 300);
 const levels = [
-  { perfectPermil: 150, pokeHitPermil: 150, grandPermil: 0 },
-  { perfectPermil: 500, pokeHitPermil: 400, grandPermil: 500 },
-  { perfectPermil: 1000, pokeHitPermil: 950, grandPermil: 1000, smart: true },
+  { perfectPermil: 150, pokeHitPermil: 150, grandPermil: 0, itemPermil: 20 },
+  { perfectPermil: 500, pokeHitPermil: 400, grandPermil: 500, itemPermil: 150 },
+  { perfectPermil: 1000, pokeHitPermil: 950, grandPermil: 1000, smart: true, itemPermil: 1000 },
 ];
 
 let wins = [0, 0, 0], reasons = {}, events = {}, ticks = 0;
@@ -23,7 +23,7 @@ for (let g = 0; g < games; g++) {
     const errs = E.validateTeam(t);
     if (errs.length) throw new Error(`bad random team: ${errs.join(" / ")}`);
   }
-  const st = E.newBattle(seed, teams[0], teams[1]);
+  const st = E.newBattle(seed, teams[0], teams[1], { bags: [E.randomBag(E.seedRng(seed, 3)), E.randomBag(E.seedRng(seed, 4))] });
   const cpus = [E.newCpu(0, E.nextRand(rng), levels[g % 3]), E.newCpu(1, E.nextRand(rng), levels[(g + 1) % 3])];
   let guard = 0;
   while (!st.outcome) {
@@ -47,4 +47,21 @@ console.log(`${games} games in ${Date.now() - t0} ms, avg ${(ticks / games / 20)
 console.log("P1 / P2 / draw:", wins.join(" / "), " reasons:", JSON.stringify(reasons));
 console.log(`units used: ${used.size} / ${E.units.length}`);
 console.log("events:", Object.entries(events).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}:${v}`).join(" "));
-if (E.extraChecks) E.extraChecks();
+// 全員の特性・魂・装備を確かめる
+const tNames = new Set();
+let equipPairs = 0;
+for (const d of E.units) {
+  const t = E.traitOf(d);
+  if (!t || !t.name || !t.desc) throw new Error(`no trait for ${d.id}`);
+  if (tNames.has(t.name)) throw new Error(`dup trait name ${t.name}`);
+  tNames.add(t.name);
+  if (!t.soulDesc) throw new Error(`empty soul for ${d.id}`);
+  for (const eq of E.equipChoices(d)) {
+    const m = E.memberStats({ unit: d.id, equipment: eq.id });
+    for (const k of ["maxHp", "atk", "spa", "def", "spd"]) if (!(m[k] >= 1)) throw new Error(`bad stat ${d.id} ${eq.id} ${k}=${m[k]}`);
+    equipPairs++;
+  }
+}
+const cats = {};
+for (const e of E.equips) cats[e.cat] = (cats[e.cat] ?? 0) + 1;
+console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSON.stringify(cats)}), allowed pairs ${equipPairs}, battle items: ${E.battleItems.length}`);

@@ -10168,34 +10168,17 @@
     if (!t) throw new Error(`unknown nature ${e}`);
     return t
   }
-  var Ni = [{
-      id: "power_bangle",
-      name: "剛力の腕輪"
-    }, {
-      id: "spirit_bangle",
-      name: "妖力の腕輪"
-    }, {
-      id: "iron_beads",
-      name: "鉄の数珠"
-    }, {
-      id: "swift_geta",
-      name: "韋駄天の下駄"
-    }, {
-      id: "life_jewel",
-      name: "命の勾玉"
-    }, {
-      id: "spirit_bell",
-      name: "妖気の鈴"
-    }, {
-      id: "ward_charm",
-      name: "厄除けの守り"
-    }, {
-      id: "stand_in_doll",
-      name: "身代わり人形"
-    }, {
-      id: "diligence_band",
-      name: "精勤の鉢巻"
-    }],
+  var Ni = [
+      { id: "power_bangle", name: "剛力の腕輪", cat: "このゲーム", mods: { atk: 15 } },
+      { id: "spirit_bangle", name: "妖力の腕輪", cat: "このゲーム", mods: { spa: 15 } },
+      { id: "iron_beads", name: "鉄の数珠", cat: "このゲーム", mods: { def: 15 } },
+      { id: "swift_geta", name: "韋駄天の下駄", cat: "このゲーム", mods: { spd: 15 } },
+      { id: "life_jewel", name: "命の勾玉", cat: "このゲーム", mods: { hp: 60 } },
+      { id: "spirit_bell", name: "妖気の鈴", cat: "このゲーム", mods: {}, special: { sgRate: 500 } },
+      { id: "ward_charm", name: "厄除けの守り", cat: "このゲーム", mods: {}, special: { curseHalf: 1 } },
+      { id: "stand_in_doll", name: "形代", cat: "このゲーム", mods: {}, special: { doll: 1 } },
+      { id: "diligence_band", name: "精勤の鉢巻", cat: "このゲーム", mods: {}, special: { noLoaf: 1 } }
+    ].map(x => ({ special: null, only: null, honke: false, ...x })),
     st = 25,
     Mh = [{
       id: "oni",
@@ -10840,6 +10823,11 @@
       trait: "benchHeal"
     }],
     ct = [...Mh, ...yh];
+  /*@@include ext/honke_items.js@@*/
+  /*@@include ext/traits.js@@*/
+  /*@@include ext/loadout.js@@*/
+  /*@@include ext/engine_fx.js@@*/
+  Ni.push(...HONKE_EQUIP);
 
   function Ah(e) {
     let t = ct.findIndex(a => a.id === e);
@@ -10858,7 +10846,7 @@
   }
 
   function tt(e, t) {
-    return Se(e) && ct[e.defIndex].trait === t
+    return Se(e) && !!e.fx[t]
   }
 
   function jn(e, t) {
@@ -10893,7 +10881,7 @@
 
   function Jt(e, t, a) {
     let r = 1e3 + Li(e, t, Sh[a]);
-    a === "def" && tt(t, "keystone") && si(e, t.index) === 1 && (r += $c), a === "atk" && tt(t, "rage") && t.hp * 1e3 <= t.maxHp * Jc && (r += eh), a === "atk" && tt(t, "conqueror") && (r += sh * t.conquests), a === "spd" && Vt(e, t.index) && Ch(e, "tailwind") && (r += jc);
+    r += fxStatBonus(e, t, a);
     let i = t.blessing;
     i?.kind === "allUp" && (r += Uc[i.tier]), i && (i.kind === "rally" && (a === "atk" || a === "spa") || i.kind === "fortify" && a === "def" || i.kind === "haste" && a === "spd") && (r += lu[i.tier]);
     let n = t.curse;
@@ -10934,7 +10922,7 @@
       } catch {
         t.push(`#${n}: 知らない性格 ${i.nature}`)
       }
-      i.equipment != null && !Ni.some(o => o.id === i.equipment) && t.push(`#${n}: 知らない装備 ${i.equipment}`);
+      i.equipment != null && (equipById(i.equipment) ? equipAllowed(s, i.equipment) || t.push(`#${n}: ${s.name} は ${equipById(i.equipment).name} を装備できない`) : t.push(`#${n}: 知らない装備 ${i.equipment}`));
       let l = i.effort ?? xu,
         u = 0;
       for (let o of ["hp", "atk", "spa", "def", "spd"]) {
@@ -10955,23 +10943,11 @@
   }
 
   function Th(e) {
-    let t = Ah(e.unit),
-      a = ct[t],
-      r = e.effort ?? xu,
-      i = e.equipment ?? null;
-    return {
-      defIndex: t,
-      maxHp: a.hp + r.hp * wh + (i === "life_jewel" ? Wc : 0),
-      atk: a.atk + r.atk + (i === "power_bangle" ? Fi : 0),
-      spa: a.spa + r.spa + (i === "spirit_bangle" ? Fi : 0),
-      def: a.def + r.def + (i === "iron_beads" ? Fi : 0),
-      spd: a.spd + r.spd + (i === "swift_geta" ? Fi : 0),
-      nature: e.nature ?? a.defaultNature,
-      equipment: i
-    }
+    let t = Ah(e.unit);
+    return { defIndex: t, ...memberStats(e) }
   }
 
-  function Rh(e, t, a) {
+  function Rh(e, t, a, opts = {}) {
     let r = [t, a].map((i, n) => {
       let s = Yn(i);
       if (s.length > 0) throw new Error(`P${n+1} の編成が正しくない: ${s.join(" / ")}`);
@@ -10985,6 +10961,11 @@
           defIndex: d.defIndex,
           nature: d.nature,
           equipment: d.equipment,
+          eq: d.eq,
+          fx: d.fx,
+          favorite: d.favorite,
+          camp: d.camp,
+          talisman: null,
           maxHp: d.maxHp,
           atk: d.atk,
           spa: d.spa,
@@ -11016,11 +10997,13 @@
         stance: null,
         poke: null,
         pokeCooldown: 0,
-        pokeRng: ni(e, Eh + n)
+        pokeRng: ni(e, Eh + n),
+        bag: validBag(opts.bags?.[n]),
+        itemCooldown: 0
       }
     });
     for (let i of r) {
-      for (let n of i.units) n.ap = bu(i, n), n.endures = tt(n, "doubleEndure") ? 2 : tt(n, "endure") ? 1 : 0;
+      for (let n of i.units) n.ap = bu(i, n), n.endures = n.fx.endure ?? 0, n.sg = Math.min(Nt, n.fx.startSg ?? 0);
       for (let n = 0; n < 3; n++) {
         let s = i.units[i.wheel[n]];
         s.ap = Math.floor(s.ap * Xn(s.rng, 400, 600) / 1e3), tt(s, "firstStrike") && (s.ap = 0, s.firstStrikeUsed = !0)
@@ -11152,6 +11135,8 @@
         }), d = !0;
         break
       }
+    let it = cpuItemInput(e, t);
+    it && i.push(it);
     if (!a.stance && !d && !l && a.pokeCooldown === 0) {
       for (let c of Ht(r))
         if (c.curse && Vt(r, c.index)) {
@@ -11188,6 +11173,8 @@
       case "pokeTap":
       case "pokeStop":
         return 4;
+      case "item":
+        return 5;
       default:
         return 99
     }
@@ -11277,24 +11264,32 @@
   }
 
   function Ui(e, t, a, r, i, n, s) {
-    if (s.source === "ult" && tt(n, "ultEvade")) return t.push({
+    if (s.source === "ult" && n.fx.ultEvade && gt(n.rng, 1e3) < n.fx.ultEvade) return t.push({
       t: "evade",
       uid: n.uid
     }), !1;
+    if ((s.source === "attack" || s.source === "skill") && a !== i && n.fx.evade && gt(n.rng, 1e3) < n.fx.evade) return t.push({
+      t: "evade",
+      uid: n.uid,
+      source: s.source
+    }), !1;
     let l = a !== i && (n.loafing || n.curse !== null),
+      pw = Bt(s.power, 1e3 + (s.source === "attack" ? r.fx.atkUp ?? 0 : s.source === "skill" ? r.fx.skillUp ?? 0 : s.source === "ult" ? r.fx.ultUp ?? 0 : 0)),
       u = Jt(a, r, s.stat),
       o = Jt(i, n, "def"),
-      d = Oh(u, s.power, o),
+      d = Oh(u, pw, o),
       c = !1,
       h = n.loafing ? _c : kc;
-    tt(r, "critEye") && (h = Math.max(h, uh)), s.canCrit && gt(r.rng, gc) < h && (c = !0, d = Bt(Math.floor((u + s.power) / 2), vc));
+    r.fx.critEye && (h = Math.max(h, r.fx.critEye)), n.eq.critTaken && (h = Math.min(gc, h * n.eq.critTaken)), s.canCrit && gt(r.rng, gc) < h && (c = !0, d = Bt(Math.floor((u + pw) / 2), vc + (r.fx.critDmg ?? 0)));
     let f = ct[n.defIndex];
-    s.element !== null && (s.element === f.weak ? d = Bt(d, Ec) : s.element === f.resist && (d = Bt(d, yc)), xh[ct[r.defIndex].trait] === s.element && (d = Bt(d, qc)));
+    s.element !== null && (s.element === f.weak ? d = Bt(d, Ec) : s.element === f.resist && (d = Bt(d, yc)), d = Bt(d, elemMult(r, n, s.element)));
+    d = Bt(d, dmgVsTarget(r, n));
     let g = s.ignoreGuard || s.source === "attack" && tt(r, "guardBreak");
-    if (n.guarding && !g && (d = Bt(d, tt(n, "ironGuard") ? th : wc)), d = Bt(d, s.chargeMult), d = Bt(d, s.qualityMult), d = Bt(d, s.grandMult), d = Bt(d, Xn(r.rng, tu, au)), d < 1 && (d = 1), e.tick >= fr && (d = vh), s.element === "water" && tt(n, "waterEater")) return $a(t, n, d, r.uid), l;
-    Xa(e, t, i, n, d, r.uid, s.source, c), (s.source === "attack" || s.source === "skill") && tt(r, "drain") && $a(t, r, Math.floor(d * ah / 1e3), r.uid);
+    if (n.guarding && !g && (d = Bt(d, n.fx.ironGuard ?? wc)), d = Bt(d, s.chargeMult), d = Bt(d, s.qualityMult), d = Bt(d, s.grandMult), d = Bt(d, Xn(r.rng, tu, au)), d < 1 && (d = 1), e.tick >= fr && (d = vh), s.element === "water" && tt(n, "waterEater")) return $a(t, n, d, r.uid), l;
+    Xa(e, t, i, n, d, r.uid, s.source, c), (s.source === "attack" || s.source === "skill") && tt(r, "drain") && $a(t, r, Math.floor(d * r.fx.drain / 1e3), r.uid);
+    afterHit(e, t, a, r, i, n, s.source);
     let k = i.stance?.unit === n.index;
-    return s.source === "attack" && tt(n, "thorns") && !k && Xa(e, t, a, r, Math.floor(d / Qc), n.uid, "trait", !1), s.source === "skill" && tt(n, "mirror") && Xa(e, t, a, r, Math.floor(d / Kc), n.uid, "trait", !1), l
+    return s.source === "attack" && tt(n, "thorns") && !k && Xa(e, t, a, r, Math.floor(d * n.fx.thorns / 1e3), n.uid, "trait", !1), s.source === "skill" && tt(n, "mirror") && Xa(e, t, a, r, Math.floor(d * n.fx.mirror / 1e3), n.uid, "trait", !1), l
   }
 
   function zh(e, t) {
@@ -11305,7 +11300,8 @@
     if (t.curse?.kind === "seal") return 0;
     let a = xc[ct[t.defIndex].sgRank - 1],
       r = 1e3;
-    return jn(e, t).some(i => tt(i, "spiritSmoke")) && (r += rh), t.blessing?.kind === "gather" && (r += Vc[t.blessing.tier]), t.equipment === "spirit_bell" && (r += Xc), Bt(a, r)
+    for (let i of jn(e, t)) tt(i, "spiritSmoke") && (r = Math.max(r, 1e3 + i.fx.spiritSmoke));
+    return t.blessing?.kind === "gather" && (r += Vc[t.blessing.tier]), r += t.fx.sgRate ?? 0, Bt(a, r)
   }
 
   function di(e, t) {
@@ -11333,19 +11329,19 @@
         amount: i,
         source: s,
         crit: l
-      }), r.hp - i <= 0 && o && r.equipment === "stand_in_doll" && !r.dollUsed ? (r.dollUsed = !0, r.hp = 1, t.push({
+      }), r.hp - i <= 0 && o && r.eq.doll && !r.dollUsed ? (r.dollUsed = !0, r.hp = 1, t.push({
         t: "doll",
         uid: r.uid
       })) : r.hp - i <= 0 && r.endures > 0 ? (r.endures--, r.hp = 1, t.push({
         t: "endure",
         uid: r.uid
       })) : r.hp = Math.max(0, r.hp - i), r.hp > 0) return;
-    let d = ct[r.defIndex].trait === "grudge";
-    if (Vh(e, t, a, r), n === null || n === r.uid) return;
+    let d = r.fx.grudge ?? 0;
+    if (Vh(e, t, a, r), onDeathFx(e, t, a, r), n === null || n === r.uid) return;
     let c = zh(e, n);
-    if (Se(c) && (tt(c, "devour") && $a(t, c, Math.floor(c.maxHp * Yc / 1e3), c.uid), tt(c, "conqueror") && (c.conquests = Math.min(lh, c.conquests + 1)), d)) {
+    if (Se(c) && (tt(c, "devour") && $a(t, c, Math.floor(c.maxHp * c.fx.devour / 1e3), c.uid), tt(c, "conqueror") && (c.conquests = Math.min(lh, c.conquests + 1)), c.fx.killSg && gainSg(c, c.fx.killSg), d)) {
       let h = e.players[c.owner];
-      Xa(e, t, h, c, Math.floor(c.maxHp * Zc / 1e3), r.uid, "trait", !1)
+      Xa(e, t, h, c, Math.floor(c.maxHp * d / 1e3), r.uid, "trait", !1)
     }
   }
 
@@ -11371,7 +11367,7 @@
 
   function Hh(e, t, a, r, i) {
     let n = Nc;
-    return n += Li(e, t, bh[i] === "stat" ? "miyabi" : "tatari"), n -= Li(a, r, "shizume"), Math.max(Bc, Math.min(Lc, n))
+    return n += Li(e, t, bh[i] === "stat" ? "miyabi" : "tatari"), n += t.fx.curseHit ?? 0, n -= Li(a, r, "shizume"), Math.max(Bc, Math.min(Lc, n))
   }
 
   function Su(e, t, a, r, i, n, s, l) {
@@ -11397,6 +11393,17 @@
       });
       return
     }
+    if (i.fx.curseResist && gt(i.rng, 1e3) < i.fx.curseResist) {
+      e.push({
+        t: "curse",
+        src: a.uid,
+        dst: i.uid,
+        kind: n,
+        tier: s,
+        result: "resisted"
+      });
+      return
+    }
     let u = i.blessing;
     if (u && u.kind === "ward" && u.wardCharges > 0) {
       u.wardCharges--, e.push({
@@ -11410,7 +11417,7 @@
       return
     }
     let o = Math.floor(su * uu[s] / 1e3);
-    i.equipment === "ward_charm" && (o = Math.floor(o / 2)), i.curse = {
+    i.fx.curseShort && (o = Bt(o, Math.max(200, 1e3 - i.fx.curseShort))), i.curse = {
       kind: n,
       tier: s,
       remaining: o,
@@ -11426,7 +11433,7 @@
   }
 
   function Cu(e, t, a, r, i) {
-    let n = Math.floor(su * uu[i] / 1e3);
+    let n = Bt(Math.floor(su * uu[i] / 1e3), 1e3 + (a.fx.blessLong ?? 0));
     a.blessing = {
       kind: r,
       tier: i,
@@ -11535,6 +11542,8 @@
       }
       case "pokeStop":
         return i.poke ? (Oi(i, t, n, "stopped", r), !0) : !1;
+      case "item":
+        return useItem(e, t, a, r);
       default:
         return !1
     }
@@ -11660,7 +11669,7 @@
         let h = Jt(l, a, "spa");
         for (let f of Ht(l)) {
           let g = Math.floor((h + Dc) / 2);
-          g = Bt(g, 1e3 + Li(l, a, "nagomi")), g = Bt(g, n), g = Bt(g, d), g = Bt(g, Xn(a.rng, tu, au)), $a(s, f, g, a.uid)
+          g = Bt(g, 1e3 + Li(l, a, "nagomi")), g = Bt(g, 1e3 + (a.fx.healUp ?? 0)), g = Bt(g, n), g = Bt(g, d), g = Bt(g, Xn(a.rng, tu, au)), $a(s, f, g, a.uid)
         }
         return
       }
@@ -11682,11 +11691,12 @@
 
   function jh(e, t, a) {
     if (!(!Se(t) || !Vt(e, t.index))) {
-      for (let r of jn(e, t)) tt(r, "prayer") && $a(a, t, Math.floor(t.maxHp * ih / 1e3), r.uid);
+      for (let r of jn(e, t)) tt(r, "prayer") && $a(a, t, healAmt(r, t.maxHp, r.fx.prayer), r.uid);
       for (let r of [3, 4, 5]) {
         let i = e.units[e.wheel[r]];
-        tt(i, "benchHeal") && $a(a, t, Math.floor(t.maxHp * nh / 1e3), i.uid)
+        tt(i, "benchHeal") && $a(a, t, healAmt(i, t.maxHp, i.fx.benchHeal), i.uid), tt(i, "benchSg") && gainSg(i, i.fx.benchSg), tt(i, "benchRegen") && $a(a, i, healAmt(i, i.maxHp, i.fx.benchRegen), i.uid)
       }
+      tt(t, "regen") && $a(a, t, healAmt(t, t.maxHp, t.fx.regen), t.uid)
     }
   }
 
@@ -11773,7 +11783,7 @@
         uid: a.uid,
         action: "stunned"
       }), "loaf";
-      if (a.equipment !== "diligence_band" && gt(a.rng, 1e3) < s.loafPermil) return a.loafing = !0, r.push({
+      if (gt(a.rng, 1e3) < loafChance(a, s)) return a.loafing = !0, r.push({
         t: "action",
         uid: a.uid,
         action: "loaf"
@@ -11815,7 +11825,7 @@
           grandMult: 1e3
         }) && di(a, oi(i, a)), "skill";
       case "guard":
-        return a.guarding = !0, "guard";
+        return a.guarding = !0, a.fx.guardHeal && $a(r, a, healAmt(a, a.maxHp, a.fx.guardHeal), a.uid), "guard";
       case "curse":
         return Su(r, i, a, n, u, s.curse, 0, !0), "curse";
       case "bless":
@@ -11825,7 +11835,11 @@
 
   function e0(e, t, a) {
     let r = e.players[t];
-    r.rotateCooldown > 0 && r.rotateCooldown--, r.targetCooldown > 0 && r.targetCooldown--, r.pokeCooldown > 0 && r.pokeCooldown--;
+    r.rotateCooldown > 0 && r.rotateCooldown--, r.targetCooldown > 0 && r.targetCooldown--, r.pokeCooldown > 0 && r.pokeCooldown--, r.itemCooldown > 0 && r.itemCooldown--;
+    for (let i of r.units) i.talisman && --i.talisman.remaining <= 0 && (i.talisman = null, a.push({
+      t: "talismanEnd",
+      uid: i.uid
+    }));
     for (let i of r.units) {
       if (!Se(i) || (i.ultLockout > 0 && i.ultLockout--, !Vt(r, i.index))) continue;
       let n = i.curse;
@@ -11854,7 +11868,7 @@
       r.purify = null;
       return
     }
-    i.progress++, i.progress >= Hc && (n.curse = null, r.purify = null, a.push({
+    i.progress += 1e3 + (n.fx.purifyFast ?? 0), i.progress >= Hc * 1e3 && (n.curse = null, r.purify = null, a.push({
       t: "curseCleared",
       uid: n.uid,
       by: "purify"
@@ -11911,6 +11925,7 @@
   }
 
   function n0(e, t) {
+    if (e.outcome) return;
     e.tick === fr && t.push({
       t: "suddenDeath"
     });
@@ -12009,8 +12024,7 @@
       if (t[i.rank] >= Gn[i.rank] || i.group && (a.get(i.group) ?? 0) >= Eu[i.group].limit) continue;
       t[i.rank]++, i.group && a.set(i.group, (a.get(i.group) ?? 0) + 1);
       let n = Tu[gt(e, Tu.length)],
-        s = gt(e, Ni.length + 1),
-        l = s === Ni.length ? null : Ni[s].id;
+        l = randomEquip(e, i);
       r.push({
         unit: i.id,
         nature: $n[gt(e, $n.length)].id,
@@ -15375,6 +15389,7 @@
     },
     Te = "#1a1420";
 
+  buildTraits();
   /*@@include ext/engine_exports.js@@*/
   /*@@ENGINE_END@@*/
   function oa(e, t, a, r = 4, i = 0, n = "#fff") {
