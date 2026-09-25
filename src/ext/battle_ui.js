@@ -327,6 +327,17 @@ function debugHook() {
   if (!location.hash.includes("debug")) return;
   window.__yokaiDebug = {
     ga: () => Ga, send: (i) => zt(Ga, i), lobby: () => openPvpLobby(),
+    // 奥義の振り付けの数（全員）
+    ultStats() { const c = {}; for (const d of ct) { const k = ultStyleOf(d); c[k] = (c[k] ?? 0) + 1; } return c; },
+    // 奥義の振り付けを 1 つ試す（手前のまん中の妖怪を、その振り付けの妖怪に見立てる）
+    ultTry(style) {
+      const d = ct.find(x => ultStyleOf(x) === style && ["all", "curseAll", "heal", "blessAll"].includes(x.ult.kind) === ["rain", "bloom"].includes(style)) ?? ct.find(x => ultStyleOf(x) === style);
+      if (!d) return null;
+      const p = Ga.state.players, me = p[0].units[p[0].wheel[1]].uid, foe = p[1].units[p[1].wheel[1]].uid, f = Ga.scene.figs.get(me);
+      f.def = d, window.__ultUid = me;
+      Ga.scene.action(me, foe, "ult", Id(d.ult.element ?? null));
+      return `${d.name}（${d.ult.kind}${d.ult.element ? "・" + d.ult.element : ""}）`;
+    },
     // 演出の確認用：出来事を 1 つ画面に流す（dst:-1 は敵の前衛 i 番目、-2 はこちらの前衛 0 番目）
     play(ev) {
       const p = Ga.state.players, uidOf = (pl, i) => p[pl].units[p[pl].wheel[i]].uid;

@@ -32282,6 +32282,7 @@ void main() {
     };
 
   /*@@include ext/fx3d.js@@*/
+  /*@@include ext/ult_motion.js@@*/
   function t2(e) {
     return 1 - (1 - e) * (1 - e)
   }
