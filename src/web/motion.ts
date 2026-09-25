@@ -271,3 +271,58 @@ export function flash(el: HTMLElement, color: string, strong: boolean): void {
     { duration: strong ? 900 : 600 },
   );
 }
+
+/** 待機中のゆれ方（CSS のアニメーション名）。いつも動いていて、画面が止まらないようにする */
+export const IDLE_STYLE: Record<MotionKind, string> = {
+  smash: "idle-heavy",
+  charge: "idle-heavy",
+  slam: "idle-heavy",
+  dash: "idle-bounce",
+  slash: "idle-bounce",
+  pounce: "idle-bounce",
+  hop: "idle-hop",
+  float: "idle-float",
+  wave: "idle-float",
+  flicker: "idle-flicker",
+  glow: "idle-float",
+  stretch: "idle-sway",
+  sway: "idle-sway",
+  spin: "idle-sway",
+  rattle: "idle-rattle",
+};
+
+/** 行動の直前のセリフ（オリジナル）。本家の「参る」のように、だれが動くかを知らせる */
+export const CALL_LINE: Record<string, string> = {
+  oni: "ぶっ潰す！",
+  karakasa: "からかさ参上！",
+  yukionna: "凍てつけ…",
+  nekomata: "爪の餌食よ",
+  kappa: "皿が乾く前に！",
+  ogama: "ゲコォ！",
+  bakedanuki: "化かしてやる！",
+  rokurokubi: "のびーるよ",
+  zashiki: "あそぼ？",
+  kodama: "……コダマ",
+  tengu: "喝ッ！",
+  kamaitachi: "斬る！",
+  shuten: "酒の肴だ！",
+  ushioni: "踏み潰す",
+  otakemaru: "神通力を見よ",
+  nurikabe: "通さぬ",
+  ittan: "ひらり〜",
+  onibi: "燃えろ…",
+  kasha: "亡者はどこだ",
+  kyokotsu: "恨めしや…",
+  waira: "掘り返す！",
+  komainu: "阿ッ！",
+  yamabiko: "ヤッホー！",
+  hakutaku: "見えておるぞ",
+};
+
+/** 声の高さ（Hz）。大きい・重いキャラほど低い */
+export const VOICE_PITCH: Record<string, number> = {
+  oni: 140, karakasa: 330, yukionna: 520, nekomata: 480, kappa: 360, ogama: 110,
+  bakedanuki: 260, rokurokubi: 440, zashiki: 620, kodama: 700, tengu: 220, kamaitachi: 400,
+  shuten: 120, ushioni: 95, otakemaru: 160, nurikabe: 90, ittan: 560, onibi: 600,
+  kasha: 240, kyokotsu: 300, waira: 150, komainu: 280, yamabiko: 520, hakutaku: 200,
+};

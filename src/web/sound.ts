@@ -217,3 +217,15 @@ export function sfxWin(win: boolean): void {
   const notes = win ? [523, 659, 784, 1047] : [392, 330, 262];
   notes.forEach((f, i) => tone(f, 0.3, "triangle", 0.2, i * 0.14));
 }
+
+/** 声っぽい音（録音の代わりに合成）。文字数に合わせて短い音を並べ、キャラごとに高さを変える */
+export function voice(pitch: number, syllables: number, enemy: boolean): void {
+  if (!ctx || !sfxGain) return;
+  const n = Math.max(2, Math.min(6, syllables));
+  for (let i = 0; i < n; i++) {
+    const wobble = [1, 1.18, 0.92, 1.26, 1.05, 0.88][i % 6];
+    const f = pitch * wobble * (enemy ? 0.94 : 1);
+    tone(f, 0.07, "square", 0.07, i * 0.075, f * 1.08);
+    tone(f * 2, 0.06, "triangle", 0.04, i * 0.075);
+  }
+}

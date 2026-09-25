@@ -227,6 +227,8 @@ interface View {
   preview: number;
   previewTimer: number | null;
   arrows: SVGSVGElement | null;
+  /** この行動のためのセリフをもう出したか（uid ごと） */
+  called: Set<number>;
   lastFrame: number;
   acc: number;
   refs: Record<string, HTMLElement>;
@@ -254,6 +256,7 @@ function startBattle(team: TeamSpec): void {
     preview: 0,
     previewTimer: null,
     arrows: null,
+    called: new Set(),
     lastFrame: performance.now(),
     acc: 0,
     refs: {},
@@ -297,7 +300,8 @@ function buildBattle(v: View): void {
   const foeLine = h("div", "line foe-line");
   const allyLine = h("div", "line");
   const formation = h("div", "formation");
-  top.append(hud, foeLine, allyLine, formation);
+  const order = h("div", "order");
+  top.append(hud, order, foeLine, allyLine, formation);
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("class", "arrows");
   svg.innerHTML =
@@ -308,19 +312,21 @@ function buildBattle(v: View): void {
     "</defs>";
   top.append(svg);
   v.arrows = svg;
-  v.refs = { clock, foeRes, allyRes, foeLine, allyLine, formation, top };
+  v.refs = { clock, foeRes, allyRes, foeLine, allyLine, formation, top, order };
 
   for (const pid of [1, 0] as const) {
     for (const u of v.state.players[pid].units) {
       const el = h("button", "unit " + (pid === 0 ? "ally" : "foe"));
       el.dataset.uid = String(u.uid);
       el.innerHTML =
+        '<div class="bubble" hidden></div>' +
         '<div class="nm"><span class="fig"></span><span class="n"></span><span class="st"></span></div>' +
         '<div class="bar hp"><i></i></div><div class="bar ag"><i></i></div><div class="bar sg"><i></i></div>' +
         '<div class="fx"></div><div class="eta num"></div>';
       el.onclick = () => onUnitClick(v, u);
       const fig = el.querySelector(".fig") as HTMLElement;
-      fig.innerHTML = artSvg(def(u).id, def(u).name.slice(0, 1));
+      const motion = M.UNIT_MOTION[def(u).id] ?? "dash";
+      fig.innerHTML = `<div class="idle ${M.IDLE_STYLE[motion]}" style="animation-delay:-${(u.uid * 0.37) % 2}s">${artSvg(def(u).id, def(u).name.slice(0, 1))}</div>`;
       fig.style.setProperty("--tribe", TRIBE_COLOR[def(u).tribe]);
       v.unitEl.set(u.uid, el);
     }
@@ -541,6 +547,7 @@ function figOf(v: View, uid: number): HTMLElement | null {
 function present(v: View, e: BattleEvent): void {
   switch (e.t) {
     case "action": {
+      v.called.delete(e.uid);
       const u = unitOf(v, e.uid);
       const fig = figOf(v, e.uid);
       if (!fig) return;
@@ -603,9 +610,12 @@ function present(v: View, e: BattleEvent): void {
     case "forcedRotate":
       S.sfxRotate();
       break;
-    case "stance":
+    case "stance": {
       S.sfxStance(e.player === 1);
+      const u = unitOf(v, e.uid);
+      say(v, u, `${e.grand ? "大奥義" : "奥義"}「${def(u).ultName}」`, true);
       break;
+    }
     case "suddenDeath":
       S.sfxAlarm();
       break;
@@ -733,6 +743,7 @@ function renderUnit(v: View, u: UnitState, el: HTMLElement): void {
   const html = chips.join("");
   if (fx.innerHTML !== html) fx.innerHTML = html;
   el.classList.toggle("dead", !isAlive(u));
+  el.classList.toggle("ready", front && isAlive(u) && !u.pendingAction && u.ag >= need * 0.85);
   const st2 = p.stance;
   el.classList.toggle("stance", !!st2 && (st2.unit === u.index || st2.partners.includes(u.index)));
   el.classList.toggle("grand", !!st2 && st2.grand);
@@ -764,6 +775,8 @@ function render(v: View): void {
       .join("");
   }
   drawArrows(v);
+  callouts(v);
+  renderOrder(v);
   // 陣
   const me = s.players[0];
   const forms = new Set<string>();
@@ -806,6 +819,67 @@ function render(v: View): void {
   r.bUlt.classList.toggle("on", v.mode === "ult");
   r.hint.textContent = hintText(v);
   renderOverlay(v);
+}
+
+/** 吹き出しと声 */
+function say(v: View, u: UnitState, text: string, big = false): void {
+  const el = v.unitEl.get(u.uid);
+  if (!el) return;
+  const b = el.querySelector(".bubble") as HTMLElement;
+  b.textContent = text;
+  b.classList.toggle("big", big);
+  b.hidden = false;
+  b.getAnimations().forEach((a) => a.cancel());
+  b.animate([{ opacity: 0, transform: "translate(-50%, 6px) scale(.8)" }, { opacity: 1, transform: "translate(-50%, 0) scale(1)", offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], {
+    duration: big ? 1600 : 1100,
+  }).onfinish = () => {
+    b.hidden = true;
+  };
+  S.voice(M.VOICE_PITCH[def(u).id] ?? 300, Math.ceil(text.length / 2), u.owner === 1);
+}
+
+/** 行動まであと少しになったら、セリフで知らせる（本家の「参る」のような合図）。行動の中身はまだ決まっていない */
+const CALL_TICKS = 12;
+function callouts(v: View): void {
+  for (const pid of [0, 1] as const) {
+    const p = v.state.players[pid];
+    for (let pos = 0; pos < 3; pos++) {
+      const u = p.units[p.wheel[pos]];
+      const frozen = p.stance && (p.stance.unit === u.index || p.stance.partners.includes(u.index));
+      if (!isAlive(u) || frozen || u.pendingAction) continue;
+      const left = Math.ceil((agNeeded(p, u) - u.ag) / C.AG_PER_TICK);
+      if (left <= CALL_TICKS && !v.called.has(u.uid)) {
+        v.called.add(u.uid);
+        say(v, u, M.CALL_LINE[def(u).id] ?? "参る！");
+      }
+    }
+    // 後衛に下がった・倒れたユニットは、次に前に出たときにまた言う
+    for (let pos = 3; pos < 6; pos++) v.called.delete(p.units[p.wheel[pos]].uid);
+  }
+}
+
+/** 次に動く順（前衛の6体を、行動までの時間が短い順に） */
+function renderOrder(v: View): void {
+  const list: { u: UnitState; left: number }[] = [];
+  for (const pid of [0, 1] as const) {
+    const p = v.state.players[pid];
+    for (let pos = 0; pos < 3; pos++) {
+      const u = p.units[p.wheel[pos]];
+      const frozen = p.stance && (p.stance.unit === u.index || p.stance.partners.includes(u.index));
+      if (!isAlive(u) || frozen) continue;
+      list.push({ u, left: Math.max(0, Math.ceil((agNeeded(p, u) - u.ag) / C.AG_PER_TICK)) });
+    }
+  }
+  list.sort((a, b) => a.left - b.left || a.u.uid - b.u.uid);
+  const html =
+    '<span class="olabel">次に動く順</span>' +
+    list
+      .map(
+        ({ u, left }) =>
+          `<span class="oitem ${u.owner === 0 ? "a" : "f"}" title="${def(u).name}"><span class="oart">${artSvg(def(u).id, def(u).name.slice(0, 1))}</span><span class="num">${secs(left)}</span></span>`,
+      )
+      .join("");
+  if (v.refs.order.innerHTML !== html) v.refs.order.innerHTML = html;
 }
 
 /** だれがだれを狙っているか（§4.4 のねらい）。もうすぐ動くユニットほど濃く・太く */
