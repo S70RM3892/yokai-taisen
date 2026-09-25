@@ -1,0 +1,24 @@
+{
+  "name": "yokai-taisen",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/S70RM3892/yokai-taisen.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/S70RM3892/yokai-taisen/issues"
+  },
+  "homepage": "https://github.com/S70RM3892/yokai-taisen#readme",
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright": "^1.63.0"
+  }
+}
