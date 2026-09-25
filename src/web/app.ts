@@ -169,10 +169,43 @@ function showSetup(): void {
   const status = h("div", "b-status");
   center.append(wrapWheel, status);
 
-  // ---- 右：選ぶリスト／くわしく ----
+  // ---- 右：選ぶリスト／くわしく（396体あるので、種族・ランク・名前でしぼる） ----
+  let fTribe = "all";
+  let fRank = "all";
+  let fText = "";
+  const filters = h("div", "b-filters");
+  const search = h("input", "b-search") as HTMLInputElement;
+  search.id = "unit-search";
+  search.placeholder = "名前でさがす";
+  search.oninput = () => {
+    fText = search.value.trim();
+    refresh();
+  };
+  const tribeRow = h("div", "b-chips");
+  for (const t of ["all", "takeru", "ayashi", "tsuwamono", "kage", "nagomi", "miyabi", "tatari", "shizume", "maga"]) {
+    const b = h("button", "b-chip", t === "all" ? "全" : TRIBE[t]);
+    b.dataset.v = t;
+    b.onclick = () => {
+      fTribe = t;
+      refresh();
+    };
+    tribeRow.append(b);
+  }
+  const rankRow = h("div", "b-chips");
+  for (const r of ["all", "S", "A", "B", "C", "D", "E"]) {
+    const b = h("button", "b-chip", r === "all" ? "全" : r);
+    b.dataset.v = r;
+    b.onclick = () => {
+      fRank = r;
+      refresh();
+    };
+    rankRow.append(b);
+  }
+  filters.append(search, tribeRow, rankRow);
+  const countEl = h("div", "b-count");
   const list = h("div", "b-list");
   const detail = h("div", "b-detail");
-  right.append(list, detail);
+  right.append(filters, countEl, list, detail);
 
   // ---- 下：ボタン ----
   const bBack = h("button", "b-btn", "もどす");
@@ -286,11 +319,19 @@ function showSetup(): void {
 
     // リスト（ランクと大物の制限で入れられないものは暗く）
     list.hidden = !showList;
+    filters.hidden = !showList;
+    countEl.hidden = !showList;
     detail.hidden = showList;
     if (showList) {
       list.replaceChildren();
       const cur = unitDef(picked[sel]);
-      for (const d of UNITS) {
+      tribeRow.querySelectorAll<HTMLElement>(".b-chip").forEach((b) => b.classList.toggle("on", b.dataset.v === fTribe));
+      rankRow.querySelectorAll<HTMLElement>(".b-chip").forEach((b) => b.classList.toggle("on", b.dataset.v === fRank));
+      const shown = UNITS.filter(
+        (d) => (fTribe === "all" || d.tribe === fTribe) && (fRank === "all" || d.rank === fRank) && (!fText || d.name.includes(fText)),
+      );
+      countEl.textContent = `${shown.length} 体（全 ${UNITS.length} 体）`;
+      for (const d of shown) {
         const trial = picked.slice();
         trial[sel] = d.id;
         const bad = validateTeam(trial.filter((x): x is string => x !== null).map((unit) => ({ unit })).concat(
@@ -504,7 +545,7 @@ function buildBattle(v: View, canvas: HTMLCanvasElement): void {
   v.svg = { arrows };
   for (const pid of [0, 1] as const) {
     for (const u of v.state.players[pid].units) {
-      v.scene.addFigure(u.uid, pid === 0, artSvg(def(u).id, def(u).name.slice(0, 1)), TRIBE_COLOR[def(u).tribe], M.UNIT_MOTION[def(u).id] ?? "dash");
+      v.scene.addFigure(u.uid, pid === 0, artSvg(def(u).id, def(u).name.slice(0, 1)), TRIBE_COLOR[def(u).tribe], M.motionOf(def(u).id));
       if (pid === 1) {
         const bar = h("div", "foebar");
         bar.innerHTML = '<span class="n"></span><div class="bar hp"><i></i></div><div class="fxs"></div>';
@@ -963,7 +1004,7 @@ function say(v: View, uid: number, text: string, big = false): void {
   v.refs.fx.append(b);
   setTimeout(() => b.remove(), big ? 1600 : 1150);
   const u = unitOf(v, uid);
-  S.voice(M.VOICE_PITCH[def(u).id] ?? 300, Math.ceil(text.length / 2), u.owner === 1);
+  S.voice(M.pitchOf(def(u).id), Math.ceil(text.length / 2), u.owner === 1);
 }
 
 /** 次に行動するユニット（行動ポイントが一番少ない前衛。BATTLE_SPEC §4.1） */
@@ -991,7 +1032,7 @@ function callouts(v: View): void {
   const key = `${s.busyUntil}:${next.uid}`;
   if (left <= 12 && v.called !== key) {
     v.called = key;
-    say(v, next.uid, M.CALL_LINE[def(next).id] ?? "参る！");
+    say(v, next.uid, M.lineOf(def(next).id));
   }
 }
 

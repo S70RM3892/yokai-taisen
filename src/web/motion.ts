@@ -326,3 +326,16 @@ export const VOICE_PITCH: Record<string, number> = {
   shuten: 120, ushioni: 95, otakemaru: 160, nurikabe: 90, ittan: 560, onibi: 600,
   kasha: 240, kyokotsu: 300, waira: 150, komainu: 280, yamabiko: 520, hakutaku: 200,
 };
+
+// ---- 自動生成の妖怪は looks.gen.ts から ----
+import { LOOKS } from "./looks.gen.js";
+
+export function motionOf(id: string): MotionKind {
+  return UNIT_MOTION[id] ?? LOOKS[id]?.motion ?? "dash";
+}
+export function lineOf(id: string): string {
+  return CALL_LINE[id] ?? LOOKS[id]?.line ?? "参る！";
+}
+export function pitchOf(id: string): number {
+  return VOICE_PITCH[id] ?? LOOKS[id]?.pitch ?? 300;
+}

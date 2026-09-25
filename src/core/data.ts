@@ -1,5 +1,7 @@
 // ユニット・性格・装備のデータ（UNITS.md・BATTLE_SPEC §4.2・§7.2・§8.3）。
 
+import { GENERATED_UNITS } from "./roster.gen.js";
+
 export type Element = "fire" | "water" | "thunder" | "earth" | "ice" | "wind";
 export type Tribe =
   | "takeru" // 猛
@@ -221,7 +223,8 @@ export const EQUIPMENT: readonly { id: EquipmentId; name: string }[] = [
 // ---- ユニット（UNITS.md v0.3） ----
 const LOAF = 25; // 2.5%（仮。全員同じ）
 
-export const UNITS: readonly UnitDef[] = [
+/** 手作りの 24 体（UNITS.md の表） */
+const HANDMADE: readonly UnitDef[] = [
   {
     id: "oni", name: "鬼", rank: "S", tribe: "takeru",
     hp: 312, atk: 135, spa: 60, def: 95, spd: 60, sgRank: 2, weak: "ice", resist: "fire",
@@ -392,6 +395,9 @@ export const UNITS: readonly UnitDef[] = [
     loafPermil: LOAF, defaultNature: "devoted", trait: "benchHeal",
   },
 ];
+
+/** 全ユニット：手作りの 24 体 ＋ 原作と同じ数にそろえるための 372 体（scripts/gen-roster.mjs） */
+export const UNITS: readonly UnitDef[] = [...HANDMADE, ...GENERATED_UNITS];
 
 export function unitIndexById(id: string): number {
   const i = UNITS.findIndex((u) => u.id === id);

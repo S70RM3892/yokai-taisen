@@ -2,6 +2,8 @@
 // 原作（妖怪ウォッチ）のキャラの見た目はまねしない（CLAUDE.md・PLAN.md §0）。
 // どれも viewBox 0 0 64 64。前を向いた姿で描き、動きは motion.ts がつける。
 
+import { LOOKS } from "./looks.gen.js";
+
 const INK = "#1a1420";
 
 /** 目：丸い目。size で大きさ、look で黒目のずれ */
@@ -252,8 +254,87 @@ const ART: Record<string, string> = {
 };
 
 /** そのユニットの絵（SVG の文字列）。ない場合は名前の1文字目 */
-export function artSvg(id: string, fallback: string): string {
-  const body = ART[id];
+export function artSvg(id: string, fallback: string, tribeColor = "#888"): string {
+  const body = ART[id] ?? genArtBody(id, tribeColor);
   if (!body) return `<span>${fallback}</span>`;
   return `<svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true" overflow="visible">${body}</svg>`;
+}
+
+// ---- 自動生成の妖怪の絵（系統ごとに同じ体、成長の段階で大きさ・目・飾りが変わる） ----
+
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+function hsl(h: number, s: number, l: number): string {
+  return `hsl(${h % 360} ${s}% ${l}%)`;
+}
+
+/** 型ごとの体の形 */
+const BODY: Record<string, (c: string, d: string) => string> = {
+  // 角のある戦士：どっしりした胴と頭
+  striker: (c, d) => `<path d="M14 58 Q10 36 20 28 L44 28 Q54 36 50 58Z" fill="${d}"/><circle cx="32" cy="26" r="16" fill="${c}"/>`,
+  drainer: (c, d) => `<path d="M10 56 Q8 30 32 24 Q56 30 54 56 Q32 62 10 56Z" fill="${c}"/><path d="M18 56 L22 48 L26 56 L30 48 L34 56 L38 48 L42 56 L46 48 L50 56Z" fill="${d}"/>`,
+  // 炎・玉のような体
+  caster: (c, d) => `<path d="M32 4 Q46 20 48 34 Q50 52 32 58 Q14 52 16 34 Q18 20 32 4Z" fill="${c}"/><path d="M32 26 Q40 34 40 42 Q40 52 32 54 Q24 52 24 42 Q24 34 32 26Z" fill="${d}" opacity=".55"/>`,
+  // 岩・壁
+  wall: (c, d) => `<path d="M8 58 L10 16 Q32 4 54 16 L56 58Z" fill="${c}"/><path d="M10 30 L54 30 M10 44 L56 44 M24 16 L22 30 M40 30 L42 44" stroke="${d}" stroke-width="2"/>`,
+  endureWall: (c, d) => `<ellipse cx="32" cy="38" rx="26" ry="22" fill="${c}"/><ellipse cx="32" cy="46" rx="16" ry="11" fill="${d}" opacity=".6"/>`,
+  guardian: (c, d) => `<path d="M8 22 Q32 10 56 22 L52 50 Q32 62 12 50Z" fill="${c}"/><path d="M32 22 L32 54 M14 34 L50 34" stroke="${d}" stroke-width="3"/>`,
+  taunter: (c, d) => `<circle cx="32" cy="36" r="24" fill="${c}"/><path d="M12 30 L4 22 M52 30 L60 22" stroke="${d}" stroke-width="4" stroke-linecap="round"/>`,
+  // 小さく丸い支援役
+  buffer: (c, d) => `<circle cx="32" cy="38" r="18" fill="${c}"/><circle cx="32" cy="20" r="12" fill="${c}"/><path d="M20 44 Q32 52 44 44" stroke="${d}" stroke-width="3" fill="none"/>`,
+  healer: (c, d) => `<path d="M32 8 Q52 10 50 34 Q50 54 32 58 Q14 54 14 34 Q12 10 32 8Z" fill="${c}"/><path d="M28 44 L36 44 M32 40 L32 48" stroke="${d}" stroke-width="3"/>`,
+  // 道具のお化け・幽霊
+  disruptorStat: (c, d) => `<rect x="12" y="12" width="40" height="40" rx="10" fill="${c}"/><path d="M12 24 L52 24" stroke="${d}" stroke-width="3"/><path d="M22 52 L20 60 M42 52 L44 60" stroke="${d}" stroke-width="3"/>`,
+  disruptorStatus: (c, d) => `<path d="M12 60 L12 28 Q12 8 32 8 Q52 8 52 28 L52 60 L46 54 L39 60 L32 54 L25 60 L18 54Z" fill="${c}"/><path d="M18 20 Q32 12 46 20" stroke="${d}" stroke-width="2" fill="none"/>`,
+  // 鳥・布
+  dodger: (c, d) => `<path d="M32 16 Q48 18 50 34 Q48 50 32 52 Q16 50 14 34 Q16 18 32 16Z" fill="${c}"/><path d="M14 34 Q2 26 4 16 Q12 26 18 28Z M50 34 Q62 26 60 16 Q52 26 46 28Z" fill="${d}"/>`,
+  scapegoat: (c, d) => `<ellipse cx="32" cy="40" rx="20" ry="18" fill="${c}"/><ellipse cx="18" cy="16" rx="5" ry="10" fill="${c}"/><ellipse cx="46" cy="16" rx="5" ry="10" fill="${c}"/><ellipse cx="32" cy="46" rx="9" ry="6" fill="${d}"/>`,
+};
+
+const EYES = [
+  (y: number, r: number) => `<circle cx="25" cy="${y}" r="${r}" fill="#fff"/><circle cx="39" cy="${y}" r="${r}" fill="#fff"/><circle cx="25.5" cy="${y + 0.5}" r="${r * 0.5}" fill="${INK}"/><circle cx="39.5" cy="${y + 0.5}" r="${r * 0.5}" fill="${INK}"/>`,
+  (y: number) => `<path d="M20 ${y + 1} L29 ${y - 2} M44 ${y + 1} L35 ${y - 2}" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>`,
+  (y: number, r: number) => `<ellipse cx="32" cy="${y}" rx="${r + 2}" ry="${r + 3}" fill="#fff"/><circle cx="32" cy="${y + 1}" r="${r}" fill="${INK}"/>`,
+  (y: number, r: number) => `<circle cx="25" cy="${y}" r="${r * 0.8}" fill="#f2d15c"/><circle cx="39" cy="${y}" r="${r * 0.8}" fill="#f2d15c"/><rect x="${24.3}" y="${y - r * 0.7}" width="1.4" height="${r * 1.4}" fill="${INK}"/><rect x="${38.3}" y="${y - r * 0.7}" width="1.4" height="${r * 1.4}" fill="${INK}"/>`,
+];
+
+const MOUTH = [
+  (y: number) => `<path d="M27 ${y} Q32 ${y + 4} 37 ${y}" stroke="${INK}" stroke-width="2" fill="none"/>`,
+  (y: number) => `<path d="M26 ${y} L38 ${y} L35 ${y + 4} L29 ${y + 4}Z" fill="${INK}"/><path d="M28 ${y} L29 ${y + 3} L30 ${y}M34 ${y} L35 ${y + 3} L36 ${y}" fill="#fff"/>`,
+  (y: number) => `<ellipse cx="32" cy="${y + 1}" rx="3" ry="2.5" fill="${INK}"/>`,
+];
+
+const ACCESSORY = [
+  (c: string) => `<path d="M20 14 L16 2 L26 10Z M44 14 L48 2 L38 10Z" fill="${c}"/>`, // 角
+  (c: string) => `<path d="M18 16 L20 4 L28 12Z M46 16 L44 4 L36 12Z" fill="${c}"/>`, // 耳
+  (c: string) => `<path d="M22 10 L26 2 L32 8 L38 2 L42 10Z" fill="#d9b24a"/><circle cx="32" cy="6" r="2" fill="${c}"/>`, // 冠
+  (c: string) => `<path d="M32 2 Q40 -2 42 8 Q36 10 32 2Z" fill="#6fbf73"/><path d="M32 2 Q24 -2 22 8 Q28 10 32 2Z" fill="#8fd48f"/>`, // 葉
+  (c: string) => `<ellipse cx="32" cy="3" rx="12" ry="3" fill="none" stroke="#f2d15c" stroke-width="2"/>`, // 輪
+  (c: string) => `<path d="M26 10 Q32 -4 38 10" fill="${c}"/>`, // 炎の先
+];
+
+/** 自動生成の妖怪の SVG の中身（viewBox 0 0 64 64） */
+export function genArtBody(id: string, tribeColor: string): string | null {
+  const look = LOOKS[id];
+  if (!look) return null;
+  const fh = hashStr(look.family);
+  const hue = (fh % 360 + (hashStr(tribeColor) % 40)) % 360;
+  const c = hsl(hue, 45 + (fh % 20), 52 - look.form * 4);
+  const d = hsl(hue + 20, 40, 30);
+  const body = (BODY[look.role] ?? BODY.buffer)(c, d);
+  const eyeStyle = EYES[(fh >>> 3) % EYES.length];
+  const eyeY = look.role === "caster" ? 38 : look.role === "wall" ? 26 : look.role === "buffer" ? 20 : 26;
+  const eyeR = [4.8, 3.8, 3.2][look.form];
+  const mouth = MOUTH[(fh >>> 5) % MOUTH.length](eyeY + 9);
+  // 成長の段階：子どもは飾りなし、ふつうは1つ、長は2つ
+  const acc: string[] = [];
+  if (look.form >= 1) acc.push(ACCESSORY[(fh >>> 7) % ACCESSORY.length](d));
+  if (look.form >= 2) acc.push(ACCESSORY[2](d));
+  const scale = [0.78, 0.92, 1.05][look.form];
+  const off = 32 - 32 * scale;
+  return `<g transform="translate(${off} ${off + (1 - scale) * 14}) scale(${scale})">${acc.join("")}${body}${eyeStyle(eyeY, eyeR)}${mouth}</g>`;
 }
