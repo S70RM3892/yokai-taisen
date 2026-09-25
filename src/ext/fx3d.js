@@ -245,6 +245,7 @@ Object.assign(e2.prototype, {
     const f = this.figs.get(uid);
     if (!f) return;
     const h = f.model.userData.height ?? 1.6, p = f.root.position.clone().setY(h * 0.55);
+    this.hitStop = Math.max(this.hitStop, crit ? 0.24 : 0.06); // 当たった瞬間に止める（会心は長く）
     if (!crit) {
       // ふつう：白い光と小さな火花、斬撃 1 本
       this.flare(p, color, 1.3, 0.22);
@@ -263,6 +264,7 @@ Object.assign(e2.prototype, {
   };
   P.ko = function (uid) {
     orig.ko.call(this, uid);
+    this.hitStop = Math.max(this.hitStop, 0.24);
     const f = this.figs.get(uid);
     if (!f) return;
     this.shockwave(f.root.position, 0x9ad0ff, 2.6, 0.7);
@@ -276,10 +278,12 @@ Object.assign(e2.prototype, {
     }
   };
   P.action = function (uid, target, kind, color) {
-    orig.action.call(this, uid, target, kind, color);
+    // 奥義は一体ずつの振り付け（ult_motion.js）。使えないときだけもとの動き
+    const ult = kind === "ult" || kind === "grand";
+    if (!(ult && this.startUlt(uid, target, kind === "grand", color))) orig.action.call(this, uid, target, kind, color);
     const f = this.figs.get(uid);
     if (!f) return;
-    if (kind === "ult" || kind === "grand") {
+    if (ult) {
       const g = kind === "grand";
       this.pillar(f.root.position, g ? 0xf2a541 : color, g ? 8 : 5.5, g ? 1.1 : 0.75, g ? 1.4 : 1);
       this.pillar(f.root.position, 0xffffff, g ? 8 : 5.5, g ? 0.45 : 0.3, g ? 1.2 : 0.8);
@@ -304,7 +308,7 @@ Object.assign(e2.prototype, {
     this.flare(a.root.position.clone().setY(1.1), color, big ? 1.8 : 1.1, 0.25);
   };
   P.update = function (dt) {
-    this.fxUpdate(dt);
+    this.fxUpdate(this.hitStop > 0 ? dt * 0.2 : dt); // 止まっているあいだは光も遅く
     // 奥義のときだけ画角をすこし狭めて寄る（もとの update がカメラを置き直したあとに効く）
     const fov = 42 - this.camPunch * 5;
     if (Math.abs(this.camera.fov - fov) > 0.01) this.camera.fov = fov, this.camera.updateProjectionMatrix();
@@ -380,7 +384,7 @@ function critBurst(e, ev, p) {
     top.append(fl);
     setTimeout(() => fl.remove(), 520);
   }
-  sc.hitStop = Math.max(sc.hitStop, 0.16);
+  sc.hitStop = Math.max(sc.hitStop, 0.26);
   sc.camShake = Math.max(sc.camShake, 0.42);
   sc.flashLevel = Math.max(sc.flashLevel, 0.3);
   sfxCrit();
