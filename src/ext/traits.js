@@ -15,7 +15,7 @@ function fxLine(k, v) {
   switch (head) {
     case "rage": return null; // rageAt とまとめて書く
     case "rageAt": return null;
-    case "guardBreak": return "こうげきが相手のガードを無視する";
+    case "guardBreak": return "こうげきが相手のガードを無視する（そのかわり ちからが 93% になる）";
     case "keystone": return `前衛のまん中にいると まもり+${pct(v)}`;
     case "adept": return `${ELEM_JA[arg]}の技の威力 ×${(v / 1000).toFixed(2)}`;
     case "endure": return v >= 2 ? "たおれるダメージを 2 回まで HP1 でこらえる" : "たおれるダメージを 1 回だけ HP1 でこらえる";
@@ -40,7 +40,7 @@ function fxLine(k, v) {
     case "ultEvade": return v >= 1000 ? "相手のひっさつわざを必ずかわす" : `相手のひっさつわざを ${pct(v)} でかわす`;
     case "scapegoat": return "ねらわれると となりの前衛の味方に代わってもらう";
     case "guardian": return "たおれそうな前衛の味方をかばう";
-    case "relay": return "自分の番に、自分のかわりに となりの前衛の味方を行動させる（右どなり優先）";
+    case "relay": return "自分の番に、自分のかわりに となりの前衛の味方に こうげきさせる（右どなり優先）";
     case "oil": return `チームにいると メンバーサークルを回したあとの待ち時間-${pct(v)}`;
     case "up": return `${STAT_JA[arg]}+${pct(v)}`;
     case "atkUp": return `こうげきの威力+${pct(v)}`;
@@ -78,7 +78,7 @@ function fxLine(k, v) {
     case "taunt": return "いつも相手のこうげき・ようじゅつを引きつける（ねらう指定より先。全体わざはのぞく）";
     case "hideFull": return "前衛にほかの味方がいる間は ねらわれない（ねらう指定をされても ほかの妖怪がこうげきされる）";
     case "guardOnly": return "ガードしかしない";
-    case "blocker": return "前衛に出るとき ガードしながら出る";
+    case "blocker": return "前衛に出るとき ガードしながら出る（後衛に下がってから だれも行動しないうちに戻ったときはガードしない）";
     case "pierce": return "相手の耐性（得意な属性）を無視してダメージを与える";
     case "sureHit": return "こうげき・ようじゅつが かわされない";
     case "accuracy": return `相手にかわされにくい（-${pct(v)}）`;

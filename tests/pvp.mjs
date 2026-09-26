@@ -61,6 +61,43 @@ if (hTarget !== gTarget) fail(`guest target did not reach host: ${gTarget} vs ${
 const head = await guest.textContent("h1 small");
 if (!head.includes("ホスト")) fail(`guest header: ${head}`);
 
+// ホストの入力は、ゲストの片道の通信時間ぶん遅れて効く（入力の遅れを両者でそろえる）
+{
+  const r = await host.evaluate(async () => {
+    const g = __yokaiDebug.ga(), foe = g.state.players[1];
+    g.net.link.rtt = 400; // 片道 200ms = 4 tick
+    const u = foe.units[foe.wheel[1]];
+    g.state.players[0].targetCooldown = 0;
+    const t0 = g.state.tick;
+    __yokaiDebug.send({ t: "target", enemyUnit: u.index });
+    await new Promise(res => setTimeout(res, 110)); // 遅らせなければ 1 tick（50ms）で効く
+    const soon = g.state.players[0].target;
+    await new Promise(res => setTimeout(res, 600));
+    g.net.link.rtt = 0;
+    return { want: u.index, soon, later: g.state.players[0].target, t0, t1: g.state.tick };
+  });
+  if (r.soon === r.want) fail("host input applied without the fair delay");
+  if (r.later !== r.want) fail(`host input never applied: ${JSON.stringify(r)}`); else console.log("host input delayed to match the guest");
+}
+
+// ホストのタブが裏に回っても（描画が止まっても）対戦は進む
+{
+  const before = await host.evaluate(() => {
+    window.__raf = window.requestAnimationFrame, window.__rafQ = [];
+    window.requestAnimationFrame = cb => (window.__rafQ.push(cb), 0);
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+    return __yokaiDebug.ga().state.tick;
+  });
+  await host.waitForTimeout(2000);
+  const after = await host.evaluate(() => {
+    const t = __yokaiDebug.ga().state.tick;
+    delete document.hidden, window.requestAnimationFrame = window.__raf;
+    for (const cb of window.__rafQ.splice(0)) window.requestAnimationFrame(cb);
+    return t;
+  });
+  if (after - before < 20) fail(`host stopped while hidden: ${before} -> ${after}`); else console.log(`host kept going while hidden: ${before} -> ${after}`);
+}
+
 await host.evaluate(() => __yokaiDebug.autoplay());
 await guest.evaluate(() => __yokaiDebug.autoplay());
 await host.waitForTimeout(6000);

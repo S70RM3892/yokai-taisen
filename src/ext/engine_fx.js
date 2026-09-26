@@ -34,7 +34,7 @@ function honkeStatBonus(e, u, stat) {
   const pos = si(e, u.index);
   if (pos === 1) r += (fx["center_" + stat] ?? 0) + (fx.center_all ?? 0);
   if (u.curse) {
-    if (u.curse.kind === "allDown") r -= lu[u.curse.tier];
+    if (u.curse.kind === "allDown") r -= Uc[u.curse.tier]; // 全ステータスダウン（本家：全ステータスの量）
     if (fx.cursedAllDown) r -= fx.cursedAllDown;
     if (fx.cursedAllUp) r += fx.cursedAllUp;
   }

@@ -78,7 +78,7 @@ function renderDetail(host, slot, onChange) {
   host.insertAdjacentHTML("beforeend", statTable(d, st));
   const hk = d.trait === "honke";
   const skillLine = d.skillMode === "heal" ? `回復・威力 ${d.skillPower}（味方を回復）` : d.skillMode === "drain" ? `吸収・威力 ${d.skillPower}（与えたダメージの半分を回復）` : `${d.skillElement ? Gl[d.skillElement] : "無"}・威力 ${d.skillPower}`;
-  const inspLine = hk ? (d.inspKind === "bless" ? `${Ad[d.blessing]}${Bn[d.inspTier] ?? ""}（味方）` : `${Wl[d.curse]}${Bn[d.inspTier] ?? ""}（相手）`) : `${Wl[d.curse]}（相手）／${Ad[d.blessing]}（味方）`;
+  const inspLine = hk ? (d.inspKind === "bless" ? `${inspLabel(Ad, d.blessing, d.inspStat)}${Bn[d.inspTier] ?? ""}（味方）` : `${inspLabel(Wl, d.curse, d.inspStat)}${Bn[d.inspTier] ?? ""}（相手）`) : `${Wl[d.curse]}（相手）／${Ad[d.blessing]}（味方）`;
   host.insertAdjacentHTML("beforeend", `<div class="dt-trait"><div class="dt-h">スキル「${tr.name}」</div><div>${tr.desc}</div>${hk && tr.detail && !tr.fx.noBattle ? `<div class="dt-note">このゲームでは：${tr.detail}</div>` : ""}</div>
     <div class="dt-moves">
       <div><span class="dt-k">こうげき</span> ${hk ? d.attackName + "・" : ""}威力 ${d.attackPower}${d.attackHits > 1 ? `（${d.attackHits} 回に分けて当たる）` : ""}</div>
@@ -123,7 +123,7 @@ function ultDesc(u) {
   const x = [];
   if (u.power && ["single", "all", "heal"].includes(u.kind)) x.push(`威力 ${u.power}`);
   if (u.cancel) x.push("当たると相手のパワーチャージを止める");
-  if (u.curse) x.push(`${Wl[u.curse]}にすることがある`);
+  if (u.curse) x.push(`${inspLabel(Wl, u.curse, u.stat)}にすることがある`);
   if (u.gamble) x.push("クリティカルが出やすいが外れやすい");
   else if (u.crit) x.push("クリティカルが出やすい");
   if (u.recoil) x.push("反動でダメージを受ける");
@@ -143,8 +143,8 @@ function ultKindDesc(u) {
     case "all": return u.spread ? `（${u.hits} 発を相手の前衛へ散らして${u.element ? Gl[u.element] + "の" : ""}ダメージ。当たった数の分だけ効く）`
       : `（相手の前衛全員に${u.element ? Gl[u.element] + "の" : ""}ダメージ）`;
     case "heal": return "（味方の前衛全員を回復）";
-    case "curseAll": return `（相手の前衛全員を${Wl[u.curse]}に）`;
-    case "blessAll": return `（味方の前衛全員に${Ad[u.blessing]}）`;
+    case "curseAll": return `（相手の前衛全員を${inspLabel(Wl, u.curse, u.stat)}に）`;
+    case "blessAll": return `（味方の前衛全員に${inspLabel(Ad, u.blessing, u.stat)}）`;
     case "selfBless": return "（まもりを上げて、相手の攻撃を自分に集める）";
     case "dispel": return "（相手のよいとりつきを消す）";
     case "purifyAll": return "（味方の前衛全員をおはらい）";

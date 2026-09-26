@@ -12,7 +12,7 @@
 // 対人戦では回復などのアイテムはなし（エンジンの state.noItems。バッグも空）。そうびはそのまま効く。
 // ============================================================================
 
-var NET_VER = 3; // 妖怪が本家の 398 体だけになった版（id が変わった）
+var NET_VER = 4; // 4：ダメージの乱数・クリティカル・つつく・ホストの入力の遅れなど、対戦の計算が変わった版（3：妖怪が本家の 398 体だけになった版）
 var NET_TICK_SNAP = 100; // 何 tick ごとに状態をまるごと送るか
 var NET_STUN = [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun.cloudflare.com:3478" }];
 var NET_INPUTS = new Set(["rotate", "target", "purify", "ultStart", "ultRelease", "ultCharge", "ultCancel", "purifyTap", "pokeStart", "pokeTap", "pokeStop"]);
@@ -351,6 +351,44 @@ function netHostSend(e, t) {
   if (n % NET_TICK_SNAP === 0 || e.state.outcome) e.net.link.send({ k: "snap", n, s: e.state });
 }
 
+// ホスト：自分の入力も、ゲストの入力がホストに届くまでと同じだけ遅らせて入れる（入力の遅れを両者でそろえる。
+// 以前はホストの入力だけすぐ効き、メンバーサークルの回転やひっさつわざの取り合いでホストが有利だった）
+var NET_FAIR_MAX = 8; // 遅らせる長さの上限（tick。8 = 0.4 秒）
+function netFairDelay(e) {
+  return Math.max(0, Math.min(NET_FAIR_MAX, Math.round((e.net.link.rtt ?? 0) / 2 / 50)));
+}
+function netHostQueue(e, input) {
+  const i = { ...input };
+  if (i.t === "ultRelease") i.at = e.state.tick; // 「あわせろ！」は押した瞬間の tick で判定する（ゲストと同じ）
+  (e.net.hostQ ??= []).push({ due: e.state.tick + netFairDelay(e), i });
+}
+// ホスト：その tick に入れる自分の入力（遅らせた分が来たもの）
+function netHostRelease(e) {
+  const q = e.net.hostQ;
+  while (q?.length && q[0].due <= e.state.tick) e.pending.push(q.shift().i);
+}
+
+// タブが裏に回っても対戦を止めない。画面の描画（requestAnimationFrame）は裏では止まるので、
+// Web Worker のタイマーで 50ms ごとに起こしてもらい、そのぶん対戦を進める（ホスト）・届いた tick を流す（ゲスト）
+var NET_BG = null;
+function netBgStart() {
+  if (NET_BG) return;
+  try {
+    const url = URL.createObjectURL(new Blob(["setInterval(() => postMessage(0), 50);"], { type: "text/javascript" }));
+    NET_BG = new Worker(url);
+    NET_BG.onmessage = netBgTick;
+  } catch { NET_BG = !1; }
+}
+function netBgTick() {
+  const t = Ga;
+  if (!t || !t.running || !t.net || !document.hidden || t.state.outcome) return;
+  const now = performance.now();
+  if (now < t.introUntil) return;
+  t.acc += Math.min(now - t.lastFrame, 1000), t.lastFrame = now;
+  if (t.net.role === "guest") { netGuestPump(t); return; }
+  for (let r = 0; t.acc >= 50 && r < 20 && !t.state.outcome; r++) X2(t), t.acc -= 50;
+}
+
 // ゲスト：自分の入力はホストへ（「あわせろ！」は押した瞬間に見えていた tick を付ける）
 function netGuestSend(e, input) {
   const i = { ...input };
@@ -404,7 +442,7 @@ function startPvpBattle(net, seed, teams) {
   document.querySelector(".pvp-lobby")?.remove();
   const canon = Rh(seed, teams[0], teams[1], { noItems: !0 });
   const guest = net.role === "guest";
-  net.inbox = [], net.stream = [], net.resyncs = 0, net.gaps = 0, net.wantAgain = !1, net.peerAgain = !1;
+  net.inbox = [], net.hostQ = [], net.stream = [], net.resyncs = 0, net.gaps = 0, net.wantAgain = !1, net.peerAgain = !1;
   Kr.replaceChildren();
   const canvas = q("canvas", "stage"), scene = new e2(canvas);
   Ga = {
@@ -435,9 +473,11 @@ function startPvpBattle(net, seed, teams) {
     wheelKey: "",
   };
   O2(Ga, canvas);
+  netBgStart();
   const foe = Ga.state.players[1].units.map(u => ct[u.defIndex].name).join("・");
   Rt(Ga, `相手：${net.peerName}（${foe}）`, "f");
   Rt(Ga, "対人戦：アイテムはなし。そうびは効く", "a");
+  if (net.link.rtt != null) Rt(Ga, `通信の往復 ${net.link.rtt}ms（入力の遅れは両者そろえる）`, "a");
   for (const pid of [1, 0]) {
     // 相手の魂は見せない（装備だけ出す）
     const eqs = Ga.state.players[pid].units.map(u => { const eq = equipById(u.equipment ?? null); return eq && !hiddenSoul(u, eq) ? `${ct[u.defIndex].name}＝${eq.name}` : null; }).filter(Boolean);
