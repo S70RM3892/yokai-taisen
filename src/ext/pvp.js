@@ -12,7 +12,7 @@
 // 対人戦では回復などのアイテムはなし（エンジンの state.noItems。バッグも空）。持ち物（装備）はそのまま効く。
 // ============================================================================
 
-var NET_VER = 1;
+var NET_VER = 2;
 var NET_TICK_SNAP = 100; // 何 tick ごとに状態をまるごと送るか
 var NET_STUN = [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun.cloudflare.com:3478" }];
 var NET_INPUTS = new Set(["rotate", "target", "purify", "ultStart", "ultRelease", "ultCharge", "ultCancel", "purifyTap", "pokeStart", "pokeTap", "pokeStop"]);
@@ -393,7 +393,7 @@ function openPvpLobby(joinCode = "") {
   wrap.append(box);
   box.append(q("div", "big", "対人戦"));
   const note = q("div", "pvp-note");
-  note.innerHTML = "いまの編成（6 体・性格・育成・<b class=\"ok\">持ち物（装備）</b>）で戦う。持ち物は対人戦でも効く。<b>回復などのアイテムはなし</b>。";
+  note.innerHTML = "いまの編成（6 体・性格・<b class=\"ok\">持ち物（装備）</b>）で戦う。持ち物は対人戦でも効く。<b>回復などのアイテムはなし</b>。";
   box.append(note);
   const faces = q("div", "pvp-team");
   for (const m of team) {

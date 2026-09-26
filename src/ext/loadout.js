@@ -5,6 +5,28 @@
 
 var SOUL_PREFIX = "soul:";
 
+// 前の版の性格（このゲーム独自の 8 種）は、いちばん近い本家の性格として読む（保存した編成・妖怪ごとの初めの性格）
+var NATURE_ALIAS = {
+  fierce: "arakure", arcane: "zunouteki", balanced: "tanki", wild: "reisei",
+  hinder: "hidou", devoted: "kenshinteki", stalwart: "doujinai", careful: "shinchou",
+};
+function natureId(id) { return qn(id).id; }
+
+// 本家の性格の前半（さぼりやすさ）。mult はその妖怪のサボりやすさに掛ける。
+// 本家は 6 段階＋ビビり。倍率は本家では公表されていないので、このゲームで決めた。
+var DILIGENCE = [
+  { id: "choumajime", name: "超まじめ", mult: 0.25 },
+  { id: "majime", name: "まじめ", mult: 0.5 },
+  { id: "sunao", name: "すなお", mult: 1 },
+  { id: "kimama", name: "気まま", mult: 1.5 },
+  { id: "zubora", name: "ずぼら", mult: 2 },
+  { id: "chouzubora", name: "超ずぼら", mult: 3 },
+];
+function diligenceOf(id) { return DILIGENCE.find(x => x.id === id) ?? DILIGENCE[2]; }
+function natureFullName(natId, dilId) { return `${diligenceOf(dilId).name}で${qn(natId).name}`; }
+// 性格ボーナス（本家：対戦のたびに伸びる。ここでは伸びきった値）
+function natureBonus(natId) { return { ...xu, ...qn(natId).bonus }; }
+
 function equipById(id) {
   if (id == null) return null;
   if (id.startsWith(SOUL_PREFIX)) {
@@ -60,10 +82,13 @@ function mergeFx(...list) {
   return out;
 }
 
-// member: { unit, nature?, effort?, equipment? }
+// member: { unit, nature?, diligence?, equipment? }
+// 能力の上乗せは本家と同じく性格ボーナスだけ（前の版の「育成」は本家にないのでなくした）
 function memberStats(member) {
   const d = ct.find(x => x.id === member.unit);
-  const r = member.effort ?? xu;
+  const nature = natureId(member.nature ?? d.defaultNature);
+  const dil = diligenceOf(member.diligence);
+  const r = natureBonus(nature);
   const e = equipById(member.equipment ?? null);
   const mods = e?.mods ?? {};
   const sp = e?.special ?? {};
@@ -83,9 +108,10 @@ function memberStats(member) {
   const fx = mergeFx(traitOf(d).fx, e?.fx, eqFx);
   return {
     ...base,
-    nature: member.nature ?? d.defaultNature,
+    nature,
+    diligence: dil.id,
     equipment: e ? e.id : null,
-    eq: sp,
+    eq: dil.mult === 1 ? sp : { ...sp, loafMult: (sp.loafMult ?? 1) * dil.mult },
     fx,
     favorite: favoriteOf(d),
     camp: campOf(d),
@@ -119,7 +145,7 @@ function randomBag(rng) {
   return bag;
 }
 
-// CPU の装備えらび：本家の装備・このゲームの装備・魂からランダム（装備できるものだけ）
+// CPU の装備えらび：本家の装備・魂からランダム（装備できるものだけ）
 function randomEquip(rng, def) {
   const r = gt(rng, 10);
   if (r === 0) return null;
