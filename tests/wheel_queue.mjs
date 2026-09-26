@@ -23,7 +23,7 @@ await page.click(".b-btn.go");
 await page.click(".confirm .btn.primary");
 await page.waitForTimeout(2800);
 
-// ホイールの回転は妖怪の行動と同じ判定：だれかの行動のモーション中に回しても、そのあいだは並びが変わらない。
+// メンバーサークルの回転は妖怪の行動と同じ判定：だれかの行動のモーション中に回しても、そのあいだは並びが変わらない。
 // 回した角度で待ち（光る）、モーションが終わったら回る
 const st = () => page.evaluate(() => { const g = __yokaiDebug.ga(), s = g.state, p = s.players[0];
   return { tick: s.tick, busy: s.busyUntil, wheel: p.wheel.join(), pending: p.pendingRotate, cd: p.rotateCooldown,

@@ -6,7 +6,7 @@
 //   ガード … 腕を組んで身をかがめる（ガード中は六角の結界。statusFx）
 //   サボり … 寝る・あくび・よそ見・おどる（その妖怪ごとに決まる）
 //   被弾 … のけぞる／よける … 横に跳んで残像／気絶 … 吹っとんで倒れ、魂が抜ける
-//   登場 … ホイールで前に出たとき、跳んで着地／勝敗 … 勝った側は跳ねてよろこび、負けた側はうなだれる
+//   登場 … メンバーサークルで前に出たとき、跳んで着地／勝敗 … 勝った側は跳ねてよろこび、負けた側はうなだれる
 // ダメージの数字は行動から約 0.48 秒後に出るので、当たる瞬間をそこに合わせる。
 // 姿勢は { pos, y, rx, rz, face, spin, sx, sy, op, armL, armR, armZ, head } で返し、updateFigure で当てる。
 // ============================================================================
@@ -533,7 +533,7 @@ var FX_HEX = null;
     const f = this.figs.get(uid);
     if (f && f.alive && !f.anim) this.startMove(uid, "hurt");
   };
-  // ホイールで前に出てきた妖怪は、跳んで着地する
+  // メンバーサークルで前に出てきた妖怪は、跳んで着地する
   P.setLine = function (ally, uids) {
     const was = new Set([...this.figs.values()].filter(o => o.ally === ally && o.root.visible).map(o => o.uid));
     prevLine.call(this, ally, uids);

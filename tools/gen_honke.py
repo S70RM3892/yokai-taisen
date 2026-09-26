@@ -102,8 +102,13 @@ def ult_of(d):
         o = {"kind": "single", "power": max(80, total)}
         hits = h
     else:
-        o = {"kind": "all", "power": max(60, min(170, round(total * 0.55)))}
-        hits = max(1, round(h / 3))
+        # 本家どおり：「敵全体」は前衛の敵それぞれに いりょく x 回数 を当てる。
+        # 「敵複数」は x 回数 の 1 発ずつを前衛の敵へ散らして当てる（当たった回数の分だけダメージ）
+        o = {"kind": "all", "power": total}
+        hits = h
+        if "複数" in tgt:
+            o["spread"], o["hits"] = 1, h
+            hits = 1
         if "味方" in tgt: o["blast"] = 1
     if "自爆" in extra: o["selfKo"] = 1
     if "キャンセル" in extra: o["cancel"] = 1

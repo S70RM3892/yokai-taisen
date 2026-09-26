@@ -184,7 +184,7 @@ var BATTLE_ITEMS = [
     { id: "migawari_ningyou", name: "みがわり人形", kind: "flee" },
   ]);
 
-var BAG_SIZE = 6;            // 持ち物は 6 つまで（同じものを重ねてもよい）
+var BAG_SIZE = 6;            // アイテムは 6 つまで（同じものを重ねてもよい）
 var ITEM_COOLDOWN = 100;     // アイテムを使ったあと、次に使えるまで 5 秒
 var FAVORITE_MULT = 1250;    // 好物は 1.25 倍
 

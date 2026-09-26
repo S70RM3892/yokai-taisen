@@ -67,10 +67,10 @@ await host.waitForTimeout(6000);
 await host.screenshot({ path: `${out}/pvp-2-host.png` });
 await guest.screenshot({ path: `${out}/pvp-2-guest.png` });
 
-// 決着まで待つ（最大 5 分）。途中で同じ tick の状態を比べる
+// 決着まで待つ（最大 10 分。対戦は長くても 7200 tick で終わるが、遅い環境では 1 秒に 20 tick 進まない）。途中で同じ tick の状態を比べる
 const t0 = Date.now();
 let checked = 0;
-while (Date.now() - t0 < 300000) {
+while (Date.now() - t0 < 600000) {
   const g = await guest.evaluate(() => { const x = __yokaiDebug.ga(); return x && { tick: x.canon.tick, resyncs: x.net.resyncs, gaps: x.net.gaps, done: !!x.canon.outcome, lag: x.net.stream.length }; });
   const h = await host.evaluate(() => { const x = __yokaiDebug.ga(); return x && { tick: x.state.tick, done: !!x.state.outcome }; });
   if (!g || !h) { fail("battle vanished"); break; }

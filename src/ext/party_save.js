@@ -4,10 +4,10 @@
 // 保存する中身は「このゲームの内部 id」ではなく、本家で変わらないもの：
 //   妖怪 … 本家の図鑑 No と名前（例 { no: 322, name: "ブシニャン" }）
 //   性格 … 本家の性格 id（arakure など）とまじめさ
-//   持ち物 … 装備の id と名前。魂は「どの妖怪の魂か」を妖怪と同じ形で
+//   そうび … 装備の id と名前。魂は「どの妖怪の魂か」を妖怪と同じ形で
 //   アイテム … id と名前
 // 読むときは No → 名前 → 古い版の id の順にさがす。見つからないものだけを外し、何を外したかを知らせる
-// （1 つが読めなくても、ほかの 5 体・持ち物は残す）。
+// （1 つが読めなくても、ほかの 5 体・そうびは残す）。
 //
 // localStorage の "yokai-taisen:party" に { format, current, slots } を入れる。
 //   current … いま編成画面で組んでいる 6 体（ページを開きなおしても続きから）
@@ -27,7 +27,7 @@ var LEGACY_UNIT_ID = {
   g170: "びきゃく", g010: "万尾獅子", g109: "むりだ城", p002: "あせっか鬼", nurikabe: "シロカベ",
 };
 
-// ---- 妖怪・持ち物を、変わらない形にする／もどす ----
+// ---- 妖怪・そうびを、変わらない形にする／もどす ----
 function unitRef(id) {
   const d = ct.find(x => x.id === id);
   return d ? { no: d.no, name: d.name } : { id };
@@ -107,7 +107,7 @@ function partyResolve(party) {
       if (m.diligence) l.diligence = DILIGENCE.some(x => x.id === m.diligence) ? m.diligence : null;
       if (m.equip) {
         const eq = findEquip(m.equip);
-        if (eq && equipAllowed(d, eq)) l.equipment = eq; else lost.push(`${d.name}の持ち物「${equipLabel(m.equip)}」`);
+        if (eq && equipAllowed(d, eq)) l.equipment = eq; else lost.push(`${d.name}のそうび「${equipLabel(m.equip)}」`);
       }
     }
     lo.push(l);
@@ -214,7 +214,7 @@ function partyBox(onChange) {
       };
       const save = q("button", "b-mini save", "保存");
       save.disabled = !full;
-      save.title = full ? "いまの 6 体・性格・持ち物・アイテムをこのセットに保存" : "6 体そろうと保存できる";
+      save.title = full ? "いまの 6 体・性格・そうび・アイテムをこのセットに保存" : "6 体そろうと保存できる";
       save.onclick = () => {
         const cur = partyStore();
         const nm = cur.slots[i]?.name || `セット ${i + 1}`;

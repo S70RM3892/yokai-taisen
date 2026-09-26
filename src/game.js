@@ -200,7 +200,7 @@
       drain: "吸精",
       waterEater: "水喰い",
       hidden: "隠れ身",
-      firstStrike: "先駆け",
+      firstStrike: "閃光",
       spiritSmoke: "福の気",
       prayer: "祈り",
       benchHeal: "後見",
@@ -345,7 +345,7 @@
     e.forEach((i, n) => {
       let s = ct.find(o => o.id === i.unit);
       if (!s) {
-        t.push(`#${n}: 知らないユニット ${i.unit}`);
+        t.push(`#${n}: 知らない妖怪 ${i.unit}`);
         return
       }
       if (a[s.rank]++, s.group && r.set(s.group, (r.get(s.group) ?? 0) + 1), i.nature !== void 0) try {
@@ -353,7 +353,7 @@
       } catch {
         t.push(`#${n}: 知らない性格 ${i.nature}`)
       }
-      i.equipment != null && (equipById(i.equipment) ? equipAllowed(s, i.equipment) || t.push(`#${n}: ${s.name} は ${equipById(i.equipment).name} を装備できない`) : t.push(`#${n}: 知らない装備 ${i.equipment}`));
+      i.equipment != null && (equipById(i.equipment) ? equipAllowed(s, i.equipment) || t.push(`#${n}: ${s.name} は ${equipById(i.equipment).name} をそうびできない`) : t.push(`#${n}: 知らないそうび ${i.equipment}`));
       let l = i.effort ?? xu,
         u = 0;
       for (let o of ["hp", "atk", "spa", "def", "spd"]) {
@@ -937,7 +937,7 @@
     switch (a?.t) {
       case "rotate": {
         if (s || i.rotateCooldown > 0 || a.dir !== "cw" && a.dir !== "ccw") return !1;
-        if ((FIELD ?? EMPTY_FIELD).wheelLock[t] && !i.units.some(x => Se(x) && x.fx.oilFree)) return !1; // まわSEN：前衛にいる間 相手はホイールを回せない
+        if ((FIELD ?? EMPTY_FIELD).wheelLock[t] && !i.units.some(x => Se(x) && x.fx.oilFree)) return !1; // まわSEN：前衛にいる間 相手はメンバーサークルを回せない
         let l = a.steps ?? 1;
         if (!gr(l, 1, 5) || i.pendingRotate) return !1;
         // 回転も妖怪の行動と同じ判定：だれかの行動（こうげき・術・奥義など）のモーション中は反映しない。
@@ -1165,11 +1165,35 @@
       }
       case "all": {
         let h = !1;
-        for (let f of Ht(u)) {
-          if (!Se(f)) continue;
-          let g = Ui(e, s, l, a, u, f, spec(o.power ?? Tc, r));
-          h = h || g
-        }
+        if (o.spread) {
+          // 敵複数に攻撃（本家）：o.hits 発を前衛の敵へ 1 発ずつ散らす。当たった回数の割合だけダメージ
+          let pool = Ht(u).filter(Se),
+            n = o.hits ?? 1,
+            cnt = new Map;
+          for (let k = 0; k < n && pool.length; k++) {
+            let f = pool[gt(a.rng, pool.length)];
+            cnt.set(f, (cnt.get(f) ?? 0) + 1)
+          }
+          for (let [f, k] of cnt) {
+            if (!Se(f)) continue;
+            let sp = spec(o.power ?? Tc, r),
+              mk = s.length;
+            sp.chargeMult = Bt(sp.chargeMult, Math.floor(k * 1e3 / n));
+            let g = Ui(e, s, l, a, u, f, sp);
+            if (k > 1)
+              for (let x = mk; x < s.length; x++)
+                if (s[x].t === "damage" && s[x].src === a.uid) {
+                  s[x].hits = k;
+                  break
+                }
+            h = h || g
+          }
+        } else
+          for (let f of Ht(u)) {
+            if (!Se(f)) continue;
+            let g = Ui(e, s, l, a, u, f, spec(o.power ?? Tc, r));
+            h = h || g
+          }
         // 自爆（敵味方全員に攻撃）：味方の前衛にも当たり、自分は気絶する
         if (o.blast)
           for (let f of Ht(l)) f !== a && Ui(e, s, l, a, l, f, spec(o.power ?? Tc, r));
@@ -18835,15 +18859,15 @@ void main() {
   }
   var Vl = "",
     Hl = {
-      takeru: "猛",
-      ayashi: "怪",
-      tsuwamono: "剛",
-      kage: "影",
-      nagomi: "和",
-      miyabi: "雅",
-      tatari: "祟",
-      shizume: "鎮",
-      maga: "禍"
+      takeru: "イサマシ",
+      ayashi: "フシギ",
+      tsuwamono: "ゴーケツ",
+      kage: "プリチー",
+      nagomi: "ポカポカ",
+      miyabi: "ウスラカゲ",
+      tatari: "ブキミー",
+      shizume: "ニョロロン",
+      maga: "怪魔"
     },
     Gl = {
       fire: "火",
@@ -18854,29 +18878,29 @@ void main() {
       wind: "風"
     },
     Wl = {
-      slow: "鈍重",
-      weaken: "衰弱",
-      brittle: "脆化",
-      poison: "蝕毒",
-      seal: "封気",
-      stun: "行動停止",
+      slow: "すばやさダウン",
+      weaken: "ちから・ようりょくダウン",
+      brittle: "まもりダウン",
+      poison: "HPが減る",
+      seal: "妖気がたまらない",
+      stun: "動けない",
       confuse: "混乱",
-      allDown: "全能力低下",
-      lazy: "怠け",
-      money: "散財"
+      allDown: "全ステータスダウン",
+      lazy: "サボる",
+      money: "お金をばらまく"
     },
     Ad = {
-      rally: "鼓舞",
-      fortify: "堅護",
-      haste: "疾風",
-      gather: "集気",
-      regen: "再生",
-      ward: "浄気",
-      allUp: "万全",
-      taunt: "挑発",
-      hide: "隠形"
+      rally: "ちから・ようりょくアップ",
+      fortify: "まもりアップ",
+      haste: "すばやさアップ",
+      gather: "妖気がたまりやすい",
+      regen: "HP回復",
+      ward: "とりつかれない",
+      allUp: "全ステータスアップ",
+      taunt: "ねらわれる",
+      hide: "ねらわれない"
     },
-    Bn = ["", "（超）", "（究極）"],
+    Bn = ["", "（大）", "（超）"],
     Kr = document.getElementById("app"),
     q = (e, t = "", a = "") => {
       let r = document.createElement(e);
@@ -18909,7 +18933,7 @@ void main() {
       i = !0,
       n = q("section", "builder"),
       s = q("div", "b-head");
-    s.append(q("span", "b-tag", "編成"), q("span", "b-sub", "対戦に出す6体とホイールの並び"));
+    s.append(q("span", "b-tag", "編成"), q("span", "b-sub", "対戦に出す6体とメンバーサークルの並び"));
     let l = q("div", "b-left"),
       u = q("div", "b-center"),
       o = q("div", "b-right"),
@@ -18974,7 +18998,7 @@ void main() {
     let L = q("button", "b-btn", "いどう");
     L.title = "2つの枠を入れ替える（M）";
     let ee = q("button", "b-btn", "くわしく");
-    ee.title = "くわしい情報（3D・能力・装備）を出す／しまう（Tab）";
+    ee.title = "くわしい情報（3D・能力・そうび）を出す／しまう（Tab）";
     let H = q("button", "b-btn", "おまかせ"),
       re = q("button", "b-btn go", "けってい");
     re.title = "この6体で対戦する（Enter）", d.append(W, L, ee, H, re);
@@ -19064,7 +19088,7 @@ void main() {
             })))).length > 0,
             Ue = q("button", "b-item" + (je ? " ng" : "") + (ne?.id === he.id ? " cur" : "")),
             He = q("span", "b-pic");
-          He.innerHTML = da(he.id, he.name.slice(0, 1)), He.style.background = Pi[he.tribe], Ue.append(He, q("span", "b-nm", he.name), q("span", "b-r r" + he.rank, he.rank)), Ue.title = `${he.name}（${he.rank}・${Hl[he.tribe]}）特性：${traitOf(he).name}\n${traitOf(he).desc}`, Ue.onclick = () => Re(he.id), Ue.onpointerenter = X => { X.pointerType === "mouse" && i && DETAIL_FOR !== he.id && (DETAIL_FOR = he.id, renderDetail(N, detailSlot ?? t, Me)) }, V.append(Ue)
+          He.innerHTML = da(he.id, he.name.slice(0, 1)), He.style.background = Pi[he.tribe], Ue.append(He, q("span", "b-nm", he.name), q("span", "b-r r" + he.rank, he.rank)), Ue.title = `${he.name}（${he.rank}・${Hl[he.tribe]}）スキル：${traitOf(he).name}\n${traitOf(he).desc}`, Ue.onclick = () => Re(he.id), Ue.onpointerenter = X => { X.pointerType === "mouse" && i && DETAIL_FOR !== he.id && (DETAIL_FOR = he.id, renderDetail(N, detailSlot ?? t, Me)) }, V.append(Ue)
         }
       }
     }
@@ -19086,7 +19110,7 @@ void main() {
       if (document.querySelector(".result") || /INPUT|SELECT|TEXTAREA/.test(X.target.tagName)) return;
       Ga || (X.key === "Enter" ? re.click() : X.key === "Tab" ? (X.preventDefault(), ee.click()) : X.key.toLowerCase() === "m" ? L.click() : X.key === "Backspace" ? W.click() : X.key === "ArrowLeft" || X.key.toLowerCase() === "q" ? y(-1) : (X.key === "ArrowRight" || X.key.toLowerCase() === "e") && y(1))
     };
-    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じ。左の「流行りの型」で本家の流行り編成をそのまま入れられる。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && !partyRestoreCurrent().ok && (() => {
+    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じ。左の「流行りの型」で本家の流行り編成をそのまま入れられる。枠を選んで右のリストから入れる。メンバーサークルを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && !partyRestoreCurrent().ok && (() => {
       let X = s0(ni(Xl(), 77));
       bt = X.map(te => te.unit), loFromMembers(X.map(te => ({ ...te, diligence: "choumajime" })))
     })(), Me()
@@ -19200,7 +19224,7 @@ void main() {
     for (let [d, c] of r.entries()) s.append(Dd(c, d ? "b" : "a"));
     s.append(Dd(t));
     let o = q("div", "txt");
-    o.append(q("span", "kind", a ? "大奥義" : "奥義"), q("span", "move", Ze(t).ultName), q("span", "who", (n ? "" : "敵の") + Ze(t).name)), s.append(o), i.append(s), setTimeout(() => s.remove(), 1300)
+    o.append(q("span", "kind", a ? "Gわざ" : "ひっさつわざ"), q("span", "move", Ze(t).ultName), q("span", "who", (n ? "" : "敵の") + Ze(t).name)), s.append(o), i.append(s), setTimeout(() => s.remove(), 1300)
   }
 
   function Jr(e, t, a, r = "", i = 1e3) {
@@ -19432,7 +19456,7 @@ void main() {
       "text-anchor": "middle",
       class: "zero-t"
     });
-    b.textContent = "ゼロ";
+    b.textContent = "零式";
     let A = Ke("circle", {
       r: 26,
       class: "zhit"
@@ -19532,7 +19556,7 @@ void main() {
   function Yl(e, t) {
     let cu0 = e.state.players[0].units[e.state.players[0].wheel[t]];
     if (cu0 && Se(cu0) && cu0.curse) {
-      Jr(e, "とりつかれていて奥義を撃てない", "miss", "後衛に下げておはらいしよう", 1100), e.mode = "none";
+      Jr(e, "とりつかれていてひっさつわざを使えない", "miss", "後衛に下げておはらいしよう", 1100), e.mode = "none";
       return
     }
     zt(e, {
@@ -19551,10 +19575,7 @@ void main() {
       }), e.mode = "none";
       return
     }
-    performance.now() - Cd < 300 || (t >= 3 ? (zt(e, {
-      t: "purify",
-      allySlot: t
-    }), e.mode = "none") : Yl(e, t))
+    performance.now() - Cd < 300 || (t >= 3 ? (purifyPick(e, t), e.mode = "none") : Yl(e, t))
   }
 
   function H2(e, t) {
@@ -19660,10 +19681,7 @@ void main() {
       t: "ultCancel"
     }), t.mode = "none";
     else if (a >= "1" && a <= "3") Yl(t, Number(a) - 1);
-    else if (a >= "4" && a <= "6") zt(t, {
-      t: "purify",
-      allySlot: Number(a) - 1
-    });
+    else if (a >= "4" && a <= "6") purifyPick(t, Number(a) - 1);
     else if (a === "tab") {
       e.preventDefault();
       let i = t.state.players[1],
@@ -19758,7 +19776,7 @@ void main() {
       case "action": {
         let i = Ot(e, t.uid),
           n = t.dst !== void 0 && t.dst !== null ? Ot(e, t.dst) : t.dst === null ? null : ui(e.state.players[i.owner], e.state.players[1 - i.owner]);
-        t.action === "attack" ? (r.action(t.uid, n ? n.uid : null, "attack", 16777215), o2(Math.min(1, Ze(i).attackPower / 150))) : t.action === "skill" ? (r.action(t.uid, n ? n.uid : null, "skill", Id(Ze(i).skillElement)), c2(Ze(i).skillElement)) : t.action === "guard" ? (r.guard(t.uid), h2(), ma(e, t.uid, "守り", "info")) : t.action === "loaf" ? (r.loaf(t.uid), k2(), ma(e, t.uid, "なまけ", "info"), Rt(e, `${la(e,t.uid)} はなまけている`, a(t.uid))) : t.action === "rest" && (r.loaf(t.uid), ma(e, t.uid, "力をためている", "info"));
+        t.action === "attack" ? (r.action(t.uid, n ? n.uid : null, "attack", 16777215), o2(Math.min(1, Ze(i).attackPower / 150))) : t.action === "skill" ? (r.action(t.uid, n ? n.uid : null, "skill", Id(Ze(i).skillElement)), c2(Ze(i).skillElement)) : t.action === "guard" ? (r.guard(t.uid), h2(), ma(e, t.uid, "ガード", "info")) : t.action === "loaf" ? (r.loaf(t.uid), k2(), ma(e, t.uid, "サボり", "info"), Rt(e, `${la(e,t.uid)} はサボっている`, a(t.uid))) : t.action === "rest" && (r.loaf(t.uid), ma(e, t.uid, "力をためている", "info"));
         break
       }
       case "damage": {
@@ -19770,19 +19788,19 @@ void main() {
         }
         i && (ma(e, t.dst, i > 0 ? "弱点！" : "いまひとつ", "eff " + (i > 0 ? "weak" : "resist")), i > 0 && r.hit(t.dst, !0, 16765562)), (t.crit || t.amount >= 160) && ql(e)
       }
-      showDamage(e, t, U2(e, t)), t.crit ? (d2(), Rt(e, `${la(e,t.src??t.dst)} のクリティカル！ ${t.amount}`, a(t.src ?? t.dst))) : Ot(e, t.dst).guarding && (t.source === "attack" || t.source === "skill") && p2(), t.source === "trait" && Rt(e, `${la(e,t.dst)} に特性のダメージ ${t.amount}`, a(t.dst));
+      showDamage(e, t, U2(e, t)), t.crit ? (d2(), Rt(e, `${la(e,t.src??t.dst)} のクリティカル！ ${t.amount}`, a(t.src ?? t.dst))) : Ot(e, t.dst).guarding && (t.source === "attack" || t.source === "skill") && p2(), t.source === "trait" && Rt(e, `${la(e,t.dst)} にスキルのダメージ ${t.amount}`, a(t.dst));
       break;
       case "heal":
         viewOf(e, t.dst).hp = Math.min(Ot(e, t.dst).maxHp, viewOf(e, t.dst).hp + t.amount), ma(e, t.dst, "+" + t.amount, "heal"), t.amount >= 20 && (f2(), r.healFx(t.dst));
         break;
       case "curse":
-        t.result === "hit" ? (r.cast(t.src, 11566304), r.curseFx(t.dst), ma(e, t.dst, Wl[t.kind] + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${Wl[t.kind]}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "呪付 失敗" : t.result === "resisted" ? "ふせいだ" : "呪付 無効", "info");
+        t.result === "hit" ? (r.cast(t.src, 11566304), r.curseFx(t.dst), ma(e, t.dst, Wl[t.kind] + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${Wl[t.kind]}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "とりつき 失敗" : t.result === "resisted" ? "ふせいだ" : "とりつき 無効", "info");
         break;
       case "bless":
         r.cast(t.src, 5030564), r.blessFx(t.dst), ma(e, t.dst, Ad[t.kind] + Bn[t.tier], "info"), g2();
         break;
       case "ko":
-        viewOf(e, t.uid).hp = 0, viewOf(e, t.uid).alive = !1, e.stats.ko[t.uid < 6 ? 1 : 0]++, ql(e), r.ko(t.uid), w2(), Rt(e, `${la(e,t.uid)} が倒れた`, a(t.uid));
+        viewOf(e, t.uid).hp = 0, viewOf(e, t.uid).alive = !1, e.stats.ko[t.uid < 6 ? 1 : 0]++, ql(e), r.ko(t.uid), w2(), Rt(e, `${la(e,t.uid)} は気絶した`, a(t.uid));
         break;
       case "ult": {
         let i = Ot(e, t.uid),
@@ -19793,23 +19811,23 @@ void main() {
         e.stats.ult[i.owner]++, L2(e, i, t.grand, t.grand ? e.partners[i.owner] : []), T2(t.grand), setTimeout(() => {
           r.action(t.uid, l ? null : u, t.grand ? "grand" : "ult", Id("element" in n ? n.element : null)), r.perfectFx(t.uid), v2(t.grand), ql(e)
         }, 1100);
-        Rt(e, `${la(e,t.uid)} の${t.grand?"大奥義":"奥義"}「${Ze(i).ultName}」`, a(t.uid));
+        Rt(e, `${la(e,t.uid)} の${t.grand?"Gわざ":"ひっさつわざ"}「${Ze(i).ultName}」`, a(t.uid));
         break
       }
       case "stance": {
         let i = e.state.players[t.player];
-        e.partners[t.player] = (i.stance?.partners ?? []).map(n => i.units[n]), Ed(t.player === 1), zd(e, t.uid, `${t.grand?"大奥義":"奥義"}「${Ze(Ot(e,t.uid)).ultName}」`, !0), t.player === 1 && Rt(e, `${la(e,t.uid)} が${t.grand?"大奥義":"奥義"}を構えた！`, "f");
+        e.partners[t.player] = (i.stance?.partners ?? []).map(n => i.units[n]), Ed(t.player === 1), zd(e, t.uid, `${t.grand?"Gわざ":"ひっさつわざ"}「${Ze(Ot(e,t.uid)).ultName}」`, !0), t.player === 1 && Rt(e, `${la(e,t.uid)} が${t.grand?"Gわざ":"ひっさつわざ"}のパワーチャージを始めた！`, "f");
         break
       }
       case "stanceCancel":
-        t.reason === "curse" ? (ma(e, t.uid, "とりつかれて奥義が解けた", "info"), Rt(e, `${la(e,t.uid)} はとりつかれて奥義の構えが解けた`, a(t.uid))) : t.player === 0 && t.reason !== "input" && Rt(e, "構えがキャンセルされた", "a");
+        t.reason === "curse" ? (ma(e, t.uid, "とりつかれてパワーチャージが解けた", "info"), Rt(e, `${la(e,t.uid)} はとりつかれてパワーチャージが解けた`, a(t.uid))) : t.player === 0 && t.reason !== "input" && Rt(e, "パワーチャージが止められた", "a");
         break;
       case "rotateDropped":
         t.player === 0 && wheelDenied(e);
         break;
       case "rotate":
       case "forcedRotate":
-        _2(), jinAfterRotate(e, t), t.t === "forcedRotate" && Rt(e, `${t.player===0?"こちら":"相手"}の前衛が全滅して、ホイールが回った`, t.player === 0 ? "a" : "f");
+        _2(), jinAfterRotate(e, t), t.t === "forcedRotate" && Rt(e, `${t.player===0?"こちら":"相手"}の前衛が全滅して、メンバーサークルが回った`, t.player === 0 ? "a" : "f");
         break;
       case "doll":
         viewOf(e, t.uid).hp = Math.max(1, viewOf(e, t.uid).hp), Rt(e, `${la(e,t.uid)} は身代わり人形で耐えた`, a(t.uid));
@@ -19818,16 +19836,16 @@ void main() {
         viewOf(e, t.uid).hp = Math.max(1, viewOf(e, t.uid).hp), ma(e, t.uid, "踏ん張り", "info"), Rt(e, `${la(e,t.uid)} は踏ん張った`, a(t.uid));
         break;
       case "firstStrike":
-        ma(e, t.uid, "先駆け", "info");
+        ma(e, t.uid, "閃光", "info");
         break;
       case "suddenDeath":
         yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になる", "f");
         break;
       case "pokeEnd":
-        t.player === 0 && t.result === "success" && Jr(e, "吸収！", "good", "妖気を吸った", 900), t.player === 0 && Rt(e, t.result === "success" ? "つつき成功：妖気を吸った" : "つつき終了", "a");
+        t.player === 0 && t.result === "success" && Jr(e, "吸収！", "good", "妖気を吸った", 900), t.player === 0 && Rt(e, t.result === "success" ? "つついて妖気を吸った" : "つつくのをやめた", "a");
         break;
       case "curseCleared":
-        t.by === "purify" && (Rt(e, `${la(e,t.uid)} の呪付を浄化した`, a(t.uid)), t.uid < 6 && Jr(e, "おはらい成功！", "good", "", 800));
+        t.by === "purify" && (Rt(e, `${la(e,t.uid)} のとりつきをおはらいした`, a(t.uid)), t.uid < 6 && Jr(e, "おはらい成功！", "good", "", 800));
         break;
       case "purifyStart":
         t.player === 0 && (e.purifyHidden = null);
@@ -19850,7 +19868,7 @@ void main() {
         ma(e, t.uid, "はね返した！", "info");
         break;
       case "steal":
-        ma(e, t.dst, `${battleItem(t.item)?.name ?? "持ち物"}をとられた`, "info"), Rt(e, `${la(e,t.src)} が ${battleItem(t.item)?.name ?? "持ち物"} をうばった`, a(t.src));
+        ma(e, t.dst, `${battleItem(t.item)?.name ?? "アイテム"}をとられた`, "info"), Rt(e, `${la(e,t.src)} が ${battleItem(t.item)?.name ?? "アイテム"} をうばった`, a(t.src));
         break;
       case "relay":
         ma(e, t.to, "ひとまかせ", "info");
@@ -19949,7 +19967,7 @@ void main() {
 
   function Hd(e) {
     let t = [];
-    return e.curse && t.push(`<span class="chip c">${Wl[e.curse.kind]}${Bn[e.curse.tier]}・要おはらい</span>`), e.blessing && t.push(`<span class="chip b">${Ad[e.blessing.kind]} 残り${e.blessing.turns}ターン</span>`), e.talisman && t.push(`<span class="chip b">札 ${STAT_JA[e.talisman.stat]} ${Ti(e.talisman.remaining)}</span>`), e.guarding && t.push('<span class="chip g">守り</span>'), e.loafing && t.push('<span class="chip l">なまけ中</span>'), t.join("")
+    return e.curse && t.push(`<span class="chip c">${Wl[e.curse.kind]}${Bn[e.curse.tier]}・要おはらい</span>`), e.blessing && t.push(`<span class="chip b">${Ad[e.blessing.kind]} 残り${e.blessing.turns}ターン</span>`), e.talisman && t.push(`<span class="chip b">おふだ ${STAT_JA[e.talisman.stat]} ${Ti(e.talisman.remaining)}</span>`), e.guarding && t.push('<span class="chip g">ガード</span>'), e.loafing && t.push('<span class="chip l">サボり中</span>'), t.join("")
   }
 
   function j2(e, t) {
@@ -20000,12 +20018,12 @@ void main() {
     });
     let i = t.rotateCooldown / cu,
       n = 2 * Math.PI * 152;
-    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("queued", !!t.pendingRotate), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? "アイテムなし" : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
+    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("queued", !!t.pendingRotate), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "Gわざ" : "わざ", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつく" : "ねらう", e.refs.bPurify.querySelector(".clabel").textContent = "おはらい", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? "アイテムなし" : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
   }
 
   function Z2(e) {
     let t = e.state.players[0];
-    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をホイールで選ぶ` : e.mode === "item" ? "持ち物から選ぶ" : e.mode === "ult" ? e.zero ? "大奥義を撃つ前衛を選ぶ（自分と両隣の妖気が満タン）" : "奥義を撃つ前衛を選ぶ（妖気が満タン・とりつかれていない）" : e.mode === "purify" ? "浄化する後衛（呪付のかかったユニット）を選ぶ" : t.pendingRotate ? "行動のモーションが終わったら回る" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "ゼロ：光っている敵をタップでつつき" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "ホイールをなぞって回す・敵をタップで標的"
+    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をメンバーサークルで選ぶ` : e.mode === "item" ? "アイテムを選ぶ" : e.mode === "ult" ? e.zero ? "Gわざを使う前衛を選ぶ（自分と両どなりの妖気が満タン）" : "ひっさつわざを使う前衛を選ぶ（妖気が満タン・とりつかれていない）" : e.mode === "purify" ? "おはらいする後衛（とりつかれた妖怪）を選ぶ" : t.pendingRotate ? "行動のモーションが終わったら回る" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "零式：光っている敵をタップでつつく" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "メンバーサークルをなぞって回す・敵をタップでねらう"
   }
 
   /*@@include ext/battle_ui.js@@*/
@@ -20078,10 +20096,10 @@ void main() {
       o = q("div", "rs-stats num");
     o.innerHTML = '<span class="h"></span><span class="h a">こちら</span><span class="h f">相手</span>' + [
       ["与ダメージ", u.total],
-      ["撃破", u.ko],
+      ["気絶させた", u.ko],
       ["クリティカル", u.crit],
       ["弱点ヒット", u.weak],
-      ["奥義", u.ult]
+      ["ひっさつわざ", u.ult]
     ].map(([g, k]) => `<span>${g}</span><span class="a">${k[0]}</span><span class="f">${k[1]}</span>`).join(""), r.append(o);
     let d = q("div", "rs-rec");
     d.innerHTML = `${e.net ? "対人戦" : or[e.diff].name}：<b>${n.w}</b>勝 ${n.l}敗${n.d?` ${n.d}分`:""}　連勝 <b>${n.streak}</b>（最高 ${n.best}）`, r.append(d);

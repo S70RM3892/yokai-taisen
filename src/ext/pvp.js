@@ -9,7 +9,7 @@
 //
 // 通信：WebRTC のデータチャネル（サーバーなし。招待コード → 返事コードを LINE などで手渡しする）、
 //       または同じブラウザの別タブ・別ウィンドウ（BroadcastChannel。部屋番号で入る）。
-// 対人戦では回復などのアイテムはなし（エンジンの state.noItems。バッグも空）。持ち物（装備）はそのまま効く。
+// 対人戦では回復などのアイテムはなし（エンジンの state.noItems。バッグも空）。そうびはそのまま効く。
 // ============================================================================
 
 var NET_VER = 3; // 妖怪が本家の 398 体だけになった版（id が変わった）
@@ -437,10 +437,10 @@ function startPvpBattle(net, seed, teams) {
   O2(Ga, canvas);
   const foe = Ga.state.players[1].units.map(u => ct[u.defIndex].name).join("・");
   Rt(Ga, `相手：${net.peerName}（${foe}）`, "f");
-  Rt(Ga, "対人戦：アイテムはなし。持ち物（装備）は効く", "a");
+  Rt(Ga, "対人戦：アイテムはなし。そうびは効く", "a");
   for (const pid of [1, 0]) {
     const eqs = Ga.state.players[pid].units.map(u => { const eq = equipById(u.equipment ?? null); return eq ? `${ct[u.defIndex].name}＝${eq.name}` : null; }).filter(Boolean);
-    Rt(Ga, `${pid ? "相手" : "こちら"}の持ち物：${eqs.length ? eqs.join("・") : "なし"}`, pid ? "f" : "a");
+    Rt(Ga, `${pid ? "相手" : "こちら"}のそうび：${eqs.length ? eqs.join("・") : "なし"}`, pid ? "f" : "a");
   }
   xd(), requestAnimationFrame(Ud);
 }
@@ -548,7 +548,7 @@ function pvpResultButtons(e, wrap, again, back) {
 // ---- ロビー（編成画面から開く） ----
 function pvpEntryButton() {
   const b = q("button", "btn pvp-entry", "対人戦（人 vs 人）");
-  b.title = "友だちと対戦する。持ち物（装備）は効く・アイテムはなし";
+  b.title = "友だちと対戦する。そうびは効く・アイテムはなし";
   b.onclick = () => openPvpLobby();
   return b;
 }
@@ -561,14 +561,14 @@ function openPvpLobby(joinCode = "", room = "") {
   wrap.append(box);
   box.append(q("div", "big", "対人戦"));
   const note = q("div", "pvp-note");
-  note.innerHTML = "いまの編成（6 体・性格・<b class=\"ok\">持ち物（装備）</b>）で戦う。持ち物は対人戦でも効く。<b>回復などのアイテムはなし</b>。";
+  note.innerHTML = "いまの編成（6 体・性格・<b class=\"ok\">そうび</b>）で戦う。そうびは対人戦でも効く。<b>回復などのアイテムはなし</b>。";
   box.append(note);
   const faces = q("div", "pvp-team");
   for (const m of team) {
     const d = ct.find(x => x.id === m.unit), eq = equipById(m.equipment ?? null), cell = q("div", "pvp-mem"), f = q("span", "cf-pic");
     f.style.background = Pi[d.tribe], f.innerHTML = da(d.id, d.name.slice(0, 1));
-    cell.title = eq ? `${d.name}：${eq.name}（${equipDesc(eq)}）` : `${d.name}：持ち物なし`;
-    cell.append(f, q("b", "", d.name), q("small", eq ? "eq" : "eq none", eq ? eq.name : "持ち物なし"));
+    cell.title = eq ? `${d.name}：${eq.name}（${equipDesc(eq)}）` : `${d.name}：そうびなし`;
+    cell.append(f, q("b", "", d.name), q("small", eq ? "eq" : "eq none", eq ? eq.name : "そうびなし"));
     faces.append(cell);
   }
   box.append(faces);

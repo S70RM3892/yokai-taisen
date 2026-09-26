@@ -98,7 +98,8 @@ for (const game of ["tsubuse", "renda", "kosure", "mawase", "kire"]) {
     __yokaiDebug.send({ t: "purify", allySlot: 4 });
     return true;
   }, game);
-  await page.waitForTimeout(120);
+  // おはらいが始まるのを待ってから種類を決める（遅い環境だと入力が届くまでに時間がかかる）
+  await page.waitForFunction(() => !!__yokaiDebug.ga().state.players[0].purify, null, { timeout: 3000 }).catch(() => {});
   await page.evaluate(game => { const p = __yokaiDebug.ga().state.players[0]; if (p.purify) p.purify.game = game; }, game);
   await page.waitForTimeout(200);
   const st = await page.$(".mg-stage.purify");
@@ -107,7 +108,8 @@ for (const game of ["tsubuse", "renda", "kosure", "mawase", "kire"]) {
   const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
   const before = await page.evaluate(() => __yokaiDebug.ga().state.players[0].purify?.progress ?? -1);
   if (game === "tsubuse" || game === "renda") {
-    for (let i = 0; i < 20; i++) { const b = await page.$(game === "tsubuse" ? ".mg-bubble:not(.pop)" : ".mg-spot"); if (b) { try { await b.click({ timeout: 300 }); } catch {} } await page.waitForTimeout(80); }
+    // おはらいは本家どおりタッチしたぶんだけ進むので、泡が出てくるのを待ちながら押しつづける
+    for (let i = 0; i < 40; i++) { const b = await page.$(game === "tsubuse" ? ".mg-bubble:not(.pop)" : ".mg-spot"); if (b) { try { await b.click({ timeout: 300 }); } catch {} } await page.waitForTimeout(120); }
   } else if (game === "kosure") {
     await page.mouse.move(cx - 60, cy); await page.mouse.down();
     for (let i = 0; i < 30; i++) await page.mouse.move(cx + (i % 2 ? 60 : -60), cy + (i % 3) * 10, { steps: 4 });
