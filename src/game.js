@@ -562,13 +562,13 @@
       enemyUnit: u.index
     });
     let d = !1;
-    if (!a.stance && Ht(r).length > 0)
+    if (!a.stance && Ht(r).length > 0 && t.tick < fr) // サドンデス中は ひっさつわざを使えない
       for (let c = 0; c < 3; c++) {
         let h = a.units[a.wheel[c]];
         if (!Se(h) || h.sg < Nt || h.ultLockout > 0 || h.curse) continue;
         // 復活の必殺技は、前衛に気絶した味方がいるとき（全回復つきなら HP が減った前衛がいるときも）だけ使う
-        let uk = ct[h.defIndex].ult, fr = [0, 1, 2].map(x => a.units[a.wheel[x]]);
-        if (uk.kind === "revive" && !fr.some(x => !Se(x) || uk.full && x.hp * 5 < x.maxHp * 3)) continue;
+        let uk = ct[h.defIndex].ult, frontUnits = [0, 1, 2].map(x => a.units[a.wheel[x]]);
+        if (uk.kind === "revive" && !frontUnits.some(x => !Se(x) || uk.full && x.hp * 5 < x.maxHp * 3)) continue;
         let f = a.units[a.wheel[(c + 5) % 6]],
           g = a.units[a.wheel[(c + 1) % 6]],
           k = Se(f) && Se(g) && f.sg >= Nt && g.sg >= Nt && gt(e.rng, 1e3) < e.params.grandPermil;
@@ -1018,7 +1018,7 @@
         }), !0)
       }
       case "ultStart": {
-        if (s || i.stance || !gr(a.allySlot, 0, 2)) return !1;
+        if (s || i.stance || !gr(a.allySlot, 0, 2) || e.tick >= fr) return !1; // サドンデス中は ひっさつわざも使えない（本家：こうげきだけ）
         let l = i.units[i.wheel[a.allySlot]];
         if (!Se(l) || l.sg < Nt || l.ultLockout > 0 || l.curse) return !1; // 悪いとりつき中は奥義を撃てない（本家）
         let u = [];
@@ -1460,6 +1460,7 @@
       l === "guard" && !a.fx.guardOnly && (FIELD ?? EMPTY_FIELD).noGuardAll && (l = "attack"); // まもりわすれ
       l === "skill" && s.skillMode === "heal" && !Ht(i).some(x => x.hp < x.maxHp) && (l = "attack");
     }
+    e.tick >= fr && (l = "attack"); // サドンデス中は こうげきだけ（本家）
     let u = ui(i, n),
       o = null,
       heal = l === "skill" && s.skillMode === "heal";
@@ -1635,9 +1636,10 @@
 
   function n0(e, t) {
     if (e.outcome) return;
-    e.tick === fr && t.push({
+    // サドンデス（本家：与ダメージがぜんぶ 999・こうげきだけ）。パワーチャージ中のひっさつわざは取りやめ
+    e.tick === fr && (t.push({
       t: "suddenDeath"
-    });
+    }), [0, 1].forEach(p => e.players[p].stance && Ii(e, p, t, "sudden")));
     let a = e.players.map(r => r.units.every(i => !Se(i)));
     if (a[0] || a[1]) e.outcome = {
       winner: a[0] && a[1] ? null : a[0] ? 1 : 0,
@@ -19945,7 +19947,7 @@ void main() {
         flashShown(e, t.uid) && ma(e, t.uid, "閃光", "info"), t.skipped !== null && Rt(e, `${la(e,t.uid)} が先に動いて、${la(e,t.skipped)} の番がとばされた`, a(t.uid));
         break;
       case "suddenDeath":
-        yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になる", "f");
+        yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999・こうげきだけ", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になり、こうげきしかできない", "f");
         break;
       case "pokeEnd":
         t.result === "success" ? (t.player === 0 && Jr(e, t.effect === "sg" ? "吸収！" : t.effect === "ko" ? "一撃！" : "ツボ！", "good", t.effect === "sg" ? `妖気を ${t.amount} 吸った` : `${t.amount} ダメージ`, 900), Rt(e, `${t.player === 0 ? "こちら" : "相手"}が ${la(e, t.target)} をつついて${t.effect === "sg" ? `妖気を ${t.amount} 吸った` : `${t.amount} ダメージ${t.effect === "ko" ? "（一撃）" : ""}`}`, t.player === 0 ? "a" : "f")) : t.player === 0 && Rt(e, "つつくのをやめた", "a");

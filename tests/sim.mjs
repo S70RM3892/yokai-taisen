@@ -273,6 +273,23 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log("inspirit: ちからアップ raises only ちから (+10%), ようりょくアップ only ようりょく");
 }
 
+// サドンデス（本家）：ダメージはぜんぶ 999、こうげきしかしない・ひっさつわざも使えない
+{
+  const s = E.newBattle(4, E.randomTeam(E.seedRng(4, 1)), E.randomTeam(E.seedRng(4, 2)), { noItems: true });
+  s.tick = 5999; // すぐサドンデスにする
+  const acts = new Set();
+  for (let i = 0; i < 400 && !s.outcome; i++) {
+    const p = s.players[0], u = p.units[p.wheel[0]];
+    u.sg = 1000, u.ultLockout = 0, u.curse = null;
+    const ev = [];
+    E.step(s, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], ev);
+    if (p.stance) throw new Error("ult started during sudden death");
+    for (const e of ev) if (e.t === "action") acts.add(e.action);
+  }
+  for (const a of acts) if (!["attack", "loaf", "stunned", "rest"].includes(a)) throw new Error(`sudden death action: ${a}`);
+  console.log(`sudden death: attack only (${[...acts].join(",")}), no ult`);
+}
+
 // ブロッカー（本家）：前に出るときガードする。ただし後衛へ下がってから だれも行動しないうちに戻ったときはガードしない
 {
   const ids = ["ムリカベ", "ヨロイさん", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
