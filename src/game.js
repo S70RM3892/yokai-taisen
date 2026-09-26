@@ -20062,6 +20062,7 @@ void main() {
   /*@@include ext/battle_ui.js@@*/
   /*@@include ext/battle_view.js@@*/
   /*@@include ext/pvp.js@@*/
+  /*@@include ext/pvp_fb.js@@*/
   function Q2(e) {
     let t = e.state.players[0],
       a = e.refs.overlay;

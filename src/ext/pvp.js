@@ -612,7 +612,7 @@ function openPvpLobby(joinCode = "", room = "") {
     body.replaceChildren();
     if (mode === "random") {
       body.append(q("div", "help", "押すだけで、いまさがしている人と対戦する。だれもいなければ、来るまで待つ（ほかのタブで遊んでいてよい。つながると音が鳴る）。"),
-        matchButton("相手をさがす", () => autoMatch(matchId("rand"), say, { waitText: "さがしている人を待っています…（このまま待つ）" })));
+        matchButton("相手をさがす", () => startMatch("rand", "", say, { waitText: "さがしている人を待っています…（このまま待つ）" })));
     } else if (mode === "room") {
       const word = q("input", "pvp-room num");
       word.inputMode = "numeric", word.maxLength = 6, word.autocomplete = "off";
@@ -631,7 +631,7 @@ function openPvpLobby(joinCode = "", room = "") {
         const w = word.value.trim();
         if (!/^\d{4,6}$/.test(w)) { say("あいことばは 4〜6 けたの数字", "bad"); return null; }
         saveStored("pvpRoom", w);
-        return autoMatch(matchId("room", w), say, { waitText: `「${w}」で相手を待っています…（相手にも同じ番号を入れてもらう）`, busyStop: `「${w}」はもう対戦中。べつの番号にする` });
+        return startMatch("room", w, say, { waitText: `「${w}」で相手を待っています…（相手にも同じ番号を入れてもらう）`, busyStop: `「${w}」はもう対戦中。べつの番号にする` });
       });
       body.append(q("div", "help", "友だちと同じ番号（4〜6 けた）を入れて、ふたりとも「つなぐ」を押す。先に押した方が部屋を作り、あとの人が入る。リンクを送れば、開くだけで同じ番号になる。"), row, go);
       if (room) setTimeout(() => go.click(), 0);

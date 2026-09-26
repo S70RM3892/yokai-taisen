@@ -1,0 +1,29 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "m": {
+      "$ver": {
+        "q": {
+          "$pool": {
+            ".read": true,
+            ".indexOn": ["t"],
+            "$id": {
+              ".write": true,
+              ".validate": "!newData.exists() || (newData.child('t').isNumber() && (!data.child('c').exists() || newData.child('c').val() === data.child('c').val()) && (!newData.child('c').exists() || (newData.child('c').isString() && newData.child('c').val().length < 64)))"
+            }
+          }
+        },
+        "s": {
+          "$id": {
+            ".read": true,
+            "$msg": {
+              ".write": true,
+              ".validate": "!newData.exists() || (newData.child('f').isString() && newData.child('f').val().length < 64 && newData.child('d').isString() && newData.child('d').val().length < 20000)"
+            }
+          }
+        }
+      }
+    }
+  }
+}
