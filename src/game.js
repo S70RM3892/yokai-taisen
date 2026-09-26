@@ -11194,13 +11194,14 @@
   }
 
   function ui(e, t) {
+    // ちょうはつ（よいとりつき・ちょうはつ魂）は本家どおり、ねらう指定（ピン）より先に相手の攻撃を集める
+    let a = [0, 1, 2].map(u => t.units[t.wheel[u]]).filter(Se),
+      r = a.find(u => u.blessing?.kind === "taunt") ?? a.find(u => u.fx.taunt);
+    if (r) return r;
     if (e.target !== null) {
       let u = t.units[e.target];
       if (Se(u) && Vt(t, u.index)) return u
     }
-    let a = [0, 1, 2].map(u => t.units[t.wheel[u]]).filter(Se),
-      r = a.find(u => u.blessing?.kind === "taunt") ?? a.find(u => u.fx.taunt);
-    if (r) return r;
     let i = a.filter(u => !tt(u, "hidden") && !untargetable(u));
     i.length === 0 && (i = a.filter(u => !untargetable(u)));
     let

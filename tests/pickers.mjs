@@ -18,7 +18,7 @@ page.on("console", m => { if (m.type() === "error" && !m.text().includes("Failed
 const fail = msg => { console.log("FAIL:", msg); errors.push(msg); };
 // タブは「ラベル 件数」、並べかえは「ラベル」だけ
 const chip = async (label) => page.locator(".picker .pk-chip", { hasText: new RegExp("^" + label.replace(/[()]/g, "\\$&") + "( \\d+)?$") }).first().click();
-const names = () => page.$$eval(".picker .pk-body .pick-item .pk-main > b", bs => bs.map(b => b.childNodes[0].textContent.trim()));
+const names = () => page.$$eval(".picker .pk-body .pick-item .pk-main > b, .picker .pk-body .pick-item .pk-name > b", bs => bs.map(b => b.childNodes[0].textContent.trim()));
 
 await page.goto(pathToFileURL(resolve("dist/index.html")).href);
 await page.waitForTimeout(1200);

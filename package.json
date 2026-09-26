@@ -1,11 +1,11 @@
 {
   "name": "yokai-taisen",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node tools/check_names.mjs && node tools/build.mjs",
-    "test": "node tools/build.mjs --engine-only && node tests/sim.mjs"
+    "test": "node tools/build.mjs --engine-only && node tests/sim.mjs && node tests/rare_souls.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.24.0",
