@@ -56,7 +56,7 @@ function purifyInput(p, amount) {
   const pu = p.purify;
   if (!pu || !gr(amount, 1, MAX_TAP)) return false;
   const u = p.units[pu.unit];
-  pu.progress += Math.floor(amount * (1e3 + (u.fx.purifyFast ?? 0)) / 1e3);
+  pu.progress += Math.floor(amount * purifySpeed(u) / 1e3);
   return true;
 }
 

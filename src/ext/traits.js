@@ -143,7 +143,7 @@ var HAND_TRAITS = {
 
 var TRIBE_JA = { takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮", maga: "禍" };
 var ELEM_JA = { fire: "火", water: "水", thunder: "雷", earth: "土", ice: "氷", wind: "風" };
-var CURSE_JA = { slow: "鈍重", weaken: "衰弱", brittle: "脆化", poison: "蝕毒", seal: "封気", stun: "行動停止", confuse: "混乱" };
+var CURSE_JA = { slow: "鈍重", weaken: "衰弱", brittle: "脆化", poison: "蝕毒", seal: "封気", stun: "行動停止", confuse: "混乱", allDown: "全能力低下", lazy: "怠け", money: "散財" };
 
 // 効果キー → 説明文
 function fxLine(k, v) {
@@ -203,9 +203,9 @@ function fxLine(k, v) {
     case "spdLow": return `HP が半分以下のとき すばやさ+${pct(v)}`;
     case "deathSg": return `たおれると 前衛の味方の妖気+${v}`;
     case "deathHeal": return `たおれると 前衛の味方の HP を ${pct(v)} 回復`;
-    case "blessLong": return `よいとりつきの時間+${pct(v)}`;
+    case "blessLong": return `よいとりつきが長もち（+${pct(v)}）`;
     case "curseResist": return `悪いとりつきを ${pct(v)} でふせぐ`;
-    case "curseShort": return `悪いとりつきの時間-${pct(v)}`;
+    case "curseShort": return `悪いとりつきをはらいやすい（おはらい+${pct(v)}）`;
     case "purifyFast": return `おはらいされる速さ+${pct(v)}`;
     case "evade": return `こうげき・ようじゅつを ${pct(v)} でかわす`;
     case "benchSg": return `後衛にいると 味方が行動するたび 妖気+${v}`;
@@ -249,6 +249,7 @@ var TRAIT_TABLE = new Map();
 function buildTraits() {
   const names = new Set(), sigs = new Map(), dup = [];
   for (const d of ct) {
+    if (d.trait === "honke") { TRAIT_TABLE.set(d.id, honkeTrait(d)); continue; } // 本家の妖怪は本家のスキル（同じスキルの妖怪がいる）
     let name, fx;
     if (HAND_TRAITS[d.id]) {
       [name, fx] = HAND_TRAITS[d.id];
@@ -293,12 +294,14 @@ function hash32(s) {
   return t >>> 0;
 }
 function favoriteOf(def) {
+  if (def.fav) return def.fav;
   const fam = zi[def.id]?.family ?? def.id;
   if (FAV_BY_FAMILY[fam]) return FAV_BY_FAMILY[fam];
   const keys = Object.keys(FOOD_CATS);
   return keys[hash32(fam) % keys.length];
 }
 function campOf(def) {
+  if (def.camp) return def.camp;
   return hash32("camp:" + def.id) % 2 === 0 ? "ganso" : "honke";
 }
 var CAMP_JA = { ganso: "元祖軍", honke: "本家軍" };

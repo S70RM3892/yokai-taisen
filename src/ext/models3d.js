@@ -920,6 +920,7 @@ var TRIBE_TINT = { takeru: 0xd9644a, ayashi: 0x8a6ee0, tsuwamono: 0x8f8a74, kage
 
 function modelSpec(def) {
   if (def.honkeModel) return def.honkeModel;
+  if (def.trait === "honke") return def.honkeModel = honkeAutoModel(def);
   if (HAND_MODEL[def.id]) return HAND_MODEL[def.id];
   const z = zi[def.id];
   return FAMILY_MODEL[z?.family] ?? ["blob", { skin: TRIBE_TINT[def.tribe] }];
