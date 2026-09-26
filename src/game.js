@@ -1291,7 +1291,7 @@
         let i = e.units[e.wheel[r]];
         tt(i, "benchHeal") && $a(a, t, healAmt(i, t.maxHp, i.fx.benchHeal), i.uid), tt(i, "benchSg") && gainSg(i, i.fx.benchSg), tt(i, "benchRegen") && $a(a, i, healAmt(i, i.maxHp, i.fx.benchRegen), i.uid)
       }
-      tt(t, "regen") && $a(a, t, healAmt(t, t.maxHp, t.fx.regen), t.uid), tt(t, "relay") && relayTurn(e, t, a)
+      tt(t, "regen") && $a(a, t, healAmt(t, t.maxHp, t.fx.regen), t.uid)
     }
   }
 
@@ -1325,12 +1325,18 @@
       i = r.u.ap;
     for (let l of a) l.u.ap = Math.max(0, l.u.ap - i);
     let n = e.players[r.pid],
-      s = Jh(e, r.pid, r.u, t);
+      // ひとまかせ（本家）：自分の番に、自分のかわりに となりの前衛の味方（右どなり優先）を行動させる
+      by = relayPick(n, r.u),
+      s;
+    by && t.push({ t: "relay", uid: r.u.uid, to: by.uid });
+    s = Jh(e, r.pid, by ?? r.u, t);
     if (s === null) {
+      by && t.pop();
       e.busyUntil = e.tick + 1;
       return
     }
-    e.lastActor = r.u.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, r.u, t), blessTurnPassed(r.u, t), Yh(e), e.busyUntil = e.tick + pc[s]
+    let act = by ?? r.u;
+    e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), Yh(e), e.busyUntil = e.tick + pc[s]
   }
 
   function Qh(e) {
