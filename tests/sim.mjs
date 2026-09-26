@@ -250,6 +250,31 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log("revive ult: front row only (花さか爺・心オバア full HP, おでんじん one ally)");
 }
 
+// つつく：ツボ（★）は妖怪ごとに決まった場所で動かない。人の速さ（1 秒に 5 回・★に当たるのは 7 割）でも間に合う
+{
+  let ok = 0, n = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const s = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    const p = s.players[0], foe = s.players[1], f = foe.units[foe.wheel[0]];
+    // だれも動かないようにして、つつくだけを見る
+    for (const q of s.players) for (const u of q.units) u.curse = { kind: "stun", tier: 0, elapsed: 0, remaining: 1e9 };
+    E.step(s, [{ player: 0, input: { t: "pokeStart", enemyUnit: f.index } }], []);
+    if (!p.poke) throw new Error("poke did not start");
+    const spot = p.poke.weakCell;
+    let result = null;
+    for (let i = 0; i < 400 && !result; i++) {
+      if (p.poke && p.poke.weakCell !== spot) throw new Error("poke spot moved");
+      const tap = i % 4 === 0 ? [{ player: 0, input: { t: "pokeTap", cell: (i / 4) % 10 < 7 ? spot : (spot + 1) % 16 } }] : [];
+      const ev = [];
+      E.step(s, tap, ev);
+      for (const e of ev) if (e.t === "pokeEnd" && e.player === 0) result = e.result;
+    }
+    n++, result === "success" && ok++;
+  }
+  if (ok !== n) throw new Error(`poke at human speed: ${ok}/${n} succeeded`);
+  console.log(`poke: spot stays put, human-speed tapping succeeds ${ok}/${n}`);
+}
+
 // おはらい：本家どおり、タッチアクションをしないと進まない。とりつかれた敵を攻撃すると妖気が多くたまる
 {
   const s = E.newBattle(5, E.randomTeam(E.seedRng(5, 1)), E.randomTeam(E.seedRng(5, 2)), { noItems: true });

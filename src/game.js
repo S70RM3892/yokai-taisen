@@ -92,7 +92,7 @@
     sh = 150,
     lh = 3,
     uh = 22,
-    hu = 60,
+    hu = 200, // つつくの制限時間（10 秒。以前は 3 秒で、人の手では間に合わなかった）
     ri = 16,
     oh = 10,
     pu = 2,
@@ -1043,7 +1043,8 @@
           target: l.index,
           elapsed: 0,
           gauge: 0,
-          weakCell: gt(i.pokeRng, ri),
+          // ツボ（本家）：妖怪ごとに決まった場所にあり、つついている間は動かない
+          weakCell: pokeSpot(l),
           lastTapTick: -1e3
         }, r.push({
           t: "pokeStart",
@@ -1542,6 +1543,10 @@
     }))
   }
 
+  function pokeSpot(u) {
+    return ct[u.defIndex].seed % ri
+  }
+
   function Qn(e, t) {
     return Se(t) && Vt(e, t.index) && (t.curse !== null || t.loafing)
   }
@@ -1573,10 +1578,6 @@
       if (n.elapsed++, n.elapsed >= hu) {
         Oi(r, t, i, "fail", a);
         return
-      }
-      if (n.elapsed % oh === 0) {
-        let s = gt(r.pokeRng, ri - 1);
-        n.weakCell = s >= n.weakCell ? s + 1 : s
       }
     }
   }
