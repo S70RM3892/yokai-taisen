@@ -156,12 +156,21 @@ var HONKE_BY_ID = new Map();
   }
 })();
 
+// このゲームだけの調整（1 体ずつ）。fx は特性、soulFx・soulText は魂を上書きする
+//   クリティカル率（critEye）は 64 分の いくつ、クリティカルの威力（critDmg）は 1000 で +100%
+var HONKE_TUNE = {
+  山吹鬼: { fx: { critDmg: 2000 } }, // 超クリティカル：クリティカルの威力 +200%（ほかの妖怪は +50%）
+  いのちとり: { soulFx: { critEye: 29 }, soulText: "クリティカル率アップ（45%）" }, // いのちとりの魂：29/64 ≒ 45%
+};
+
 // 本家の妖怪の特性（本家のスキル）と魂
 function honkeTrait(def) {
-  const fx = { ...(HONKE_SKILL_FX[def.hskill] ?? { noBattle: 1 }) };
+  const tune = HONKE_TUNE[def.name] ?? {};
+  const fx = { ...(HONKE_SKILL_FX[def.hskill] ?? { noBattle: 1 }), ...tune.fx };
   const text = HONKE_SKILL_TEXT[def.hskill] ?? "";
-  const soulFx = def.soulFx ? { ...def.soulFx } : {};
-  const soulDesc = def.soulText ? def.soulText + (soulFx.noBattle ? "（対戦では効果なし）" : "") : "本家では魂にできない（効果なし）";
+  const soulFx = { ...(def.soulFx ?? {}), ...tune.soulFx };
+  const soulText = tune.soulText ?? def.soulText;
+  const soulDesc = soulText ? soulText + (soulFx.noBattle ? "（対戦では効果なし）" : "") : "本家では魂にできない（効果なし）";
   return {
     name: def.hskill, fx, desc: text + (fx.noBattle ? "（対戦では効果なし）" : ""), detail: fxDesc(fx),
     soulName: `${def.name}の魂`, soulFx, soulMods: def.soulMods ?? {}, soulDesc, honke: !0,
