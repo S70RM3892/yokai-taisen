@@ -140,7 +140,8 @@ var HONKE_BY_ID = new Map();
   }
   for (const s of HONKE_RARE_SOULS) {
     Ni.push({ id: "rsoul_" + RARE_SOUL_ID[s.name], name: s.name, cat: "レア魂", mods: {}, special: null, only: null, honke: true,
-      fx: RARE_SOUL_FX[s.name], desc: `${s.text}（本家：${s.from.map(x => x.replace(/魂$/, "") + "の魂").join("＋")} を合成）` });
+      fx: RARE_SOUL_FX[s.name], desc: s.text + (RARE_SOUL_FX[s.name].noBattle ? "（対戦では効果なし）" : ""),
+      recipe: s.from.map(x => x.replace(/魂$/, "") + "の魂").join("＋") });
   }
 })();
 

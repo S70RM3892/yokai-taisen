@@ -104,7 +104,7 @@ function renderDetail(host, slot, onChange) {
   pickRow("性格", natureFullName(st.nature, st.diligence) + (lo.nature ? "" : "（初めの性格）"),
     `${qn(st.nature).kind}・${natureBonusText(st.nature)}・${natureDesc(st.nature)}`,
     () => openNaturePicker(d, lo, (nat, dil) => { SLOT_LOADOUT[slot].nature = nat; SLOT_LOADOUT[slot].diligence = dil; saveLoadout(); onChange(); }));
-  pickRow("持ち物", eq ? eq.name : "なし", eq ? equipDesc(eq) : "装備なし",
+  pickRow("持ち物", eq ? eq.name : "なし", eq ? equipDesc(eq) + (equipGameText(eq) ? `（このゲームでは：${equipGameText(eq)}）` : "") : "装備なし",
     () => openEquipPicker(d, lo.equipment, id => { SLOT_LOADOUT[slot].equipment = id; saveLoadout(); onChange(); }));
   host.append(form);
 }
@@ -184,34 +184,58 @@ function openSortPicker(o) {
   const pref = loadStored("pick:" + o.key, {});
   let tab = o.tabs.some(t => t[0] === pref.tab) ? pref.tab : o.tabs[0][0];
   let sort = o.sorts.some(t => t[0] === pref.sort) ? pref.sort : o.sorts[0][0];
+  let hide = o.hide ? pref.hide !== !1 : !1; // 「効果のないものをかくす」は初めは入れておく
   const wrap = q("div", "result picker");
   const box = q("div", "box");
+  // 上（見出し・いまの持ち物・しぼりこみ・ならべかえ）は止めて、下の一覧だけスクロールする
+  const top = q("div", "pk-top");
+  const titleRow = q("div", "pk-title");
   const title = q("div", "title");
-  box.append(title);
-  if (o.head) box.append(o.head);
-  const tabs = q("div", "pk-row");
-  const sorts = q("div", "pk-row");
+  const x = q("button", "pk-x", "×");
+  x.title = "とじる（Esc）";
+  x.setAttribute("aria-label", "とじる");
+  titleRow.append(title, x);
+  const current = q("div", "pk-cur");
+  top.append(titleRow, current);
+  if (o.head) top.append(o.head);
+  const tabs = q("div", "pk-row pk-scroll");
+  const sorts = q("div", "pk-row pk-scroll");
+  const tools = q("div", "pk-tools");
   const search = o.search ? q("input", "b-search") : null;
-  if (search) { search.placeholder = "名前・効果でさがす"; search.oninput = () => draw(); }
+  if (search) { search.placeholder = "名前・効果でさがす"; search.type = "search"; search.oninput = () => draw(); tools.append(search); }
+  const hideBtn = o.hide ? q("button", "pk-chip pk-toggle") : null;
+  if (hideBtn) { hideBtn.onclick = () => { hide = !hide; remember(); draw(); }; tools.append(hideBtn); }
+  for (const btn of o.actions ?? []) tools.append(btn);
+  const count = q("div", "pk-count");
   const body = q("div", "pick-grid pk-body");
-  const close = q("button", "btn", "とじる");
   const done = () => { wrap.remove(); document.removeEventListener("keydown", onKey); };
   const onKey = e => { if (e.key === "Escape") done(); };
-  close.onclick = done;
-  const remember = () => saveStored("pick:" + o.key, { tab, sort });
+  x.onclick = done;
+  const remember = () => saveStored("pick:" + o.key, { tab, sort, hide });
   const chips = (host, list, cur, set, counts) => {
     host.replaceChildren();
     for (const [id, label] of list) {
-      const b = q("button", "pk-chip" + (id === cur ? " on" : ""), counts ? `${label} ${counts(id)}` : label);
+      const n = counts?.(id);
+      const b = q("button", "pk-chip" + (id === cur ? " on" : "") + (n === 0 ? " empty" : ""), counts ? `${label} ${n}` : label);
       b.setAttribute("aria-pressed", id === cur);
       b.onclick = () => { set(id); remember(); draw(); };
       host.append(b);
     }
+    host.querySelector(".on")?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
   };
   const draw = () => {
     title.textContent = typeof o.title === "function" ? o.title() : o.title;
+    const cur = o.current?.();
+    current.hidden = !cur;
+    if (cur) current.innerHTML = cur;
+    if (hideBtn) {
+      const n = o.items.filter(it => o.hide.test(it)).length;
+      hideBtn.textContent = `${hide ? "✓ " : ""}${o.hide.label}（${n}）`;
+      hideBtn.classList.toggle("on", hide);
+      hideBtn.setAttribute("aria-pressed", hide);
+    }
     const word = search?.value.trim() ?? "";
-    const hit = it => !word || o.search(it).includes(word);
+    const hit = it => (!word || o.search(it).includes(word)) && !(hide && o.hide.test(it));
     chips(tabs, o.tabs, tab, v => (tab = v), id => o.items.filter(o.tabs.find(t => t[0] === id)[2]).filter(hit).length);
     chips(sorts, o.sorts.map(([id, label]) => [id, label]), sort, v => (sort = v));
     const [, , key, asc] = o.sorts.find(t => t[0] === sort);
@@ -221,24 +245,29 @@ function openSortPicker(o) {
       const c = typeof a.v === "string" ? a.v.localeCompare(b.v, "ja") : a.v - b.v;
       return (asc ? c : -c) || a.i - b.i;
     });
+    count.textContent = `${list.length} 件`;
     body.replaceChildren();
-    if (!list.length) body.append(q("div", "muted", "当てはまるものがない"));
+    body.scrollTop = 0;
+    if (!list.length) body.append(q("div", "muted", word ? `「${word}」に当てはまるものがない` : "当てはまるものがない"));
     for (const { it } of list) {
       const c = o.card(it, sort);
       const b = q("button", "pick-item " + (c.cls ?? ""));
       b.innerHTML = c.html;
+      if (c.title) b.title = c.title;
       b.onclick = () => { if (o.onPick(it)) draw(); else done(); };
       body.append(b);
     }
   };
-  box.append(q("div", "pk-lab", "しぼりこみ"), tabs, q("div", "pk-lab", "ならべかえ"), sorts);
-  if (search) box.append(search);
-  box.append(body, close);
+  top.append(q("div", "pk-lab", "しぼりこみ"), tabs, q("div", "pk-lab", "ならべかえ"), sorts);
+  if (tools.childElementCount) top.append(tools);
+  top.append(count);
+  box.append(top, body);
   wrap.append(box);
   wrap.onclick = e => { if (e.target === wrap) done(); };
   document.addEventListener("keydown", onKey);
   document.body.append(wrap);
   draw();
+  body.querySelector(".cur")?.scrollIntoView?.({ block: "center" });
   return { draw, close: done };
 }
 
@@ -297,47 +326,72 @@ function openNaturePicker(d, lo, onPick) {
 
 // 持ち物（装備・魂）：この妖怪に付けたときの能力の変化で並べられる
 var EQUIP_TABS = [
-  ["all", "装備すべて", e => e && e.cat !== "魂" && e.cat !== "レア魂"],
-  ...["うでわ", "ゆびわ", "おまもり", "バッジ", "専用", "呪言", "そのほか", "勲章"].map(c => [c, c, e => e?.cat === c]),
-  ["soul", "魂", e => e?.cat === "魂"],
-  ["rare", "レア魂", e => e?.cat === "レア魂"],
-  ["none", "なし", e => e === null],
+  ["all", "装備すべて", e => e.cat !== "魂" && e.cat !== "レア魂"],
+  ["rare", "レア魂", e => e.cat === "レア魂"],
+  ["soul", "魂", e => e.cat === "魂"],
+  ...["うでわ", "ゆびわ", "おまもり", "バッジ", "専用", "呪言", "そのほか", "勲章"].map(c => [c, c, e => e.cat === c]),
 ];
+
+// 対戦で何も起きない持ち物（本家では効果があるが、このゲームの対戦にはない）
+function equipNoEffect(e) {
+  if (!e) return !1;
+  const hasMods = e.mods && Object.values(e.mods).some(v => v);
+  if (e.cat === "魂" || e.cat === "レア魂") return !hasMods && (!e.fx || !!e.fx.noBattle || !Object.keys(e.fx).length);
+  return !hasMods && !!e.special?.noBattleEffect;
+}
+// 魂・レア魂の、このゲームでの効き方（本家の説明とは別に、数字で）
+function equipGameText(e) {
+  if (!e || (e.cat !== "魂" && e.cat !== "レア魂") || !e.fx || e.fx.noBattle) return "";
+  const t = fxDesc(e.fx);
+  return t && !(e.desc ?? "").includes(t) ? t : ""; // このゲームの妖怪の魂は、説明がもともと効き方そのもの
+}
+// 持ち物 1 つの説明（詳しい画面・選ぶ画面・出陣前の確認で同じもの）
+function equipInfoHtml(e) {
+  if (!e) return "";
+  const game = equipGameText(e);
+  return `${equipDesc(e)}${game ? `<small class="pk-game">このゲームでは：${game}</small>` : ""}${e.recipe ? `<small class="pk-recipe">本家の合成：${e.recipe}</small>` : ""}`;
+}
 
 function openEquipPicker(d, cur, onPick) {
   const slotMember = { unit: d.id };
   const base = memberStats(slotMember);
   const deltas = new Map();
   const deltaOf = e => {
-    if (!e) return {};
     if (!deltas.has(e.id)) {
       const st = memberStats({ ...slotMember, equipment: e.id });
       deltas.set(e.id, Object.fromEntries(STAT_ROWS.map(([k]) => [k, st[k] - base[k]])));
     }
     return deltas.get(e.id);
   };
-  const statSort = k => e => e ? deltaOf(e)[k] ?? 0 : null;
-  const special = e => e ? equipDesc({ ...e, mods: {} }) : "";
-  openSortPicker({
-    key: "equip", title: `${d.name} の持ち物`, items: [null, ...equipChoices(d), ...soulChoices()], tabs: EQUIP_TABS,
+  const statSort = k => e => deltaOf(e)[k] ?? 0;
+  const items = [...equipChoices(d), ...soulChoices()];
+  const now = equipById(cur ?? null);
+  const off = q("button", "b-mini", "持ち物をはずす");
+  off.disabled = !now;
+  off.onclick = () => { onPick(null); p.close(); };
+  const p = openSortPicker({
+    key: "equip", title: `${d.name} の持ち物`, items, tabs: EQUIP_TABS, actions: [off],
+    current: () => `<span class="dt-k">いま</span> ${now ? `<b>${now.name}</b><span class="pk-cat">${now.cat}</span><div class="pk-cur-d">${equipInfoHtml(now)}</div>` : "<b>なし</b>"}`,
+    hide: { label: "対戦で効果のないものをかくす", test: equipNoEffect },
     sorts: [
       ["order", "本家の順", () => null],
       ...STAT_ROWS.map(([k, , label]) => [k, label + "が上がる", statSort(k)]),
-      ["sum", "能力の合計", e => e ? Object.values(deltaOf(e)).reduce((a, b) => a + b, 0) : null],
-      ["name", "名前", e => e?.name ?? "", !0],
+      ["sum", "能力の合計", e => Object.values(deltaOf(e)).reduce((a, b) => a + b, 0)],
+      ["name", "名前", e => e.name, !0],
     ],
-    search: e => e ? e.name + equipDesc(e) : "なし",
+    search: e => e.name + equipDesc(e) + equipGameText(e) + (e.recipe ?? ""),
     card: (e, sort) => {
-      const on = (e?.id ?? null) === (cur ?? null);
-      if (!e) return { cls: "pk-card" + (on ? " cur" : ""), html: `<span class="pk-main"><b>なし</b><small>何も持たない</small></span>` };
-      const sp = special(e);
+      const on = e.id === (cur ?? null), none = equipNoEffect(e);
+      const sp = equipDesc({ ...e, mods: {} }), game = equipGameText(e);
+      const chips = deltaChips(deltaOf(e), STAT_ROWS.some(r => r[0] === sort) ? sort : null);
       return {
-        cls: "pk-card" + (on ? " cur" : ""),
-        html: `<span class="pk-main"><b>${e.name}</b><small>${e.cat === "魂" ? "魂" : "本家：" + e.cat}</small>
-          <span class="pk-ds">${deltaChips(deltaOf(e), STAT_ROWS.some(r => r[0] === sort) ? sort : null)}</span>${sp ? `<small class="pk-sp">${sp}</small>` : ""}</span>`,
+        cls: "pk-card pk-eq" + (on ? " cur" : "") + (none ? " none" : ""),
+        title: [sp, game && "このゲームでは：" + game, e.recipe && "本家の合成：" + e.recipe].filter(Boolean).join("\n"),
+        html: `<span class="pk-main"><span class="pk-name"><b>${e.name}</b>${on ? '<em class="pk-now">いま</em>' : ""}<span class="pk-cat">${e.cat}</span></span>
+          ${chips ? `<span class="pk-ds">${chips}</span>` : ""}${sp ? `<small class="pk-sp">${sp}</small>` : ""}${game ? `<small class="pk-game">このゲームでは：${game}</small>` : ""}${e.recipe ? `<small class="pk-recipe">合成：${e.recipe}</small>` : ""}</span>`,
       };
     },
-    onPick: e => { onPick(e?.id ?? null); return !1; },
+    onPick: e => { onPick(e.id); return !1; },
   });
 }
 
