@@ -1,6 +1,6 @@
 // ============================================================================
 // 流行りの型（プリセット）。本家の通信対戦で流行った編成（出典は docs/PRESETS.md）。
-// 妖怪・並び・持ち物は出典の編成どおり。魂は、このゲームの魂のうち同じ働きのものに置きかえた。
+// 妖怪・並び・持ち物（装備・魂）は出典の編成どおり。
 // 並び：最初の 3 体が前衛（左・まん中・右）、あとの 3 体が後衛。
 // [名前, 性格（後半）, 持ち物]。性格の前半は、対戦でサボらないように全員「超まじめ」
 // ============================================================================
@@ -8,14 +8,14 @@
 var PRESETS = [
   {
     name: "ブシニャン特化",
-    desc: "ブリー隊長の全能力アップとマスクドニャーンの挑発でブシニャンを守り、強化を重ねた一撃で落とす。オオクワノ神がサブアタッカー。",
+    desc: "ブリー隊長の全能力アップのとりつきとエクササイズでブシニャンを強め、超クリティカルの会心で落とす。マスクドニャーンは猛虎のねばりで一度こらえる壁、オオクワノ神はいあつかんで敵味方のサボりを消すサブアタッカー。",
     tags: ["エース", "強化", "挑発"],
     team: [["ブリー隊長", "kyouryokuteki", null], ["ブシニャン", "arakure", "kishin_udewa"], ["マスクドニャーン", "doujinai", "teppeki_omamori"],
       ["オオクワノ神", "arakure", "densetsu_udewa"], ["肉くいおとこ", "doujinai", null], ["マスクドニャーン", "doujinai", "teppeki_omamori"]],
   },
   {
     name: "赤鬼特化",
-    desc: "ガードくずしで壁ごと打ち抜く赤鬼に強化を重ねる。後ろのさきがけの助で最初の一手を早める。",
+    desc: "ガードくずしで壁ごと打ち抜く赤鬼に、ブリー隊長のとりつきで強化を重ねる。後ろの肉くいおとこは肉食オーラで敵味方がこうげきを選びやすくし、さきがけの助が削る。",
     tags: ["ガードくずし", "強化", "先駆け"],
     team: [["ブリー隊長", "kyouryokuteki", null], ["赤鬼", "arakure", "densetsu_udewa"], ["マスクドニャーン", "doujinai", "teppeki_omamori"],
       ["肉くいおとこ", "doujinai", null], ["さきがけの助", "arakure", "kishin_udewa"], ["マスクドニャーン", "doujinai", "teppeki_omamori"]],
@@ -29,14 +29,14 @@ var PRESETS = [
   },
   {
     name: "猛攻ミツマタ対策",
-    desc: "二度ふんばるガマンモス 2 体と大ガマで耐え、照り返しの魂を持ったから傘お化けで術をはね返しながら赤鬼で削る。",
+    desc: "超ガマンで二度ふんばり、必殺技でまもりを上げて攻撃を集めるガマンモス 2 体と、味方をかばう大ガマで耐える。ブロッカー魂のから傘お化けはガードしながら前に出て術をはね返す。そのすきに赤鬼で削る。",
     tags: ["耐久", "ふんばり", "照り返し"],
     team: [["ガマンモス", "doujinai", "teppeki_omamori"], ["赤鬼", "arakure", "densetsu_udewa"], ["ガマンモス", "doujinai", "teppeki_omamori"],
-      ["大ガマ", "doujinai", null], ["から傘お化け", "doujinai", "soul:肉くいおとこ"], ["から傘お化け", "doujinai", "soul:肉くいおとこ"]],
+      ["大ガマ", "doujinai", null], ["から傘お化け", "doujinai", "rsoul_blocker"], ["から傘お化け", "doujinai", "rsoul_blocker"]],
   },
   {
     name: "黒鬼ゾンビ",
-    desc: "まん中の黒鬼で受け止め、後ろのびきゃくが毎回 HP を戻す。ドケチングとしどろもどろで相手の力と妖気を削り、呪言の刀の万尾獅子でしめる。",
+    desc: "まん中でまもりが上がる黒鬼（におうだち）で受け止め、後ろのびきゃく（美脚）が前衛の HP を戻しつづける。ドケチングの毒の必殺技としどろもどろの全能力ダウンで削り、呪言の刀の万尾獅子でしめる。",
     tags: ["回復", "妖気うばい", "呪言"],
     team: [["ドケチング", "hidou", null], ["黒鬼", "doujinai", "teppeki_omamori"], ["しどろもどろ", "hidou", null],
       ["びきゃく", "kyouryokuteki", null], ["びきゃく", "kyouryokuteki", null], ["万尾獅子", "arakure", "jugon_katana"]],
@@ -47,13 +47,6 @@ var PRESETS = [
     tags: ["手数", "ひとまかせ", "なめらかオイル"],
     team: [["赤鬼", "arakure", "densetsu_udewa"], ["ひとまか仙人", "kyouryokuteki", null], ["ブシニャン", "arakure", "kishin_udewa"],
       ["むりだ城", "doujinai", "teppeki_omamori"], ["あせっか鬼", "kyouryokuteki", null], ["むりだ城", "doujinai", "teppeki_omamori"]],
-  },
-  {
-    name: "赤鬼・大ガマ・ブシニャン",
-    desc: "シロカベ 2 体とあせっか鬼で守りを回しつつ、赤鬼とブシニャンでサドンデスまでに一気に倒す。",
-    tags: ["会心", "壁", "なめらかオイル"],
-    team: [["赤鬼", "arakure", "densetsu_udewa"], ["大ガマ", "doujinai", null], ["ブシニャン", "arakure", "kishin_udewa"],
-      ["シロカベ", "doujinai", "teppeki_omamori"], ["あせっか鬼", "kyouryokuteki", null], ["シロカベ", "doujinai", "teppeki_omamori"]],
   },
 ];
 

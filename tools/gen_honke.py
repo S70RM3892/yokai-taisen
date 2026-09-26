@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-# 本家（妖怪ウォッチ2 元祖/本家/真打）の妖怪で、このゲームにまだいない妖怪を src/ext/honke_roster_data.js に書き出す。
+# 本家（妖怪ウォッチ2 元祖/本家/真打）の妖怪を src/ext/honke_roster_data.js に書き出す。
+#   ・このゲームにまだいない妖怪 → HONKE_ROSTER（新しく足す）
+#   ・もういる妖怪（流行りの型で名前だけ本家にした妖怪・同じ名前の妖怪） → HONKE_REPLACE（中身を本家に置きかえる）
 #   python3 tools/gen_honke.py
 #
 # もとのデータ（2026-09 取得。tools/honke_data/ に保存）:
@@ -188,9 +190,8 @@ def seed_of(name):
     return int(hashlib.md5(("honke:" + name).encode()).hexdigest()[:8], 16)
 
 
-out, skills_used = [], {}
+out, repl, skills_used = [], [], {}
 for d in gp:
-    if d["name"] in PRESENT: continue
     h = hrs.get(d["name"])
     no = h["no"] if h else d["gid"] - 137  # 怪魔（No.355〜369）は HRS にない
     tribe = TRIBE[d["tribe"]]
@@ -248,7 +249,7 @@ for d in gp:
         if smods: e["soulMods"] = smods
     e["seed"] = seed_of(d["name"])
     skills_used[d["skill"]] = d["skill_d"]
-    out.append(e)
+    (repl if d["name"] in PRESENT else out).append(e)
 
 # レア魂（2 つの魂を合わせてできる魂）
 RARE = []
@@ -260,13 +261,17 @@ for k, v in souls.items():
     RARE.append({"name": k, "from": [m.group(1), m.group(2)], "text": m.group(3)})
 
 js = ["// このファイルは tools/gen_honke.py が作る（手で直さない）。",
-      "// 本家（妖怪ウォッチ2 元祖/本家/真打）の妖怪のうち、このゲームにいなかった分。出典は tools/gen_honke.py の先頭。",
+      "// 本家（妖怪ウォッチ2 元祖/本家/真打）の妖怪。出典は tools/gen_honke.py の先頭。",
       "var HONKE_ROSTER = ["]
 for e in out: js.append("  " + json.dumps(e, ensure_ascii=False) + ",")
+js.append("];")
+js.append("// もういる妖怪（名前が同じ）の中身を本家に置きかえる分。id はこのゲームのものを残す")
+js.append("var HONKE_REPLACE = [")
+for e in repl: js.append("  " + json.dumps(e, ensure_ascii=False) + ",")
 js.append("];")
 js.append("// 本家のスキル名 → 本家の説明")
 js.append("var HONKE_SKILL_TEXT = " + json.dumps(skills_used, ensure_ascii=False, indent=0) + ";")
 js.append("// レア魂（合成）")
 js.append("var HONKE_RARE_SOULS = " + json.dumps(RARE, ensure_ascii=False, indent=0) + ";")
 open(os.path.join(ROOT, "src", "ext", "honke_roster_data.js"), "w", encoding="utf-8").write("\n".join(js) + "\n")
-print(f"{len(out)} yokai, {len(skills_used)} skills, {len(RARE)} rare souls")
+print(f"{len(out)} yokai (+{len(repl)} replaced), {len(skills_used)} skills, {len(RARE)} rare souls")

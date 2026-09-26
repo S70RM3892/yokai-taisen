@@ -102,6 +102,17 @@ var HONKE_SKILL_FX = {
   "果汁100%": { deathSg: 300 },
   "超電磁パワー": { sgPower: 250 },
   "ムーンパワー": { benchHeal: 12 },
+  // 流行りの型の妖怪のスキル
+  "エクササイズ": { aura_atk: 100 },
+  "ベンチウォーマー": { benchHeal: 10 }, "美脚": { benchHeal: 10 },
+  "みらいよち": { evade: 150 },
+  "超ガマン": { endure: 2 }, "猛虎のねばり": { endure: 1 },
+  "なめらかオイル": { oil: 350, oilFree: 1 },
+  "肉食オーラ": { atkBias: 500 }, "草食オーラ": { atkBias: -500 },
+  "ひとまかせ": { relay: 300 },
+  "トリプルヘッド": { skillAll: 1 },
+  "わしのもの": { blessMagnet: 1 },
+  "満を持す": { halfTurn: 1 },
 };
 
 // レア魂（名前 → 効果）。合わせる 2 つの魂は本家どおり（HONKE_RARE_SOULS.from）
@@ -137,6 +148,18 @@ var HONKE_BY_ID = new Map();
     const r = role(e), ms = MOTION[r];
     zi[def.id] = { family: e.name, form: e.rank === "S" || e.rank === "A" ? 2 : e.rank === "B" || e.rank === "C" ? 1 : 0, role: r,
       motion: ms[e.seed % ms.length], line: e.ultName + "！", pitch: 180 + e.seed % 360, seed: e.seed };
+  }
+  // もういる妖怪（流行りの型で名前だけ本家にした 22 体と、もとから同じ名前の 4 体）は、中身をまるごと本家にする。
+  // id・3D モデル・動きの癖（zi）はこのゲームのものを残す（保存した編成がそのまま読めるように）
+  for (const e of HONKE_REPLACE) {
+    const d = ct.find(x => x.name === e.name);
+    if (!d) continue;
+    const keep = { id: d.id, honkeModel: d.honkeModel };
+    for (const k of Object.keys(d)) delete d[k];
+    Object.assign(d, e, keep);
+    if (!d.honkeModel) delete d.honkeModel;
+    if (e.hp + e.atk + e.spa + e.def + e.spd >= 930) d.group = "ogre"; // 赤鬼・黒鬼も「大物」（本家の公式ルール：赤鬼・青鬼・黒鬼は 1 体まで）
+    HONKE_BY_ID.set(d.id, d);
   }
   for (const s of HONKE_RARE_SOULS) {
     Ni.push({ id: "rsoul_" + RARE_SOUL_ID[s.name], name: s.name, cat: "レア魂", mods: {}, special: null, only: null, honke: true,

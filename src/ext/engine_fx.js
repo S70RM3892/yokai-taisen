@@ -59,7 +59,7 @@ function honkeStatBonus(e, u, stat) {
 
 // ---- 場の効果（前衛にいる妖怪のスキルが、敵味方の全員に効くもの）。tick ごとに作り直す ----
 var EMPTY_FIELD = { tick: 0, noLoafAll: 0, noGuardAll: 0, noEvade: 0, allUpAll: 0, loafDmg: 0, healDown: 0, poisonUp: 0, noElemSkill: 0,
-  weather: {}, camp: {}, purifyHard: [0, 0], teamNoLoaf: [0, 0], foeLoaf: [1, 1], wheelLock: [0, 0], blessMagnet: null };
+  weather: {}, camp: {}, purifyHard: [0, 0], teamNoLoaf: [0, 0], foeLoaf: [1, 1], wheelLock: [0, 0], blessMagnet: null, atkBias: 0 };
 var FIELD = null;
 function fieldOf(state) {
   const f = { ...EMPTY_FIELD, tick: state.tick, weather: {}, camp: {}, purifyHard: [0, 0], teamNoLoaf: [0, 0], foeLoaf: [1, 1], wheelLock: [0, 0] };
@@ -81,6 +81,7 @@ function fieldOf(state) {
       if (x.foeLoaf) f.foeLoaf[1 - pid] = Math.max(f.foeLoaf[1 - pid], x.foeLoaf);
       if (x.wheelLock) f.wheelLock[1 - pid] = 1;
       if (x.blessMagnet && f.blessMagnet === null) f.blessMagnet = u;
+      if (x.atkBias) f.atkBias += x.atkBias; // 肉食オーラ・草食オーラ（両方いれば打ち消しあう）
       for (const k in x) {
         if (k.startsWith("weather_")) f.weather[k.slice(8)] = Math.max(f.weather[k.slice(8)] ?? 0, x[k]);
         else if (k.startsWith("campAura_")) f.camp[k.slice(9)] = Math.max(f.camp[k.slice(9)] ?? 0, x[k]);

@@ -272,6 +272,9 @@ function fxLine(k, v) {
     case "endureChance": return `たおれるダメージを ${pct(v)} で HP1 でこらえる`;
     case "noRevive": return "味方は対戦中 復活できない";
     case "halfTurn": return "2 回に 1 回しか行動しない";
+    case "atkBias": return v > 0 ? `前衛にいる間 敵味方全員が こうげきを選びやすい（+${pct(v)}）` : `前衛にいる間 敵味方全員が こうげきを選びにくい（-${pct(-v)}）`;
+    case "skillAll": return "ようじゅつが 敵の前衛全員に当たる";
+    case "blessMagnet": return "前衛にいる間 敵味方のよいとりつきを 全部自分に向けさせる";
     case "atkElem": return `こうげきが${ELEM_JA[arg]}属性になる`;
     case "magic": return `ようじゅつが${ELEM_JA[arg]}属性（威力 120 以上）になる`;
     case "rod": return `${ELEM_JA[arg]}のようじゅつを 前衛で引き受ける`;
