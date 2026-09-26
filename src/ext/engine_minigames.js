@@ -9,7 +9,7 @@
 
 var CHARGE_GAMES = {
   mawase: { name: "まわせ！", help: "円の中をぐるぐる回す", perfect: 45, good: 75, limit: 110 },
-  nazore: { name: "なぞれ！", help: "光る点を順になぞって 3 周", perfect: 70, good: 110, limit: 150 },
+  nazore: { name: "なぞれ！", help: "光る点を順になぞって五角形を 3 周", perfect: 70, good: 110, limit: 150 },
   ute: { name: "打て！", help: "飛んでくる黄色い玉をタップ", perfect: 60, good: 95, limit: 130 },
   awasero: { name: "あわせろ！", help: "針が光る目もりに来たら押す（ぴったり 3 回で発動）", perfect: 52, good: 84, limit: 120 },
 };

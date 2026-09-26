@@ -109,7 +109,7 @@ var HONKE_SKILL_FX = {
   "超ガマン": { endure: 2 }, "猛虎のねばり": { endure: 1 },
   "なめらかオイル": { oil: 350, oilFree: 1 },
   "肉食オーラ": { atkBias: 500 }, "草食オーラ": { atkBias: -500 },
-  "ひとまかせ": { relay: 300 },
+  "ひとまかせ": { relay: 1 },
   "トリプルヘッド": { skillAll: 1 },
   "わしのもの": { blessMagnet: 1 },
   "満を持す": { halfTurn: 1 },

@@ -190,12 +190,14 @@ Object.assign(e2.prototype, {
       this.insp.set(uid, a);
     }
     a.seen = !0;
+    f.model.userData.insp = kind; // 本体の色も変える（setModelLook）
   },
   inspUpdate(dt) {
     if (!this.insp) return;
     for (const [uid, a] of this.insp) {
       const f = this.figs.get(uid);
       if (!a.seen || !f || !f.root.visible) {
+        if (f) f.model.userData.insp = null;
         this.scene.remove(a.ring), a.ring.material.dispose(), this.insp.delete(uid);
         continue;
       }

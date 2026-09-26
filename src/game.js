@@ -670,6 +670,29 @@
     return s
   }
 
+  // 悪いとりつきの相手：ちょうはつ → まだとりつかれていない前衛（ねらう指定 → HP の割合が低い順）。
+  // 以前はこうげきと同じ選び方で、もうとりつかれている妖怪に何度もとりついて上書きしていた。
+  // 前衛がみんなとりつかれていれば null（とりつかずにこうげきする）
+  function curseTarget(e, t) {
+    let a = [0, 1, 2].map(u => t.units[t.wheel[u]]).filter(Se),
+      r = a.find(u => u.blessing?.kind === "taunt") ?? a.find(u => u.fx.taunt);
+    if (r) return r;
+    let i = a.filter(u => !untargetable(u));
+    i.length === 0 && (i = a);
+    let fresh = i.filter(u => !u.curse);
+    if (fresh.length === 0) return null;
+    // よいとりつき「とりつかれない」・とりつき無効の妖怪は後回し
+    let open = fresh.filter(u => !tt(u, "unbreakable") && !(u.blessing?.kind === "ward" && u.blessing.wardCharges > 0));
+    open.length > 0 && (fresh = open);
+    if (e.target !== null) {
+      let u = fresh.find(x => x.index === e.target);
+      if (u) return u
+    }
+    let seen = fresh.filter(u => !tt(u, "hidden"));
+    seen.length > 0 && (fresh = seen);
+    return fresh.reduce((s, u) => mr(u) < mr(s) ? u : s)
+  }
+
   function Ih(e, t, a) {
     let r = Ht(e);
     if (t === "gather" && (r = r.filter(s => s.sg < Nt)), r.length === 0) return null;
@@ -1268,7 +1291,7 @@
         let i = e.units[e.wheel[r]];
         tt(i, "benchHeal") && $a(a, t, healAmt(i, t.maxHp, i.fx.benchHeal), i.uid), tt(i, "benchSg") && gainSg(i, i.fx.benchSg), tt(i, "benchRegen") && $a(a, i, healAmt(i, i.maxHp, i.fx.benchRegen), i.uid)
       }
-      tt(t, "regen") && $a(a, t, healAmt(t, t.maxHp, t.fx.regen), t.uid), tt(t, "relay") && relayTurn(e, t, a)
+      tt(t, "regen") && $a(a, t, healAmt(t, t.maxHp, t.fx.regen), t.uid)
     }
   }
 
@@ -1302,12 +1325,18 @@
       i = r.u.ap;
     for (let l of a) l.u.ap = Math.max(0, l.u.ap - i);
     let n = e.players[r.pid],
-      s = Jh(e, r.pid, r.u, t);
+      // ひとまかせ（本家）：自分の番に、自分のかわりに となりの前衛の味方（右どなり優先）を行動させる
+      by = relayPick(n, r.u),
+      s;
+    by && t.push({ t: "relay", uid: r.u.uid, to: by.uid });
+    s = Jh(e, r.pid, by ?? r.u, t);
     if (s === null) {
+      by && t.pop();
       e.busyUntil = e.tick + 1;
       return
     }
-    e.lastActor = r.u.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, r.u, t), blessTurnPassed(r.u, t), Yh(e), e.busyUntil = e.tick + pc[s]
+    let act = by ?? r.u;
+    e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), Yh(e), e.busyUntil = e.tick + pc[s]
   }
 
   function Qh(e) {
@@ -1378,6 +1407,10 @@
     let u = ui(i, n),
       o = null,
       heal = l === "skill" && s.skillMode === "heal";
+    if (l === "curse" && u) {
+      let c = curseTarget(i, n);
+      c ? u = c : l = "attack";
+    }
     if (l === "curse" && !u && (l = "attack"), l === "bless" && (o = Ih(i, s.blessing, a), o || (l = "attack")), (l === "attack" || l === "skill" && !heal || l === "curse") && !u) return a.pendingAction = l, null;
     a.pendingAction = null;
     let el = l === "skill" ? skillElementOf(a, s) : l === "attack" ? attackElement(a) : null,

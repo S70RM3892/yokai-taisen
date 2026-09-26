@@ -117,7 +117,7 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`pvp replay: ${pvp} games identical, no items, equipment applied`);
 }
 
-// なめらかオイル（回転の待ちが短い）・ひとまかせ（となりの番が早まる）
+// なめらかオイル（回転の待ちが短い）・ひとまかせ（自分のかわりに となりの前衛の味方を行動させる。右どなり優先）
 {
   const id = n => E.units.find(u => u.name === n).id;
   const base = ["ヨロイさん", "むりだ城", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"].map(n => ({ unit: id(n) }));
@@ -128,7 +128,24 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   const withRelay = base.map((m, i) => i === 1 ? { unit: id("ひとまか仙人") } : m);
   const s = E.newBattle(9, withRelay, base, { noItems: true });
   let relays = 0;
-  for (let i = 0; i < 1200 && !s.outcome; i++) { const ev = []; E.step(s, [], ev); relays += ev.filter(e => e.t === "relay" && e.uid < 6).length; }
+  const sen = s.players[0].units[1];
+  for (let i = 0; i < 1200 && !s.outcome; i++) {
+    const p = s.players[0], ev = [];
+    E.step(s, [], ev);
+    for (const [k, e] of ev.entries()) {
+      if (e.t === "action" && e.uid === sen.uid && p.wheel.indexOf(sen.index) <= 2 && !["stunned", "loaf", "rest"].includes(e.action)) {
+        const pos = p.wheel.indexOf(sen.index), nb = [pos + 1, pos - 1].filter(q => q >= 0 && q <= 2).map(q => p.units[p.wheel[q]]).find(u => u.hp > 0);
+        if (nb) throw new Error("ひとまか仙人 acted itself with a front neighbor");
+      }
+      if (e.t !== "relay" || e.uid !== sen.uid) continue;
+      relays++;
+      // すぐ後の行動は、任された となりの味方のもの（右どなり優先）
+      const next = ev.slice(k + 1).find(x => x.t === "action");
+      if (!next || next.uid !== e.to) throw new Error("relay target did not act");
+      const pos = p.wheel.indexOf(sen.index), right = pos < 2 ? p.units[p.wheel[pos + 1]] : null;
+      if (right && right.hp > 0 && e.to !== right.uid) throw new Error("relay should prefer the right neighbor");
+    }
+  }
   if (!relays) throw new Error("relay never fired");
   console.log(`oil: rotate wait ${a} -> ${b} ticks, relay fired ${relays} times`);
 }
@@ -259,7 +276,24 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
     }
   }
   if (hitTaunt < (hitTaunt + hitOther) * 0.7) throw new Error(`taunt soul did not draw attacks (${hitTaunt} / ${hitOther})`);
-  console.log(`inspirit: cursed cannot ult, curse persists; taunt soul drew ${hitTaunt}/${hitTaunt + hitOther} hits`);
+  // 悪いとりつきは、まだとりつかれていない前衛をねらう（もうとりつかれている妖怪に上書きしない）
+  let fresh = 0, again = 0;
+  for (let g = 0; g < 60; g++) {
+    const seed = g * 97 + 3;
+    const s3 = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    for (let i = 0; i < 1500 && !s3.outcome; i++) {
+      const cursed = new Set(s3.players.flatMap(P => P.units).filter(x => x.curse).map(x => x.uid));
+      const e3 = [];
+      E.step(s3, [], e3);
+      for (const a of e3) if (a.t === "action" && a.action === "curse") {
+        const d = s3.players.flatMap(P => P.units).find(x => x.uid === a.dst);
+        if (d.fx.taunt || d.blessing?.kind === "taunt") continue;
+        cursed.has(a.dst) ? again++ : fresh++;
+      }
+    }
+  }
+  if (!fresh || again) throw new Error(`curse went to an already cursed unit (${again} / ${fresh + again})`);
+  console.log(`inspirit: cursed cannot ult, curse persists; taunt soul drew ${hitTaunt}/${hitTaunt + hitOther} hits; curse picks uncursed foes ${fresh}/${fresh + again}`);
 }
 
 // 前衛が全滅したら、倒れる演出を待ってから（32 tick 以上）メンバーサークルが回る

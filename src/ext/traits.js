@@ -40,7 +40,7 @@ function fxLine(k, v) {
     case "ultEvade": return v >= 1000 ? "相手のひっさつわざを必ずかわす" : `相手のひっさつわざを ${pct(v)} でかわす`;
     case "scapegoat": return "ねらわれると となりの前衛の味方に代わってもらう";
     case "guardian": return "たおれそうな前衛の味方をかばう";
-    case "relay": return `行動すると となりの前衛の味方の番が ${pct(v)} 早く来る`;
+    case "relay": return "自分の番に、自分のかわりに となりの前衛の味方を行動させる（右どなり優先）";
     case "oil": return `チームにいると メンバーサークルを回したあとの待ち時間-${pct(v)}`;
     case "up": return `${STAT_JA[arg]}+${pct(v)}`;
     case "atkUp": return `こうげきの威力+${pct(v)}`;

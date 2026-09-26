@@ -22,7 +22,7 @@ var PRESETS = [
   },
   {
     name: "ミツマタノヅチ特化",
-    desc: "ばか頭巾のとりつきでミツマタノヅチのようりょくを上げ、全体の術で相手の前衛をまとめて削る。ひとまか仙人が術の番を早める。",
+    desc: "ばか頭巾のとりつきでミツマタノヅチのようりょくを上げ、全体の術で相手の前衛をまとめて削る。前に回したひとまか仙人は、自分の番をとなりの味方に任せて手数を増やす。",
     tags: ["全体ようじゅつ", "強化", "ひとまかせ"],
     team: [["マスクドニャーン", "doujinai", "teppeki_omamori"], ["ミツマタノヅチ", "zunouteki", "kishin_yubiwa"], ["ばか頭巾", "kyouryokuteki", null],
       ["ひとまか仙人", "kyouryokuteki", null], ["草くいおとこ", "zunouteki", "densetsu_yubiwa"], ["マスクドニャーン", "doujinai", "teppeki_omamori"]],
@@ -43,7 +43,7 @@ var PRESETS = [
   },
   {
     name: "赤鬼・ひとまか仙人・ブシニャン",
-    desc: "まん中のひとまか仙人が両どなりの赤鬼・ブシニャンに番を回して手数を増やす。あせっか鬼でサークルの待ちを縮め、むりだ城とすばやく入れかえる。",
+    desc: "まん中のひとまか仙人が自分の番を右どなりのブシニャン（倒れたら左の赤鬼）に任せて手数を増やす。あせっか鬼でサークルの待ちを縮め、むりだ城とすばやく入れかえる。",
     tags: ["手数", "ひとまかせ", "なめらかオイル"],
     team: [["赤鬼", "arakure", "densetsu_udewa"], ["ひとまか仙人", "kyouryokuteki", null], ["ブシニャン", "arakure", "kishin_udewa"],
       ["むりだ城", "doujinai", "teppeki_omamori"], ["あせっか鬼", "kyouryokuteki", null], ["むりだ城", "doujinai", "teppeki_omamori"]],
