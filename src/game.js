@@ -670,6 +670,29 @@
     return s
   }
 
+  // 悪いとりつきの相手：ちょうはつ → まだとりつかれていない前衛（ねらう指定 → HP の割合が低い順）。
+  // 以前はこうげきと同じ選び方で、もうとりつかれている妖怪に何度もとりついて上書きしていた。
+  // 前衛がみんなとりつかれていれば null（とりつかずにこうげきする）
+  function curseTarget(e, t) {
+    let a = [0, 1, 2].map(u => t.units[t.wheel[u]]).filter(Se),
+      r = a.find(u => u.blessing?.kind === "taunt") ?? a.find(u => u.fx.taunt);
+    if (r) return r;
+    let i = a.filter(u => !untargetable(u));
+    i.length === 0 && (i = a);
+    let fresh = i.filter(u => !u.curse);
+    if (fresh.length === 0) return null;
+    // よいとりつき「とりつかれない」・とりつき無効の妖怪は後回し
+    let open = fresh.filter(u => !tt(u, "unbreakable") && !(u.blessing?.kind === "ward" && u.blessing.wardCharges > 0));
+    open.length > 0 && (fresh = open);
+    if (e.target !== null) {
+      let u = fresh.find(x => x.index === e.target);
+      if (u) return u
+    }
+    let seen = fresh.filter(u => !tt(u, "hidden"));
+    seen.length > 0 && (fresh = seen);
+    return fresh.reduce((s, u) => mr(u) < mr(s) ? u : s)
+  }
+
   function Ih(e, t, a) {
     let r = Ht(e);
     if (t === "gather" && (r = r.filter(s => s.sg < Nt)), r.length === 0) return null;
@@ -1378,6 +1401,10 @@
     let u = ui(i, n),
       o = null,
       heal = l === "skill" && s.skillMode === "heal";
+    if (l === "curse" && u) {
+      let c = curseTarget(i, n);
+      c ? u = c : l = "attack";
+    }
     if (l === "curse" && !u && (l = "attack"), l === "bless" && (o = Ih(i, s.blessing, a), o || (l = "attack")), (l === "attack" || l === "skill" && !heal || l === "curse") && !u) return a.pendingAction = l, null;
     a.pendingAction = null;
     let el = l === "skill" ? skillElementOf(a, s) : l === "attack" ? attackElement(a) : null,

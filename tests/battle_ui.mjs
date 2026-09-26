@@ -67,9 +67,12 @@ for (const game of ["mawase", "nazore", "ute", "awasero"]) {
     for (let i = 0; i < 90; i++) { const a = i * 0.35; await page.mouse.move(cx + Math.cos(a) * 80, cy + Math.sin(a) * 80); }
     await page.mouse.up();
   } else if (game === "nazore") {
-    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.06); await page.mouse.down();
-    const star = Array.from({ length: 10 }, (_, i) => { const r = i % 2 ? 36 : 88, t = -Math.PI / 2 + i * Math.PI / 5; return [100 + r * Math.cos(t), 100 + r * Math.sin(t)]; });
-    for (let lap = 0; lap < 3; lap++) for (let i = 0; i <= 10; i++) { const [x, y] = star[i % 10]; await page.mouse.move(box.x + x * box.width / 200, box.y + y * box.height / 200, { steps: 3 }); }
+    // 五角形の 5 点。点の上を通らず、少し内側を 1 歩で結ぶ（指を速く動かしても当たることを確かめる）
+    const pts = Array.from({ length: 5 }, (_, i) => { const t = -Math.PI / 2 + i * 2 * Math.PI / 5; return [100 + 70 * Math.cos(t), 100 + 70 * Math.sin(t)]; });
+    // SVG は縦横比を保ってステージの中央に置かれる
+    const k = Math.min(box.width, box.height) / 200, ox = box.x + (box.width - 200 * k) / 2, oy = box.y + (box.height - 200 * k) / 2;
+    await page.mouse.move(ox + pts[0][0] * k, oy + pts[0][1] * k); await page.mouse.down();
+    for (let lap = 0; lap < 3; lap++) for (let i = 1; i <= 5; i++) { const [x, y] = pts[i % 5]; await page.mouse.move(ox + x * k, oy + y * k); }
     await page.mouse.up();
   } else if (game === "ute") {
     // 玉は動きつづけるので、クリックの代わりに押した瞬間（pointerdown）を起こす

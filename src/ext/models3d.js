@@ -793,12 +793,21 @@ function animateModel(model, t) {
   }
 }
 
-// ひかる（被弾）・うすくなる（気絶）
+// とりつき中の本体の色：わるい＝紫がじわじわ脈打つ、よい＝金色がほのかに光る
+var INSP_TINT = { bad: [0.42, 0.1, 0.62, 2.2, 0.15, 0.45], good: [0.5, 0.4, 0.08, 3.5, 0.15, 0.35] };
+
+// ひかる（被弾）・うすくなる（気絶）・とりつきの色（model.userData.insp に "bad" / "good"）
 function setModelLook(model, flash, opacity) {
+  const ti = INSP_TINT[model.userData.insp];
+  let tr0 = 0, tg0 = 0, tb0 = 0;
+  if (ti) {
+    const k = ti[4] + (ti[5] - ti[4]) * (0.5 + 0.5 * Math.sin(performance.now() / 1000 * ti[3]));
+    tr0 = ti[0] * k, tg0 = ti[1] * k, tb0 = ti[2] * k;
+  }
   for (const m of model.userData.mats) {
     if (m.emissive) {
       const base = m.userData.baseEmissive;
-      if (flash > 0.01) m.emissive.setRGB(Math.min(1, ((base >> 16 & 255) / 255) + flash * 0.9), Math.min(1, ((base >> 8 & 255) / 255) + flash * 0.9), Math.min(1, ((base & 255) / 255) + flash * 0.9));
+      if (flash > 0.01 || ti) m.emissive.setRGB(Math.min(1, ((base >> 16 & 255) / 255) + flash * 0.9 + tr0), Math.min(1, ((base >> 8 & 255) / 255) + flash * 0.9 + tg0), Math.min(1, ((base & 255) / 255) + flash * 0.9 + tb0));
       else m.emissive.setHex(base);
     }
     const op = m.userData.baseOpacity * opacity;

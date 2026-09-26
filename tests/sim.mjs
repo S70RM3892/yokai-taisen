@@ -259,7 +259,24 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
     }
   }
   if (hitTaunt < (hitTaunt + hitOther) * 0.7) throw new Error(`taunt soul did not draw attacks (${hitTaunt} / ${hitOther})`);
-  console.log(`inspirit: cursed cannot ult, curse persists; taunt soul drew ${hitTaunt}/${hitTaunt + hitOther} hits`);
+  // 悪いとりつきは、まだとりつかれていない前衛をねらう（もうとりつかれている妖怪に上書きしない）
+  let fresh = 0, again = 0;
+  for (let g = 0; g < 60; g++) {
+    const seed = g * 97 + 3;
+    const s3 = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    for (let i = 0; i < 1500 && !s3.outcome; i++) {
+      const cursed = new Set(s3.players.flatMap(P => P.units).filter(x => x.curse).map(x => x.uid));
+      const e3 = [];
+      E.step(s3, [], e3);
+      for (const a of e3) if (a.t === "action" && a.action === "curse") {
+        const d = s3.players.flatMap(P => P.units).find(x => x.uid === a.dst);
+        if (d.fx.taunt || d.blessing?.kind === "taunt") continue;
+        cursed.has(a.dst) ? again++ : fresh++;
+      }
+    }
+  }
+  if (!fresh || again) throw new Error(`curse went to an already cursed unit (${again} / ${fresh + again})`);
+  console.log(`inspirit: cursed cannot ult, curse persists; taunt soul drew ${hitTaunt}/${hitTaunt + hitOther} hits; curse picks uncursed foes ${fresh}/${fresh + again}`);
 }
 
 // 前衛が全滅したら、倒れる演出を待ってから（32 tick 以上）メンバーサークルが回る

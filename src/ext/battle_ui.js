@@ -180,7 +180,16 @@ function spinHandler(stage, onTurn) {
   stage.onpointerup = stage.onpointercancel = () => { last = null; };
 }
 
-var STAR = Array.from({ length: 10 }, (_, i) => { const r = i % 2 ? 36 : 88, t = -Math.PI / 2 + i * Math.PI / 5; return [100 + r * Math.cos(t), 100 + r * Math.sin(t)]; });
+// なぞれ！の形：大きな五角形の 5 点（星形は内側の点が近すぎて、スマホの指では当てにくかった）
+var NAZORE_PTS = Array.from({ length: 5 }, (_, i) => { const t = -Math.PI / 2 + i * 2 * Math.PI / 5; return [100 + 82 * Math.cos(t), 100 + 82 * Math.sin(t)]; });
+var NAZORE_HIT = 40; // 当たりの半径（200 四方の座標）
+
+// 点 p と線分 a-b の距離（指を速く動かして点を飛び越えても当たりにする）
+function segDist(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+  const k = l2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2)) : 0;
+  return Math.hypot(a[0] + dx * k - p[0], a[1] + dy * k - p[1]);
+}
 
 function setupCharge(e, stage, kind) {
   if (kind === "mawase") {
@@ -192,25 +201,37 @@ function setupCharge(e, stage, kind) {
       if (now - (e.mg.trail ?? 0) > 45) e.mg.trail = now, mgBurst(stage, 50 + Math.cos(a) * 40, 50 + Math.sin(a) * 40, "trail", 2);
     });
   } else if (kind === "nazore") {
-    const svg = Ke("svg", { viewBox: "0 0 200 200", class: "mg-svg" });
-    svg.innerHTML = `<path d="M${STAR.map(p => p.join(" ")).join(" L")} Z" class="mg-path"/><polyline class="mg-done" points=""/>` + STAR.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="9" class="mg-pt" data-i="${i}"/>`).join("");
+    const P = NAZORE_PTS, svg = Ke("svg", { viewBox: "0 0 200 200", class: "mg-svg" });
+    svg.innerHTML = `<path d="M${P.map(p => p.join(" ")).join(" L")} Z" class="mg-path"/><polyline class="mg-done" points=""/>` + P.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="13" class="mg-pt" data-i="${i}"/>`).join("");
     stage.append(svg);
+    // 画面が低いとステージが横長になり、SVG は縦に合わせて中央に縮む。幅・高さで別々に割ると点とずれるので、SVG の座標に直す
+    const at = ev => {
+      const m = svg.getScreenCTM();
+      if (!m) { const r = stage.getBoundingClientRect(); return [(ev.clientX - r.left) * 200 / r.width, (ev.clientY - r.top) * 200 / r.height]; }
+      const q = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(m.inverse());
+      return [q.x, q.y];
+    };
+    // 光の粒（mgBurst）はステージの % で置くので、SVG の座標から直す
+    const pct = (x, y) => { const r = stage.getBoundingClientRect(), m = svg.getScreenCTM(); if (!m) return [x / 2, y / 2]; const q = new DOMPoint(x, y).matrixTransform(m); return [(q.x - r.left) * 100 / r.width, (q.y - r.top) * 100 / r.height]; };
+    let last = null;
     const hit = ev => {
-      const r = stage.getBoundingClientRect();
-      const x = (ev.clientX - r.left) * 200 / r.width, y = (ev.clientY - r.top) * 200 / r.height;
-      const [nx, ny] = STAR[e.mg.next];
-      if (Math.hypot(nx - x, ny - y) < 24) {
+      const cur = at(ev), from = last ?? cur;
+      last = cur;
+      // 1 回の動きで次の点をいくつ通り過ぎても、順番どおりなら全部数える
+      for (let n = 0; n < P.length; n++) {
+        const [nx, ny] = P[e.mg.next];
+        if (segDist([nx, ny], from, cur) >= NAZORE_HIT) break;
         const done = e.mg.next;
-        e.mg.next = (e.mg.next + 1) % STAR.length;
-        if (e.mg.next === 0) { e.mg.lap++; sendCharge(e, 334); E2(!0); mgBurst(stage, nx / 2, ny / 2, "perfect", 18); }
-        else { E2(!1); mgBurst(stage, nx / 2, ny / 2, "good", 5); }
-        stage.querySelector(".mg-done")?.setAttribute("points", STAR.slice(0, e.mg.next ? done + 1 : 0).map(p => p.join(",")).join(" "));
+        e.mg.next = (e.mg.next + 1) % P.length;
+        const [bx, by] = pct(nx, ny);
+        if (e.mg.next === 0) { e.mg.lap++; sendCharge(e, 334); E2(!0); mgBurst(stage, bx, by, "perfect", 18); }
+        else { E2(!1); mgBurst(stage, bx, by, "good", 5); }
+        stage.querySelector(".mg-done")?.setAttribute("points", P.slice(0, e.mg.next ? done + 1 : 0).map(p => p.join(",")).join(" "));
       }
     };
-    let down = !1;
-    stage.onpointerdown = ev => { ev.preventDefault(); stage.setPointerCapture(ev.pointerId); down = !0; hit(ev); };
-    stage.onpointermove = ev => { if (down) hit(ev); };
-    stage.onpointerup = stage.onpointercancel = () => { down = !1; };
+    stage.onpointerdown = ev => { ev.preventDefault(); stage.setPointerCapture(ev.pointerId); last = null; hit(ev); };
+    stage.onpointermove = ev => { if (last) hit(ev); };
+    stage.onpointerup = stage.onpointercancel = () => { last = null; };
   } else if (kind === "ute") {
     stage.onpointerdown = ev => ev.preventDefault();
   } else if (kind === "awasero") {
