@@ -75,7 +75,7 @@ var HONKE_SKILL_FX = {
   "どんどんフィールド": { allUpAll: 150 },
   "スパルタ": { teamNoLoaf: 700 },
   "超回復": { bigHealPinch: 1 },
-  "超クリティカル": { critDmg: 500 },
+  "超クリティカル": { critDmg: 750 },
   "深夜テンション": { night: 250 },
   "きゅうけつ": { drain: 250 },
   "どろぼう": { stealItem: 200 }, "ものかくし": { stealItem: 200 },
@@ -159,8 +159,7 @@ var HONKE_BY_ID = new Map();
 // このゲームだけの調整（1 体ずつ）。fx は特性、soulFx・soulText は魂を上書きする
 //   クリティカル率（critEye）は 64 分の いくつ、クリティカルの威力（critDmg）は 1000 で +100%
 var HONKE_TUNE = {
-  山吹鬼: { fx: { critDmg: 2000 } }, // 超クリティカル：クリティカルの威力 +200%（ほかの妖怪は +50%）
-  いのちとり: { soulFx: { critEye: 29 }, soulText: "クリティカル率アップ（45%）" }, // いのちとりの魂：29/64 ≒ 45%
+  いのちとり: { soulFx: { critEye: 19 }, soulText: "クリティカル率アップ（30%）" }, // いのちとりの魂：19/64 ≒ 30%
 };
 
 // 本家の妖怪の特性（本家のスキル）と魂
