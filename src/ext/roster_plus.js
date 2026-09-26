@@ -12,7 +12,7 @@ function relayPick(p, u) {
   for (const q of [pos + 1, pos - 1]) {
     if (q < 0 || q > 2) continue;
     const r = p.units[p.wheel[q]];
-    if (Se(r)) return r;
+    if (Se(r) && r.curse?.kind !== "stun") return r;
   }
   return null;
 }

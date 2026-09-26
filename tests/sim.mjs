@@ -142,6 +142,8 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
       // すぐ後の行動は、任された となりの味方のもの（右どなり優先）
       const next = ev.slice(k + 1).find(x => x.t === "action");
       if (!next || next.uid !== e.to) throw new Error("relay target did not act");
+      // 本家：「自分のかわりにとなりの味方を攻撃させる」（ようじゅつ・とりつきではなく こうげき）
+      if (next.action !== "attack" && next.action !== "loaf") throw new Error(`relay target did ${next.action}, not attack`);
       const pos = p.wheel.indexOf(sen.index), right = pos < 2 ? p.units[p.wheel[pos + 1]] : null;
       if (right && right.hp > 0 && e.to !== right.uid) throw new Error("relay should prefer the right neighbor");
     }
@@ -211,6 +213,137 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   const all = fire("ゲンマ将軍", 1); // いりょく 130 x 1 (敵全体に攻撃)
   if (all.length !== 3) throw new Error(`all-target ult hit ${all.length} foes`);
   console.log(`ult spread: 5 hits scattered (avg ${(spreadTargets / 20).toFixed(1)} foes), all-target hits 3`);
+}
+
+// 復活のひっさつわざ（本家）：前衛の味方だけ。花さか爺・心オバアは復活＋前衛全員 HP 全回復、おでんじんは 1 体だけ
+{
+  const fire = (name, seed) => {
+    const walls = ["ヨロイさん", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
+    const me = [{ unit: E.units.find(u => u.name === name).id }, ...walls.slice(1)];
+    const s = E.newBattle(seed, me, walls, { noItems: true });
+    const p = s.players[0], u = p.units[p.wheel[0]];
+    const front = [1, 2].map(i => p.units[p.wheel[i]]), back = [3, 4].map(i => p.units[p.wheel[i]]);
+    front[0].hp = 0, back[0].hp = 0, back[1].hp = 0; // 前衛 1 体・後衛 2 体が気絶
+    front[1].hp = 1; // 前衛のもう 1 体は HP が減っている
+    u.sg = 1000, u.ultLockout = 0;
+    for (const f of s.players[1].units) f.curse = { kind: "stun", tier: 0, elapsed: 0, remaining: 1e9 };
+    E.step(s, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], []);
+    if (!p.stance) throw new Error(`${name}: stance did not start`);
+    p.stance.game = "mawase";
+    for (let i = 0; i < 50; i++) {
+      const ev = [];
+      E.step(s, [{ player: 0, input: { t: "ultCharge", amount: 300 } }], ev);
+      if (ev.some(e => e.t === "ult")) return { front, back };
+    }
+    throw new Error(`${name}: ult did not fire`);
+  };
+  for (const name of ["花さか爺", "心オバア"]) {
+    const { front, back } = fire(name, 1);
+    if (front[0].hp !== front[0].maxHp) throw new Error(`${name}: front ally revived with ${front[0].hp}/${front[0].maxHp}`);
+    if (front[1].hp !== front[1].maxHp) throw new Error(`${name}: front ally not fully healed (${front[1].hp}/${front[1].maxHp})`);
+    if (back.some(b => b.hp > 0)) throw new Error(`${name}: back-row ally revived`);
+  }
+  {
+    const { front, back } = fire("おでんじん", 1);
+    if (front[0].hp <= 0 || front[0].hp === front[0].maxHp) throw new Error(`おでんじん: front ally ${front[0].hp}/${front[0].maxHp}`);
+    if (front[1].hp !== 1) throw new Error("おでんじん: healed a living ally");
+    if (back.some(b => b.hp > 0)) throw new Error("おでんじん: back-row ally revived");
+  }
+  console.log("revive ult: front row only (花さか爺・心オバア full HP, おでんじん one ally)");
+}
+
+// とりつき（本家）：「ちからアップ」はちからだけ・「ようりょくアップ」はようりょくだけ。上がる量は 通常 10%・大 15%・超 25%。
+// ガード中は とりつかれやすさが半分
+{
+  const bless = (name) => {
+    const d = E.units.find(u => u.name === name);
+    const walls = ["ヨロイさん", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
+    const s = E.newBattle(1, [{ unit: d.id }, ...walls.slice(1)], walls, { noItems: true });
+    const p = s.players[0], me = p.units[0], ally = p.units[1];
+    const before = { atk: E.statOf(p, ally, "atk"), spa: E.statOf(p, ally, "spa") };
+    ally.blessing = null;
+    E.blessUnit([], me, ally, d.blessing, d.inspTier, d.inspStat);
+    return { d, before, after: { atk: E.statOf(p, ally, "atk"), spa: E.statOf(p, ally, "spa") }, base: { atk: ally.atk, spa: ally.spa } };
+  };
+  const a = bless("ちからモチ"); // ちからアップ
+  if (a.d.inspStat !== "atk") throw new Error("ちからモチ: inspStat");
+  if (a.after.spa !== a.before.spa || a.after.atk !== Math.floor(a.base.atk * 1100 / 1000)) throw new Error(`ちからアップ: ${JSON.stringify(a)}`);
+  const b = bless("えんらえんら"); // ようりょくアップ
+  if (b.after.atk !== b.before.atk || b.after.spa <= b.before.spa) throw new Error(`ようりょくアップ: ${JSON.stringify(b)}`);
+  console.log("inspirit: ちからアップ raises only ちから (+10%), ようりょくアップ only ようりょく");
+}
+
+// サドンデス（本家）：ダメージはぜんぶ 999、こうげきしかしない・ひっさつわざも使えない
+{
+  const s = E.newBattle(4, E.randomTeam(E.seedRng(4, 1)), E.randomTeam(E.seedRng(4, 2)), { noItems: true });
+  s.tick = 5999; // すぐサドンデスにする
+  const acts = new Set();
+  for (let i = 0; i < 400 && !s.outcome; i++) {
+    const p = s.players[0], u = p.units[p.wheel[0]];
+    u.sg = 1000, u.ultLockout = 0, u.curse = null;
+    const ev = [];
+    E.step(s, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], ev);
+    if (p.stance) throw new Error("ult started during sudden death");
+    for (const e of ev) if (e.t === "action") acts.add(e.action);
+  }
+  for (const a of acts) if (!["attack", "loaf", "stunned", "rest"].includes(a)) throw new Error(`sudden death action: ${a}`);
+  console.log(`sudden death: attack only (${[...acts].join(",")}), no ult`);
+}
+
+// ブロッカー（本家）：前に出るときガードする。ただし後衛へ下がってから だれも行動しないうちに戻ったときはガードしない
+{
+  const ids = ["ムリカベ", "ヨロイさん", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
+  const s = E.newBattle(3, ids, ids, { noItems: true });
+  const p = s.players[0], wall = p.units[0]; // ムリカベ（ブロッカー）は前衛の 1 体目
+  for (const q of s.players) for (const u of q.units) u.curse = { kind: "stun", tier: 0, elapsed: 0, remaining: 1e9 };
+  const rot = dir => { s.busyUntil = s.tick, p.rotateCooldown = 0, p.pendingRotate = null; E.step(s, [{ player: 0, input: { t: "rotate", dir, steps: 3 } }], []); };
+  // 1. 下がって、1 回でも行動があってから戻る → ガードする（回した tick に だれかが動く）
+  rot("cw");
+  if (p.wheel.indexOf(0) < 3 || !(p.acts >= 1)) throw new Error("blocker did not go back / nobody acted");
+  rot("ccw");
+  if (p.wheel.indexOf(0) >= 3) throw new Error("blocker did not come back");
+  if (!wall.guarding) throw new Error("blocker did not guard after a turn passed");
+  // 2. 下がって、だれも行動しないうちに戻る → ガードしない（行動の回数を下がったときの値にもどして作る）
+  wall.guarding = false;
+  rot("cw");
+  p.acts = wall.leftAt;
+  rot("ccw");
+  if (wall.guarding) throw new Error("blocker guarded without a turn passing");
+  console.log("blocker: guards only when a turn passed while it was in the back");
+}
+
+// つつく：ツボは妖怪ごとに決まった場所で動かない。人の速さ（1 秒に 5 回・ツボに当たるのは 7 割）でも間に合う。
+// 効果は本家どおり「妖気を吸収」（相手の妖気をぜんぶ）・「HPダメージ」・まれに「一撃（999）」
+{
+  let ok = 0, n = 0;
+  const effects = {};
+  for (let seed = 1; seed <= 20; seed++) {
+    const s = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    const p = s.players[0], foe = s.players[1], f = foe.units[foe.wheel[0]];
+    // だれも動かないようにして、つつくだけを見る
+    for (const q of s.players) for (const u of q.units) u.curse = { kind: "stun", tier: 0, elapsed: 0, remaining: 1e9 };
+    E.step(s, [{ player: 0, input: { t: "pokeStart", enemyUnit: f.index } }], []);
+    if (!p.poke) throw new Error("poke did not start");
+    const want = seed % 2 ? "sg" : "hp", spot = p.poke.spots[want];
+    if (p.poke.spots.sg === p.poke.spots.hp) throw new Error("poke spots overlap");
+    f.sg = 800;
+    let result = null, end = null;
+    for (let i = 0; i < 400 && !result; i++) {
+      if (p.poke && p.poke.spots[want] !== spot) throw new Error("poke spot moved");
+      const tap = i % 4 === 0 ? [{ player: 0, input: { t: "pokeTap", cell: (i / 4) % 10 < 7 ? spot : (spot + 1) % 16 } }] : [];
+      const ev = [];
+      E.step(s, tap, ev);
+      for (const e of ev) if (e.t === "pokeEnd" && e.player === 0) result = e.result, end = e;
+    }
+    n++, result === "success" && ok++;
+    if (end?.effect) {
+      effects[end.effect] = (effects[end.effect] ?? 0) + 1;
+      if (end.effect !== "ko" && end.effect !== want) throw new Error(`poke: aimed ${want}, got ${end.effect}`);
+      if (end.effect === "sg" && (f.sg !== 0 || end.amount < 800)) throw new Error(`poke sg: foe sg ${f.sg}, took ${end.amount}`);
+    }
+  }
+  if (ok !== n) throw new Error(`poke at human speed: ${ok}/${n} succeeded`);
+  console.log(`poke: spots stay put, human-speed tapping succeeds ${ok}/${n}, effects ${JSON.stringify(effects)}`);
 }
 
 // おはらい：本家どおり、タッチアクションをしないと進まない。とりつかれた敵を攻撃すると妖気が多くたまる

@@ -79,7 +79,7 @@ const page = async name => {
 };
 const status = p => p.textContent(".pvp-status").catch(() => "-");
 const netOf = p => p.evaluate(() => { const g = __yokaiDebug.ga(); return g?.net ? { role: g.net.role, kind: g.net.link.kind, peer: g.net.peerName ?? null } : null; }).catch(() => null);
-const queue = async pool => (await (await fetch(`${E}/m/v3/q/${pool}.json?ns=${NS}`)).json()) ?? {};
+const queue = async pool => (await (await fetch(`${E}/m/v4/q/${pool}.json?ns=${NS}`)).json()) ?? {};
 
 // 1) あいことば
 {
@@ -135,7 +135,7 @@ const queue = async pool => (await (await fetch(`${E}/m/v3/q/${pool}.json?ns=${N
   await ps[0].waitForTimeout(800);
   if (Object.keys(await queue("p2-rand")).length) fail("random: queue not cleaned");
   // 受け箱も空になっている（ルールで受け箱ごとは消せないので、1 件ずつ消す）
-  const boxes = await (await fetch(`${E}/m/v3/s.json?ns=${NS}`, { headers: { Authorization: "Bearer owner" } })).json();
+  const boxes = await (await fetch(`${E}/m/v4/s.json?ns=${NS}`, { headers: { Authorization: "Bearer owner" } })).json();
   if (boxes && Object.keys(boxes).length) fail(`random: mailboxes not cleaned (${JSON.stringify(boxes).slice(0, 120)})`);
   for (const p of ps) await p.context().close();
 }
@@ -144,7 +144,7 @@ const queue = async pool => (await (await fetch(`${E}/m/v3/q/${pool}.json?ns=${N
 {
   const word = String(100000 + Math.floor(Math.random() * 900000));
   const pool = `p2-room-${word}`;
-  const put = (id, v) => fetch(`${E}/m/v3/q/${pool}/${id}.json?ns=${NS}`, { method: "PUT", body: JSON.stringify(v) });
+  const put = (id, v) => fetch(`${E}/m/v4/q/${pool}/${id}.json?ns=${NS}`, { method: "PUT", body: JSON.stringify(v) });
   // 返事をしない行（タブが固まった人）
   await put("0ghost", { t: { ".sv": "timestamp" } });
   const p1 = await page("くろ"), p2 = await page("きい");
@@ -153,7 +153,7 @@ const queue = async pool => (await (await fetch(`${E}/m/v3/q/${pool}.json?ns=${N
   await p1.waitForFunction(() => document.querySelector(".pvp-status")?.textContent.includes("待っています"), null, { timeout: 40000 });
   // p1 の行を、招待を送らずに消える人が押さえる
   const q1 = Object.entries(await queue(pool)).find(([id, v]) => id !== "0ghost" && !v.c);
-  if (q1) await fetch(`${E}/m/v3/q/${pool}/${q1[0]}/c.json?ns=${NS}`, { method: "PUT", body: JSON.stringify("1vanished") });
+  if (q1) await fetch(`${E}/m/v4/q/${pool}/${q1[0]}/c.json?ns=${NS}`, { method: "PUT", body: JSON.stringify("1vanished") });
   else fail("ghost: p1 not queued");
   await p2.click("text=この番号でつなぐ");
   const t0 = Date.now();

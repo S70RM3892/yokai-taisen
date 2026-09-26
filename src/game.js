@@ -22,7 +22,7 @@
     return e <= 171 ? 369 - Math.floor(e / 3) * 3 : e <= 201 ? 198 - Math.floor((e - 171) / 5) * 3 : e <= 501 ? 180 - Math.floor((e - 201) / 10) * 3 : 90
   }
   var gc = 64,
-    kc = 1,
+    kc = 3, // クリティカルの出やすさ（64 分の 3 ≒ 4.7%。本家は「5% 弱」）
     _c = 4,
     vc = 1500,
     wc = 500,
@@ -60,8 +60,10 @@
     Bc = 50,
     Lc = 1e3,
     su = 300,
-    lu = [300, 400, 500],
-    Uc = [200, 267, 333],
+    // とりつきで上がる・下がる量（本家：1 つの能力は 通常 10%・大 15%・超 25%、全ステータスは 通常 7.5%・大 15%。
+    // 全ステータスの「小」（5%）は通常と同じ段にまとめている）
+    lu = [100, 150, 250],
+    Uc = [75, 150, 250],
     Ic = 500,
     uu = [1e3, 1500, 2e3],
     Oc = [20, 26, 33],
@@ -92,7 +94,7 @@
     sh = 150,
     lh = 3,
     uh = 22,
-    hu = 60,
+    hu = 200, // つつくの制限時間（10 秒。以前は 3 秒で、人の手では間に合わなかった）
     ri = 16,
     oh = 10,
     pu = 2,
@@ -314,9 +316,10 @@
     let r = 1e3 + Li(e, t, Sh[a]);
     r += fxStatBonus(e, t, a);
     let i = t.blessing;
-    i?.kind === "allUp" && (r += Uc[i.tier]), i && (i.kind === "rally" && (a === "atk" || a === "spa") || i.kind === "fortify" && a === "def" || i.kind === "haste" && a === "spd") && (r += lu[i.tier]);
+    // 「ちからアップ」はちからだけ、「ようりょくアップ」はようりょくだけ（stat がないものは両方）
+    i?.kind === "allUp" && (r += Uc[i.tier]), i && (i.kind === "rally" && (a === "atk" || a === "spa") && (!i.stat || i.stat === a) || i.kind === "fortify" && a === "def" || i.kind === "haste" && a === "spd") && (r += lu[i.tier]);
     let n = t.curse;
-    return n && (n.kind === "weaken" && (a === "atk" || a === "spa") || n.kind === "brittle" && a === "def" || n.kind === "slow" && a === "spd") && (r -= lu[n.tier]), r < du && (r = du), Math.floor(t[a] * r / 1e3)
+    return n && (n.kind === "weaken" && (a === "atk" || a === "spa") && (!n.stat || n.stat === a) || n.kind === "brittle" && a === "def" || n.kind === "slow" && a === "spd") && (r -= lu[n.tier]), r < du && (r = du), Math.floor(t[a] * r / 1e3)
   }
 
   function bu(e, t) {
@@ -441,7 +444,7 @@
       for (let n of i.units) n.ap = bu(i, n), n.endures = n.fx.endure ?? 0, n.sg = Math.min(Nt, n.fx.startSg ?? 0);
       for (let n = 0; n < 3; n++) {
         let s = i.units[i.wheel[n]];
-        s.ap = Math.floor(s.ap * Xn(s.rng, 400, 600) / 1e3), armFlash(s)
+        s.ap = Math.floor(s.ap * Xn(s.rng, 400, 600) / 1e3), armFlash(s), s.inFront = !0
       }
     }
     return {
@@ -507,10 +510,12 @@
       i = [];
     if (a.poke) {
       if (t.tick - a.poke.lastTapTick >= pu) {
-        let c = a.poke.weakCell;
+        // 相手に妖気がたまっていれば妖気のツボ、なければダメージのツボをねらう
+        let sp = a.poke.spots,
+          c = r.units[a.poke.target].sg >= 300 ? sp.sg : sp.hp;
         if (gt(e.rng, 1e3) >= e.params.pokeHitPermil) {
-          let h = gt(e.rng, ri - 1);
-          c = h >= a.poke.weakCell ? h + 1 : h
+          let h = gt(e.rng, ri);
+          c = h === sp.sg || h === sp.hp ? (h + 5) % ri : h
         }
         i.push({
           t: "pokeTap",
@@ -557,10 +562,13 @@
       enemyUnit: u.index
     });
     let d = !1;
-    if (!a.stance && Ht(r).length > 0)
+    if (!a.stance && Ht(r).length > 0 && t.tick < fr) // サドンデス中は ひっさつわざを使えない
       for (let c = 0; c < 3; c++) {
         let h = a.units[a.wheel[c]];
         if (!Se(h) || h.sg < Nt || h.ultLockout > 0 || h.curse) continue;
+        // 復活の必殺技は、前衛に気絶した味方がいるとき（全回復つきなら HP が減った前衛がいるときも）だけ使う
+        let uk = ct[h.defIndex].ult, frontUnits = [0, 1, 2].map(x => a.units[a.wheel[x]]);
+        if (uk.kind === "revive" && !frontUnits.some(x => !Se(x) || uk.full && x.hp * 5 < x.maxHp * 3)) continue;
         let f = a.units[a.wheel[(c + 5) % 6]],
           g = a.units[a.wheel[(c + 1) % 6]],
           k = Se(f) && Se(g) && f.sg >= Nt && g.sg >= Nt && gt(e.rng, 1e3) < e.params.grandPermil;
@@ -729,6 +737,10 @@
     })).sort((s, l) => s.k - l.k || s.pos - l.pos)[0].u
   }
 
+  // ダメージの乱数の幅（本家の解析：±10%）
+  var dmgRandLo = 900,
+    dmgRandHi = 1100;
+
   function Oh(e, t, a) {
     return Math.floor((e + t) / 2) - Math.floor(a / 4)
   }
@@ -751,19 +763,21 @@
     let l = a !== i && (n.loafing || n.curse !== null),
       pw = Bt(s.power, 1e3 + (s.source === "attack" ? r.fx.atkUp ?? 0 : s.source === "skill" ? r.fx.skillUp ?? 0 : s.source === "ult" ? r.fx.ultUp ?? 0 : 0));
     s.randPow && (pw = Bt(pw, Xn(r.rng, 500, 1500)));
-    let u = Jt(a, r, s.stat),
+    let u = Jt(a, r, s.stat);
+    s.source === "attack" && tt(r, "guardBreak") && (u = Bt(u, 930)); // ガードくずし（本家）：ガードを無視するかわりに ちからが 93% になる
+    let
       o = Jt(i, n, "def"),
       d = Oh(u, pw, o),
       c = !1,
-      h = n.loafing ? _c : kc;
-    r.fx.critEye && (h = Math.max(h, r.fx.critEye)), s.critUlt && (h = Math.max(h, 24)), n.eq.critTaken && (h = Math.min(gc, h * n.eq.critTaken)), n.fx.critTaken && (h = Math.min(gc, h * n.fx.critTaken)), n.fx.noCritTaken && (h = 0), (s.canCrit || s.critUlt) && gt(r.rng, gc) < h && (c = !0, d = Bt(Math.floor((u + pw) / 2), vc + (r.fx.critDmg ?? 0)));
+      h = kc; // サボっている相手でもクリティカルの出やすさは同じ（本家で出やすくなるという出典はない）
+    r.fx.critEye && (h = Math.max(h, r.fx.critEye)), s.critUlt && (h = Math.max(h, 24)), n.eq.critTaken && (h = Math.min(gc, h * n.eq.critTaken)), n.fx.critTaken && (h = Math.min(gc, h * n.fx.critTaken)), n.fx.noCritTaken && (h = 0), (s.canCrit || s.critUlt) && gt(r.rng, gc) < h && (c = !0, d += Bt(Math.floor((u + pw) / 2), vc - 1e3 + (r.fx.critDmg ?? 0))); // クリティカル（本家）：ふえた分のダメージはまもりを無視
     c && n.fx.critDefUp && addDyn(n, "def", n.fx.critDefUp, n.fx.critDefUp * 3); // もちはだ
     let f = ct[n.defIndex];
     s.element !== null && (s.element === f.weak ? n.guarding && n.fx.guardNoWeak || (d = Bt(d, Ec)) : s.element === f.resist && !r.fx.pierce && (d = Bt(d, yc)), d = Bt(d, elemMult(r, n, s.element)));
     d = Bt(d, dmgVsTarget(r, n));
     s.source === "attack" && (n.fx.halfAttack && (d = Bt(d, 500)), n.fx.resistAttack && (d = Bt(d, 1e3 - n.fx.resistAttack)));
     let g = s.ignoreGuard || s.source === "attack" && tt(r, "guardBreak");
-    if (n.guarding && !g && (d = Bt(d, guardMult(r, n))), d = Bt(d, s.chargeMult), d = Bt(d, s.qualityMult), d = Bt(d, s.grandMult), d = Bt(d, Xn(r.rng, tu, au)), d < 1 && (d = 1), e.tick >= fr && (d = vh), s.element === "water" && tt(n, "waterEater")) return $a(t, n, d, r.uid), l;
+    if (n.guarding && !g && (d = Bt(d, guardMult(r, n))), d = Bt(d, s.chargeMult), d = Bt(d, s.qualityMult), d = Bt(d, s.grandMult), d = Bt(d, Xn(r.rng, dmgRandLo, dmgRandHi)), d < 1 && (d = 1), e.tick >= fr && (d = vh), s.element === "water" && tt(n, "waterEater")) return $a(t, n, d, r.uid), l;
     // から傘シールド：ガード中はようじゅつを全部はね返す
     if (s.source === "skill" && n.guarding && n.fx.guardMirror) return t.push({
       t: "reflect",
@@ -778,7 +792,7 @@
     s.element === "thunder" && n.fx.thunderDefUp && Se(n) && addDyn(n, "def", n.fx.thunderDefUp, n.fx.thunderDefUp); // 電磁フィールド
     s.source === "attack" && n.guarding && n.fx.guardThorns && Xa(e, t, a, r, Math.max(1, Math.floor(d * n.fx.guardThorns / 1e3)), n.uid, "trait", !1); // とげガード
     s.cancel && i.stance && Ii(e, n.owner, t, "cancel"); // 必殺技キャンセル
-    s.curse && Se(n) && !n.curse && Su(t, a, r, i, n, s.curse, s.tier ?? 0, !0);
+    s.curse && Se(n) && !n.curse && Su(t, a, r, i, n, s.curse, s.tier ?? 0, !0, s.curseStat);
     s.recoil && Xa(e, t, a, r, Math.max(1, Math.floor(d * s.recoil / 1e3)), r.uid, "trait", !1); // 反動
     let k = i.stance?.unit === n.index;
     return s.source === "attack" && tt(n, "thorns") && !k && Xa(e, t, a, r, Math.floor(d * n.fx.thorns / 1e3), n.uid, "trait", !1), s.source === "skill" && tt(n, "mirror") && Xa(e, t, a, r, Math.floor(d * n.fx.mirror / 1e3), n.uid, "trait", !1), l
@@ -859,15 +873,16 @@
 
   function Hh(e, t, a, r, i) {
     let n = Nc;
-    return n += Li(e, t, bh[i] === "stat" ? "miyabi" : "tatari"), n += t.fx.curseHit ?? 0, n -= Li(a, r, "shizume"), Math.max(Bc, Math.min(Lc, n))
+    // ガード中は とりつかれやすさも半分（本家）
+    return n += Li(e, t, bh[i] === "stat" ? "miyabi" : "tatari"), n += t.fx.curseHit ?? 0, n -= Li(a, r, "shizume"), r.guarding && (n = Math.floor(n / 2)), Math.max(Bc, Math.min(Lc, n))
   }
 
-  function Su(e, t, a, r, i, n, s, l) {
+  function Su(e, t, a, r, i, n, s, l, st) {
     // つやっつや：悪いとりつきをはね返す
     if (i.fx.curseReflect && !a.fx.curseReflect && Se(a)) return e.push({
       t: "reflect",
       uid: i.uid
-    }), Su(e, r, i, t, a, n, s, !1);
+    }), Su(e, r, i, t, a, n, s, !1, st);
     if (t.units.some(d => tt(d, "curseMaster")) && (s = Math.min(2, s + 1)), l && !a.fx.curseSure && gt(a.rng, 1e3) >= Hh(t, a, r, i, n)) {
       e.push({
         t: "curse",
@@ -918,18 +933,20 @@
       kind: n,
       tier: s,
       remaining: o,
-      elapsed: 0
+      elapsed: 0,
+      stat: st ?? null
     }, e.push({
       t: "curse",
       src: a.uid,
       dst: i.uid,
       kind: n,
       tier: s,
+      stat: st ?? null,
       result: "hit"
     }), cancelStanceIfCursed(r, i, e), i.fx.cursedHeal && $a(e, i, healAmt(i, i.maxHp, i.fx.cursedHeal), i.uid)
   }
 
-  function Cu(e, t, a, r, i) {
+  function Cu(e, t, a, r, i, st) {
     let mg = FIELD?.blessMagnet; // わしのもの：よいとりつきを全部自分に
     mg && mg !== a && Se(mg) && (a = mg);
     let n = blessTurns(a, i);
@@ -939,13 +956,15 @@
       turns: n,
       fresh: !0,
       elapsed: 0,
-      wardCharges: r === "ward" ? 1 : 0
+      wardCharges: r === "ward" ? 1 : 0,
+      stat: st ?? null
     }, e.push({
       t: "bless",
       src: t.uid,
       dst: a.uid,
       kind: r,
-      tier: i
+      tier: i,
+      stat: st ?? null
     }), r === "ward" && a.curse && (a.curse = null, e.push({
       t: "curseCleared",
       uid: a.uid,
@@ -999,7 +1018,7 @@
         }), !0)
       }
       case "ultStart": {
-        if (s || i.stance || !gr(a.allySlot, 0, 2)) return !1;
+        if (s || i.stance || !gr(a.allySlot, 0, 2) || e.tick >= fr) return !1; // サドンデス中は ひっさつわざも使えない（本家：こうげきだけ）
         let l = i.units[i.wheel[a.allySlot]];
         if (!Se(l) || l.sg < Nt || l.ultLockout > 0 || l.curse) return !1; // 悪いとりつき中は奥義を撃てない（本家）
         let u = [];
@@ -1040,7 +1059,9 @@
           target: l.index,
           elapsed: 0,
           gauge: 0,
-          weakCell: gt(i.pokeRng, ri),
+          // ツボ（本家）：妖怪ごとに決まった場所にあり、つついている間は動かない。対戦では「妖気を吸収」と「HPダメージ」の 2 つ
+          spots: pokeSpots(l),
+          hits: { sg: 0, hp: 0 },
           lastTapTick: -1e3
         }, r.push({
           t: "pokeStart",
@@ -1053,12 +1074,10 @@
         if (!l || !gr(a.cell, 0, ri - 1) || e.tick - l.lastTapTick < pu) return !1;
         let u = n.units[l.target];
         if (!Qn(n, u)) return !1;
-        if (l.lastTapTick = e.tick, a.cell === l.weakCell) {
-          l.gauge += dh;
-          let o = Math.max(1, Math.floor(u.maxHp * hh / 1e3));
-          Xa(e, r, n, u, o, null, "poke", !1)
-        } else l.gauge += ch;
-        return l.gauge >= fu && Se(u) && a0(i, n, u, t, r), !0
+        l.lastTapTick = e.tick;
+        let k = a.cell === l.spots.sg ? "sg" : a.cell === l.spots.hp ? "hp" : null;
+        k ? (l.gauge += dh, l.hits[k]++) : l.gauge += ch;
+        return l.gauge >= fu && Se(u) && a0(i, n, u, t, r, e), !0
       }
       case "pokeStop":
         return i.poke ? (Oi(i, t, n, "stopped", r), !0) : !1;
@@ -1102,9 +1121,14 @@
   }
 
   function Pu(e, t) {
+    for (let a = 3; a < 6; a++) {
+      let r = e.units[e.wheel[a]];
+      r.inFront && (r.inFront = !1, r.leftAt = e.acts ?? 0)
+    }
     for (let a = 0; a < 3; a++) {
       let r = e.units[e.wheel[a]];
-      tt(r, "blocker") && (r.guarding = !0); // ブロッカー：ガードしながら前に出る
+      // ブロッカー（本家）：ガードしながら前に出る。ただし後衛へ下がってから だれも行動しないうちに戻ってきたときはガードしない
+      tt(r, "blocker") && !r.inFront && (r.leftAt === void 0 || (e.acts ?? 0) > r.leftAt) && (r.guarding = !0), r.inFront = !0
       armFlash(r) && t.push({
         t: "firstStrike",
         uid: r.uid
@@ -1178,6 +1202,7 @@
         grandMult: d,
         cancel: o.cancel,
         curse: o.curse,
+        curseStat: o.stat,
         tier: o.tier,
         recoil: o.recoil,
         gamble: o.gamble,
@@ -1248,11 +1273,11 @@
         return
       }
       case "curseAll": {
-        for (let h of Ht(u)) Su(s, l, a, u, h, o.curse, o.tier ?? c, !1);
+        for (let h of Ht(u)) Su(s, l, a, u, h, o.curse, o.tier ?? c, !1, o.stat);
         return
       }
       case "blessAll": {
-        for (let h of Ht(l)) Cu(s, a, h, o.blessing, o.tier ?? c);
+        for (let h of Ht(l)) Cu(s, a, h, o.blessing, o.tier ?? c, o.stat);
         return
       }
       // 自分によいとりつき（まもりを上げて攻撃を一身に集める）
@@ -1269,22 +1294,30 @@
         }));
         return
       }
+      // 本家の「味方全体」は前衛の 3 体（後衛はおはらいしない）
       case "purifyAll": {
-        for (let h of l.units) Se(h) && h.curse && (h.curse = null, s.push({
+        for (let h of Ht(l)) h.curse && (h.curse = null, s.push({
           t: "curseCleared",
           uid: h.uid,
           by: "ult"
         }));
         return
       }
-      // 気絶した味方を復活させる
+      // 気絶した味方を復活させる（本家：前衛の味方だけ。後衛で気絶している妖怪は起きない）
+      //   full（花さか爺・心オバア）：前衛の気絶した味方を HP 満タンで復活し、気絶していない前衛も HP を全回復
+      //   one（おでんじん）：前衛の気絶した味方 1 体を HP 40% で復活
       case "revive": {
-        if (noRevive(l)) return;
-        for (let h of l.units) Se(h) || (h.hp = Math.max(1, Math.floor(h.maxHp * 400 / 1e3)), h.sg = 0, h.curse = null, h.blessing = null, h.loafing = !1, h.guarding = !1, h.pendingAction = null, h.ap = bu(l, h), s.push({
+        let front = [0, 1, 2].map(i => l.units[l.wheel[i]]),
+          down = noRevive(l) ? [] : front.filter(h => !Se(h));
+        o.one && (down = down.slice(0, 1));
+        let alive = front.filter(Se);
+        for (let h of down) h.hp = o.full ? h.maxHp : Math.max(1, Math.floor(h.maxHp * 400 / 1e3)), h.sg = 0, h.curse = null, h.blessing = null, h.loafing = !1, h.guarding = !1, h.pendingAction = null, h.ap = bu(l, h), s.push({
           t: "revive",
           uid: h.uid,
           amount: h.hp
-        }));
+        });
+        if (o.full)
+          for (let h of alive) $a(s, h, h.maxHp, a.uid);
         return
       }
     }
@@ -1336,13 +1369,14 @@
       i = r.u.ap;
     for (let l of a) l.u.ap = Math.max(0, l.u.ap - i);
     let n = e.players[r.pid],
-      // ひとまかせ（本家）：自分の番に、自分のかわりに となりの前衛の味方（右どなり優先）を行動させる
+      // ひとまかせ（本家）：自分の番に、自分のかわりに となりの前衛の味方（右どなり優先）に こうげきさせる
       by = relayPick(n, r.u),
+      byPrev = by ? by.pendingAction : null,
       s;
-    by && t.push({ t: "relay", uid: r.u.uid, to: by.uid });
+    by && (t.push({ t: "relay", uid: r.u.uid, to: by.uid }), by.pendingAction = "attack");
     s = Jh(e, r.pid, by ?? r.u, t);
     if (s === null) {
-      by && t.pop();
+      by && (t.pop(), by.pendingAction = byPrev);
       e.busyUntil = e.tick + 1;
       return
     }
@@ -1357,6 +1391,7 @@
         skipped: sk ? sk.u.uid : null
       })
     }
+    for (let q of e.players) q.acts = (q.acts ?? 0) + 1;
     e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), Yh(e), e.busyUntil = e.tick + pc[s]
   }
 
@@ -1425,6 +1460,7 @@
       l === "guard" && !a.fx.guardOnly && (FIELD ?? EMPTY_FIELD).noGuardAll && (l = "attack"); // まもりわすれ
       l === "skill" && s.skillMode === "heal" && !Ht(i).some(x => x.hp < x.maxHp) && (l = "attack");
     }
+    e.tick >= fr && (l = "attack"); // サドンデス中は こうげきだけ（本家）
     let u = ui(i, n),
       o = null,
       heal = l === "skill" && s.skillMode === "heal";
@@ -1487,9 +1523,9 @@
       case "guard":
         return a.guarding = !0, a.fx.guardHeal && $a(r, a, healAmt(a, a.maxHp, a.fx.guardHeal), a.uid), "guard";
       case "curse":
-        return Su(r, i, a, n, u, s.curse, s.inspTier ?? 0, !0), "curse";
+        return Su(r, i, a, n, u, s.curse, s.inspTier ?? 0, !0, s.inspStat), "curse";
       case "bless":
-        return Cu(r, a, o, s.blessing, s.inspTier ?? 0), "bless"
+        return Cu(r, a, o, s.blessing, s.inspTier ?? 0, s.inspStat), "bless"
     }
   }
 
@@ -1531,14 +1567,32 @@
     }))
   }
 
+  // ツボの場所（妖怪ごとに決まっている）。一撃の出る割合・HPダメージの量は本家では公表されていないので、このゲームで決めた
+  var pokeKoPermil = 50,
+    pokeHpPermil = 200;
+  function pokeSpots(u) {
+    let sd = ct[u.defIndex].seed,
+      a = sd % ri;
+    return { sg: a, hp: (a + 1 + (sd >>> 8) % (ri - 1)) % ri }
+  }
+
   function Qn(e, t) {
     return Se(t) && Vt(e, t.index) && (t.curse !== null || t.loafing)
   }
 
-  function a0(e, t, a, r, i) {
-    a.sg = Math.max(0, a.sg - ph);
-    for (let n of Ht(e)) n.curse?.kind !== "seal" && (n.sg = Math.min(Nt, n.sg + fh));
-    a.curse && (a.curse.remaining += mh), Oi(e, r, t, "success", i)
+  // つつくのゲージが満タン（本家：通信対戦では「HPダメージ」「妖気を吸収」「一撃（999 ダメージ）」の 3 つ）。
+  // 多く当てたツボの効果が出る。まれに一撃
+  function a0(e, t, a, r, i, st) {
+    let h = e.poke.hits,
+      kind = gt(e.pokeRng, 1e3) < pokeKoPermil ? "ko" : h.sg > h.hp ? "sg" : "hp",
+      amount = 0;
+    if (kind === "sg") {
+      // 相手の妖気をぜんぶ吸って、前衛の味方に分ける
+      amount = a.sg, a.sg = 0;
+      let mine = Ht(e).filter(n => n.curse?.kind !== "seal");
+      for (let n of mine) n.sg = Math.min(Nt, n.sg + Math.ceil(amount / mine.length))
+    } else amount = kind === "ko" ? vh : Math.max(1, Math.floor(a.maxHp * pokeHpPermil / 1e3)), Xa(st, i, t, a, amount, null, "poke", !1);
+    e.poke && (e.poke.effect = kind, e.poke.amount = amount), Oi(e, r, t, "success", i)
   }
 
   function Oi(e, t, a, r, i) {
@@ -1546,6 +1600,8 @@
       t: "pokeEnd",
       player: t,
       target: a.units[e.poke.target].uid,
+      effect: e.poke.effect ?? null,
+      amount: e.poke.amount ?? 0,
       result: r
     }), e.poke = null, e.pokeCooldown = gh)
   }
@@ -1562,10 +1618,6 @@
       if (n.elapsed++, n.elapsed >= hu) {
         Oi(r, t, i, "fail", a);
         return
-      }
-      if (n.elapsed % oh === 0) {
-        let s = gt(r.pokeRng, ri - 1);
-        n.weakCell = s >= n.weakCell ? s + 1 : s
       }
     }
   }
@@ -1584,9 +1636,10 @@
 
   function n0(e, t) {
     if (e.outcome) return;
-    e.tick === fr && t.push({
+    // サドンデス（本家：与ダメージがぜんぶ 999・こうげきだけ）。パワーチャージ中のひっさつわざは取りやめ
+    e.tick === fr && (t.push({
       t: "suddenDeath"
-    });
+    }), [0, 1].forEach(p => e.players[p].stance && Ii(e, p, t, "sudden")));
     let a = e.players.map(r => r.units.every(i => !Se(i)));
     if (a[0] || a[1]) e.outcome = {
       winner: a[0] && a[1] ? null : a[0] ? 1 : 0,
@@ -19371,7 +19424,7 @@ void main() {
   }
 
   function zt(e, t) {
-    e.net?.role === "guest" ? netGuestSend(e, t) : e.pending.push(t)
+    e.net?.role === "guest" ? netGuestSend(e, t) : e.net ? netHostQueue(e, t) : e.pending.push(t)
   }
 
   function jl(e, t) {
@@ -19780,6 +19833,7 @@ void main() {
   }
 
   function X2(e) {
+    e.net && netHostRelease(e);
     let t = e.pending.map(n => ({
       player: 0,
       input: n
@@ -19848,10 +19902,10 @@ void main() {
         viewOf(e, t.dst).hp = Math.min(Ot(e, t.dst).maxHp, viewOf(e, t.dst).hp + t.amount), ma(e, t.dst, "+" + t.amount, "heal"), t.amount >= 20 && (f2(), r.healFx(t.dst));
         break;
       case "curse":
-        t.result === "hit" ? (r.cast(t.src, 11566304), r.curseFx(t.dst), ma(e, t.dst, Wl[t.kind] + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${Wl[t.kind]}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "とりつき 失敗" : t.result === "resisted" ? "ふせいだ" : "とりつき 無効", "info");
+        t.result === "hit" ? (r.cast(t.src, 11566304), r.curseFx(t.dst), ma(e, t.dst, inspLabel(Wl, t.kind, t.stat) + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${inspLabel(Wl, t.kind, t.stat)}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "とりつき 失敗" : t.result === "resisted" ? "ふせいだ" : "とりつき 無効", "info");
         break;
       case "bless":
-        r.cast(t.src, 5030564), r.blessFx(t.dst), ma(e, t.dst, Ad[t.kind] + Bn[t.tier], "info"), g2();
+        r.cast(t.src, 5030564), r.blessFx(t.dst), ma(e, t.dst, inspLabel(Ad, t.kind, t.stat) + Bn[t.tier], "info"), g2();
         break;
       case "ko":
         viewOf(e, t.uid).hp = 0, viewOf(e, t.uid).alive = !1, e.stats.ko[t.uid < 6 ? 1 : 0]++, ql(e), r.ko(t.uid), w2(), Rt(e, `${la(e,t.uid)} は気絶した`, a(t.uid));
@@ -19893,10 +19947,10 @@ void main() {
         flashShown(e, t.uid) && ma(e, t.uid, "閃光", "info"), t.skipped !== null && Rt(e, `${la(e,t.uid)} が先に動いて、${la(e,t.skipped)} の番がとばされた`, a(t.uid));
         break;
       case "suddenDeath":
-        yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になる", "f");
+        yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999・こうげきだけ", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になり、こうげきしかできない", "f");
         break;
       case "pokeEnd":
-        t.player === 0 && t.result === "success" && Jr(e, "吸収！", "good", "妖気を吸った", 900), t.player === 0 && Rt(e, t.result === "success" ? "つついて妖気を吸った" : "つつくのをやめた", "a");
+        t.result === "success" ? (t.player === 0 && Jr(e, t.effect === "sg" ? "吸収！" : t.effect === "ko" ? "一撃！" : "ツボ！", "good", t.effect === "sg" ? `妖気を ${t.amount} 吸った` : `${t.amount} ダメージ`, 900), Rt(e, `${t.player === 0 ? "こちら" : "相手"}が ${la(e, t.target)} をつついて${t.effect === "sg" ? `妖気を ${t.amount} 吸った` : `${t.amount} ダメージ${t.effect === "ko" ? "（一撃）" : ""}`}`, t.player === 0 ? "a" : "f")) : t.player === 0 && Rt(e, "つつくのをやめた", "a");
         break;
       case "curseCleared":
         t.by === "purify" && (Rt(e, `${la(e,t.uid)} のとりつきをおはらいした`, a(t.uid)), t.uid < 6 && Jr(e, "おはらい成功！", "good", "", 800));
@@ -20021,7 +20075,7 @@ void main() {
 
   function Hd(e) {
     let t = [];
-    return e.curse && t.push(`<span class="chip c">${Wl[e.curse.kind]}${Bn[e.curse.tier]}・要おはらい</span>`), e.blessing && t.push(`<span class="chip b">${Ad[e.blessing.kind]} 残り${e.blessing.turns}ターン</span>`), e.talisman && t.push(`<span class="chip b">おふだ ${STAT_JA[e.talisman.stat]} ${Ti(e.talisman.remaining)}</span>`), e.guarding && t.push('<span class="chip g">ガード</span>'), e.loafing && t.push('<span class="chip l">サボり中</span>'), t.join("")
+    return e.curse && t.push(`<span class="chip c">${inspLabel(Wl, e.curse.kind, e.curse.stat)}${Bn[e.curse.tier]}・要おはらい</span>`), e.blessing && t.push(`<span class="chip b">${inspLabel(Ad, e.blessing.kind, e.blessing.stat)} 残り${e.blessing.turns}ターン</span>`), e.talisman && t.push(`<span class="chip b">おふだ ${STAT_JA[e.talisman.stat]} ${Ti(e.talisman.remaining)}</span>`), e.guarding && t.push('<span class="chip g">ガード</span>'), e.loafing && t.push('<span class="chip l">サボり中</span>'), t.join("")
   }
 
   function j2(e, t) {
@@ -20107,7 +20161,7 @@ void main() {
           f.onpointerdown = g => {
             g.preventDefault();
             let k = e.state.players[0].poke;
-            E2(!!k && k.weakCell === h), zt(e, {
+            E2(!!k && (k.spots.sg === h || k.spots.hp === h)), zt(e, {
               t: "pokeTap",
               cell: h
             })
@@ -20118,8 +20172,9 @@ void main() {
           t: "pokeStop"
         }), a.append(s, l, u, o, c)
       }
-      a.querySelector(".gauge i").style.width = jl(r.gauge, fu), a.querySelector(".help").textContent = `残り ${Ti(hu-r.elapsed)} 秒　★を連打`, a.querySelectorAll(".cell").forEach((s, l) => {
-        s.classList.toggle("weak", l === r.weakCell), s.textContent = l === r.weakCell ? "★" : ""
+      a.querySelector(".gauge i").style.width = jl(r.gauge, fu), a.querySelector(".help").textContent = `残り ${Ti(hu-r.elapsed)} 秒　妖＝妖気を吸う／撃＝ダメージ を連打`, a.querySelectorAll(".cell").forEach((s, l) => {
+        let sp = l === r.spots.sg ? "妖" : l === r.spots.hp ? "撃" : "";
+        s.classList.toggle("weak", !!sp), s.textContent = sp
       });
       return
     }

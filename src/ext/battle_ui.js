@@ -7,6 +7,11 @@
 function hiddenSoul(u, eq) {
   return u.owner !== 0 && !!eq && (eq.cat === "魂" || eq.cat === "レア魂");
 }
+// とりつきの名前（「ちから・ようりょくアップ」は、どちらか一方だけのときは その名前にする）
+function inspLabel(names, kind, stat) {
+  if (stat && (kind === "rally" || kind === "weaken")) return (stat === "atk" ? "ちから" : "ようりょく") + (kind === "rally" ? "アップ" : "ダウン");
+  return names[kind];
+}
 // 名札に出す持ち物（装備）の名前
 function eqLabel(u) {
   const eq = equipById(u.equipment ?? null);
@@ -315,7 +320,7 @@ function purifyOverlay(e, a) {
     a.replaceChildren();
     e.pg = { acc: 0, spots: [], spawn: 0, crack: null, t: 0 };
     const head = q("div", "mg-head");
-    head.append(q("div", "mg-name purify", "おはらい：" + g.name), q("div", "title", `${Ze(u).name} の ${Wl[u.curse?.kind] ?? "とりつき"} をはらう`), q("div", "help", g.help));
+    head.append(q("div", "mg-name purify", "おはらい：" + g.name), q("div", "title", `${Ze(u).name} の ${(u.curse && inspLabel(Wl, u.curse.kind, u.curse.stat)) ?? "とりつき"} をはらう`), q("div", "help", g.help));
     const stage = q("div", "mg-stage purify " + pu.game);
     const face = q("div", "mg-face");
     face.innerHTML = da(Ze(u).id, "");

@@ -40,6 +40,14 @@ def tier(s):
     return 2 if ("超" in s or "究極" in s or "どんどん" in s) else 1 if ("大" in s or "だんだん" in s) else 0
 
 
+# とりつきが上げ下げする能力（本家：「ちからアップ」はちからだけ、「ようりょくアップ」はようりょくだけ）
+def stat_of(s):
+    if "全ステータス" in s: return None
+    if "ちから" in s: return "atk"
+    if "ようりょく" in s or "ようりょう" in s: return "spa"
+    return None
+
+
 def curse_of(s):
     t = tier(s)
     if "混乱" in s: return ("confuse", t)
@@ -72,6 +80,11 @@ def num(s, pat=r"いりょく (\d+)(?: x (\d+))?"):
     return (int(m.group(1)), int(m.group(2) or 1)) if m else (0, 1)
 
 
+def with_stat(o, s):
+    if stat_of(s): o["stat"] = stat_of(s)
+    return o
+
+
 def ult_of(d):
     u = d.get("ult_d", "")
     m = re.match(r"いりょく (\d+)(?: x (\d+))? \((.*?)\)\s*(.*)", u)
@@ -81,14 +94,16 @@ def ult_of(d):
             return {"kind": "selfBless", "blessing": "taunt", "tier": tier(u)}, 1
         if "解除" in u: return {"kind": "dispel"}, 1
         if "おはらい" in u: return {"kind": "purifyAll"}, 1
-        if "戦闘不能" in u or "復活" in u: return {"kind": "revive", "power": 120}, 1
+        # 本家：おでんじん「戦闘不能を回復」＝味方 1 体を復活。花さか爺・心オバア「復活させ（つつ）HPも回復」＝前衛の味方全体を復活＆HP 全回復
+        if "戦闘不能" in u: return {"kind": "revive", "one": 1}, 1
+        if "復活" in u: return {"kind": "revive", "full": 1}, 1
         if "全回復" in u: return {"kind": "heal", "full": 1}, 1
         if "最強の状態" in u: return {"kind": "heal", "power": 110, "bless": "allUp"}, 1
         if "味方全体の全ステータス" in u: return {"kind": "blessAll", "blessing": "allUp", "tier": 1}, 1
         b = bless_of(u)
-        if b and ("アップ" in u or "回復" in u): return {"kind": "blessAll", "blessing": b[0], "tier": b[1]}, 1
+        if b and ("アップ" in u or "回復" in u): return with_stat({"kind": "blessAll", "blessing": b[0], "tier": b[1]}, u), 1
         c = curse_of(u)
-        if c: return {"kind": "curseAll", "curse": c[0], "tier": c[1]}, 1
+        if c: return with_stat({"kind": "curseAll", "curse": c[0], "tier": c[1]}, u), 1
         raise SystemExit(f"unknown ult: {d['name']} {u}")
     p, h, tgt, extra = int(m.group(1)), int(m.group(2) or 1), m.group(3), m.group(4)
     total = p * h
@@ -117,7 +132,9 @@ def ult_of(d):
     if "反動" in extra: o["recoil"] = 250
     if "何が起こるか" in extra or "霊魂" in extra: o["randPow"] = 1
     c = curse_of(extra) if extra else None
-    if c and not o.get("selfKo"): o["curse"], o["tier"] = c
+    if c and not o.get("selfKo"):
+        o["curse"], o["tier"] = c
+        if stat_of(extra): o["stat"] = stat_of(extra)
     return o, hits
 
 
@@ -240,6 +257,7 @@ for d in gp:
         "defaultNature": nature(d, st, skill_mode, insp_kind), "trait": "honke", "hskill": d["skill"],
         "attackName": d["attack"], "skillName": d["magic"], "inspName": d["insp"],
     }
+    if stat_of(d["insp_d"]): e["inspStat"] = stat_of(d["insp_d"])
     if ah > 1: e["attackHits"] = ah
     if uhits > 1: e["ultHits"] = uhits
     if skill_mode != "dmg": e["skillMode"] = skill_mode
