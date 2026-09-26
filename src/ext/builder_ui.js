@@ -5,7 +5,7 @@
 //   ・アイテム（対戦で使うたべもの・どうぐ）をえらぶ
 //   どの選ぶ画面も、効果の大きい順などに並べかえ・種類でしぼりこみができる
 //   ・「けってい」のあと、出陣前に 6 体と持ち物をまとめて確認する
-// bt（ホイールの 6 枠の妖怪）と同じ並びで SLOT_LOADOUT（枠ごとの持ち物）を持つ。
+// bt（メンバーサークルの 6 枠の妖怪）と同じ並びで SLOT_LOADOUT（枠ごとの持ち物）を持つ。
 // ============================================================================
 
 function defaultLoadout() { return { nature: null, diligence: null, equipment: null }; }
@@ -34,7 +34,7 @@ function memberAt(i) {
 }
 function teamMembers() { return [0, 1, 2, 3, 4, 5].map(memberAt).filter(Boolean); }
 
-// ---- ホイールの並びが変わったとき、持ち物もいっしょに動かす ----
+// ---- メンバーサークルの並びが変わったとき、持ち物もいっしょに動かす ----
 function loRotate(step) { const old = SLOT_LOADOUT.slice(); SLOT_LOADOUT = old.map((_, i) => old[(i - step + 6) % 6]); saveLoadout(); }
 function loSwap(a, b) { [SLOT_LOADOUT[a], SLOT_LOADOUT[b]] = [SLOT_LOADOUT[b], SLOT_LOADOUT[a]]; saveLoadout(); }
 function loReset(i) { SLOT_LOADOUT[i] = defaultLoadout(); saveLoadout(); }
@@ -68,7 +68,7 @@ function renderDetail(host, slot, onChange) {
   top.append(view);
   const info = q("div", "dt-info");
   info.innerHTML = `<div class="dt-name"><b>${d.name}</b> <span class="rank ${d.rank}">${d.group ? d.rank + "・鬼（1 体まで）" : d.rank}</span></div>
-    <div class="tag">${Hl[d.tribe]}族・${st.camp ? CAMP_JA[st.camp] + "・" : ""}${st.favorite ? `好物「${FOOD_CATS[st.favorite]}」` : "好物なし"}</div>
+    <div class="tag">${Hl[d.tribe]}${d.tribe === "maga" ? "" : "族"}・${st.camp ? CAMP_JA[st.camp] + "・" : ""}${st.favorite ? `好物「${FOOD_CATS[st.favorite]}」` : "好物なし"}</div>
     <div class="tag">妖気ランク ${d.sgRank}・サボり ${Math.round(d.loafPermil / 10)}%</div>
     ${viewing ? '<div class="dt-note">リストで見ているところ。枠に入れるには、もう一度押す。</div>' : ""}`;
   top.append(info);
@@ -79,7 +79,7 @@ function renderDetail(host, slot, onChange) {
   const hk = d.trait === "honke";
   const skillLine = d.skillMode === "heal" ? `回復・威力 ${d.skillPower}（味方を回復）` : d.skillMode === "drain" ? `吸収・威力 ${d.skillPower}（与えたダメージの半分を回復）` : `${d.skillElement ? Gl[d.skillElement] : "無"}・威力 ${d.skillPower}`;
   const inspLine = hk ? (d.inspKind === "bless" ? `${Ad[d.blessing]}${Bn[d.inspTier] ?? ""}（味方）` : `${Wl[d.curse]}${Bn[d.inspTier] ?? ""}（相手）`) : `${Wl[d.curse]}（相手）／${Ad[d.blessing]}（味方）`;
-  host.insertAdjacentHTML("beforeend", `<div class="dt-trait"><div class="dt-h">${hk ? "スキル" : "特性"}「${tr.name}」</div><div>${tr.desc}</div>${hk && tr.detail && !tr.fx.noBattle ? `<div class="dt-note">このゲームでは：${tr.detail}</div>` : ""}</div>
+  host.insertAdjacentHTML("beforeend", `<div class="dt-trait"><div class="dt-h">スキル「${tr.name}」</div><div>${tr.desc}</div>${hk && tr.detail && !tr.fx.noBattle ? `<div class="dt-note">このゲームでは：${tr.detail}</div>` : ""}</div>
     <div class="dt-moves">
       <div><span class="dt-k">こうげき</span> ${hk ? d.attackName + "・" : ""}威力 ${d.attackPower}${d.attackHits > 1 ? `（${d.attackHits} 回に分けて当たる）` : ""}</div>
       <div><span class="dt-k">ようじゅつ</span> ${hk ? d.skillName + "・" : ""}${skillLine}</div>
@@ -104,7 +104,7 @@ function renderDetail(host, slot, onChange) {
   pickRow("性格", natureFullName(st.nature, st.diligence) + (lo.nature ? "" : "（初めの性格）"),
     `${qn(st.nature).kind}・${natureBonusText(st.nature)}・${natureDesc(st.nature)}`,
     () => openNaturePicker(d, lo, (nat, dil) => { SLOT_LOADOUT[slot].nature = nat; SLOT_LOADOUT[slot].diligence = dil; saveLoadout(); onChange(); }));
-  pickRow("持ち物", eq ? eq.name : "なし", eq ? equipDesc(eq) + (equipGameText(eq) ? `（このゲームでは：${equipGameText(eq)}）` : "") : "装備なし",
+  pickRow("そうび", eq ? eq.name : "なし", eq ? equipDesc(eq) + (equipGameText(eq) ? `（このゲームでは：${equipGameText(eq)}）` : "") : "そうびなし",
     () => openEquipPicker(d, lo.equipment, id => { SLOT_LOADOUT[slot].equipment = id; saveLoadout(); onChange(); }));
   host.append(form);
 }
@@ -122,10 +122,10 @@ function natureDesc(id) {
 function ultDesc(u) {
   const x = [];
   if (u.power && ["single", "all", "heal"].includes(u.kind)) x.push(`威力 ${u.power}`);
-  if (u.cancel) x.push("当たると相手の奥義の構えを解く");
+  if (u.cancel) x.push("当たると相手のパワーチャージを止める");
   if (u.curse) x.push(`${Wl[u.curse]}にすることがある`);
-  if (u.gamble) x.push("会心が出やすいが外れやすい");
-  else if (u.crit) x.push("会心が出やすい");
+  if (u.gamble) x.push("クリティカルが出やすいが外れやすい");
+  else if (u.crit) x.push("クリティカルが出やすい");
   if (u.recoil) x.push("反動でダメージを受ける");
   if (u.randPow) x.push("威力が毎回変わる");
   if (u.drain) x.push("与えたダメージの半分を回復");
@@ -140,7 +140,8 @@ function ultKindDesc(u) {
   switch (u.kind) {
     case "single": return `（相手 1 体に${u.element ? Gl[u.element] + "の" : ""}大ダメージ）`;
     case "break": return "（ガードを破る大ダメージ）";
-    case "all": return `（相手の前衛全員に${u.element ? Gl[u.element] + "の" : ""}ダメージ）`;
+    case "all": return u.spread ? `（${u.hits} 発を相手の前衛へ散らして${u.element ? Gl[u.element] + "の" : ""}ダメージ。当たった数の分だけ効く）`
+      : `（相手の前衛全員に${u.element ? Gl[u.element] + "の" : ""}ダメージ）`;
     case "heal": return "（味方の前衛全員を回復）";
     case "curseAll": return `（相手の前衛全員を${Wl[u.curse]}に）`;
     case "blessAll": return `（味方の前衛全員に${Ad[u.blessing]}）`;
@@ -326,7 +327,7 @@ function openNaturePicker(d, lo, onPick) {
 
 // 持ち物（装備・魂）：この妖怪に付けたときの能力の変化で並べられる
 var EQUIP_TABS = [
-  ["all", "装備すべて", e => e.cat !== "魂" && e.cat !== "レア魂"],
+  ["all", "そうびすべて", e => e.cat !== "魂" && e.cat !== "レア魂"],
   ["rare", "レア魂", e => e.cat === "レア魂"],
   ["soul", "魂", e => e.cat === "魂"],
   ...["うでわ", "ゆびわ", "おまもり", "バッジ", "専用", "呪言", "そのほか", "勲章"].map(c => [c, c, e => e.cat === c]),
@@ -366,11 +367,11 @@ function openEquipPicker(d, cur, onPick) {
   const statSort = k => e => deltaOf(e)[k] ?? 0;
   const items = [...equipChoices(d), ...soulChoices()];
   const now = equipById(cur ?? null);
-  const off = q("button", "b-mini", "持ち物をはずす");
+  const off = q("button", "b-mini", "そうびをはずす");
   off.disabled = !now;
   off.onclick = () => { onPick(null); p.close(); };
   const p = openSortPicker({
-    key: "equip", title: `${d.name} の持ち物`, items, tabs: EQUIP_TABS, actions: [off],
+    key: "equip", title: `${d.name} のそうび`, items, tabs: EQUIP_TABS, actions: [off],
     current: () => `<span class="dt-k">いま</span> ${now ? `<b>${now.name}</b><span class="pk-cat">${now.cat}</span><div class="pk-cur-d">${equipInfoHtml(now)}</div>` : "<b>なし</b>"}`,
     hide: { label: "対戦で効果のないものをかくす", test: equipNoEffect },
     sorts: [
@@ -470,8 +471,8 @@ function openConfirm(members, bag, onGo) {
     const card = q("div", "cf-card" + (i < 3 ? " front" : ""));
     card.innerHTML = `<div class="cf-head"><span class="cf-pic" style="background:${Pi[d.tribe]}">${da(d.id, d.name.slice(0, 1))}</span><div><b>${d.name}</b> <span class="rank ${d.rank}">${d.rank}</span><div class="tag">${i < 3 ? "前衛" : "後衛"}・${natureFullName(st.nature, st.diligence)}${st.favorite ? `・好物 ${FOOD_CATS[st.favorite]}` : ""}</div></div></div>
       <div class="cf-stats num">HP ${st.maxHp}　ちから ${st.atk}　ようりょく ${st.spa}　まもり ${st.def}　すばやさ ${st.spd}</div>
-      <div class="cf-line"><span class="dt-k">特性</span> ${tr.name}</div>
-      <div class="cf-line"><span class="dt-k">持ち物</span> ${eq ? `${eq.name}<small>（${equipDesc(eq)}）</small>` : "なし"}</div>`;
+      <div class="cf-line"><span class="dt-k">スキル</span> ${tr.name}</div>
+      <div class="cf-line"><span class="dt-k">そうび</span> ${eq ? `${eq.name}<small>（${equipDesc(eq)}）</small>` : "なし"}</div>`;
     grid.append(card);
   });
   box.append(grid);

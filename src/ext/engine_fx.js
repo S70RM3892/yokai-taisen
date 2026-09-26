@@ -44,7 +44,7 @@ function honkeStatBonus(e, u, stat) {
   if (u.dyn?.[stat]) r += u.dyn[stat];
   if (fx.night && F.tick >= mu / 2) r += fx.night;
   r += F.allUpAll + (F.camp[u.camp + "_" + stat] ?? 0);
-  // となり（ホイールで両どなり）の妖怪から
+  // となり（メンバーサークルで両どなり）の妖怪から
   const nbs = jn(e, u);
   for (const nb of nbs) {
     if (!Se(nb)) continue;
@@ -178,7 +178,7 @@ function onDeathFx(state, ev, p, dead) {
 }
 
 // ---- アイテム（本家の下画面右下「アイテム」） ----
-// input: { t: "item", slot: 持ち物の番号, allySlot: ホイールの位置 0〜5 }
+// input: { t: "item", slot: 持ち物の番号, allySlot: メンバーサークルの位置 0〜5 }
 function canUseItem(p, slot, allySlot) {
   if (p.itemCooldown > 0 || p.poke || p.stance) return false;
   if (!gr(slot, 0, p.bag.length - 1) || !gr(allySlot, 0, 5)) return false;

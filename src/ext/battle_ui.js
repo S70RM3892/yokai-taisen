@@ -9,7 +9,7 @@ function eqLabel(u) {
   return eq ? eq.name : "";
 }
 
-// ---- ホイール（サークル）を回す ----
+// ---- メンバーサークル（サークル）を回す ----
 // 指に遅れずについていく（なぞっている間は補間なし）。離すと 60° ごとの位置へぴたりと止まり、
 // エンジンが回転を反映するまでその位置で待つ（以前は一瞬もとの位置に戻ってから跳んでいた）。
 // CPU の回転・強制回転・キー操作のときも、絵が飛ばずに回って見えるようにする。
@@ -32,14 +32,16 @@ function wheelDrag(e, rad) {
   e.wheelDeg = deg;
 }
 
+// 回せなかった：もとの位置へ戻して赤く光らせる
+function wheelDenied(e) {
+  e.wheelResist = !1, e.preview = 0, e.wheelHold = null, wheelSet(e, 0);
+  const w = e.svg.wheel;
+  w.classList.remove("deny"), w.getBoundingClientRect(), w.classList.add("deny");
+  qe(160, 0.12, "square", 0.08);
+}
+
 function wheelRelease(e, rad) {
-  if (e.wheelResist) {
-    e.wheelResist = !1, e.preview = 0, wheelSet(e, 0);
-    const w = e.svg.wheel;
-    w.classList.remove("deny"), w.getBoundingClientRect(), w.classList.add("deny");
-    qe(160, 0.12, "square", 0.08);
-    return;
-  }
+  if (e.wheelResist) { wheelDenied(e); return; }
   const steps = Math.max(-5, Math.min(5, Math.round(rad / (Math.PI / 3))));
   if (!steps) { e.preview = 0; wheelSet(e, 0); return; }
   e.preview = steps;
@@ -49,8 +51,16 @@ function wheelRelease(e, rad) {
 }
 
 // 毎フレーム：なぞっていないときの角度
+// 行動のモーション中に回した分（pendingRotate）は、エンジンが反映するまでその角度で待つ
 function wheelIdle(e) {
   if (e.svg.rotor.hasAttribute("data-drag")) return;
+  const q = e.state.players[0].pendingRotate;
+  if (q) {
+    if (e.wheelHold) { e.wheelHold.until = performance.now() + 900; return; }
+    const d = (q.dir === "cw" ? 1 : -1) * q.steps * 60;
+    if ((e.wheelDeg ?? 0) !== d) wheelSet(e, d);
+    return;
+  }
   if (e.wheelHold) {
     if (performance.now() < e.wheelHold.until) return;
     e.wheelHold = null; // 回らなかった（はじかれた）ので戻す
@@ -59,7 +69,7 @@ function wheelIdle(e) {
   if ((e.wheelDeg ?? 0) !== target) wheelSet(e, target);
 }
 
-// ホイールの並びが変わった：いま見えている角度から 0° へ回して見せる
+// メンバーサークルの並びが変わった：いま見えている角度から 0° へ回して見せる
 function wheelChanged(e, oldKey, newKey) {
   if (!oldKey) { wheelSet(e, 0, !0); return; }
   const o = oldKey.split(",").map(Number), n = newKey.split(",").map(Number);
@@ -81,7 +91,7 @@ function itemMenu(e, a) {
   a.dataset.key = key;
   a.replaceChildren(q("div", "title", p.itemCooldown > 0 ? `アイテム（あと ${Ti(p.itemCooldown)} 秒）` : "アイテム：使うものを選ぶ"));
   const grid = q("div", "it-grid");
-  if (!p.bag.length) grid.append(q("div", "muted", "持ち物がない"));
+  if (!p.bag.length) grid.append(q("div", "muted", "アイテムがない"));
   p.bag.forEach((id, slot) => {
     const it = battleItem(id);
     const ok = [0, 1, 2, 3, 4, 5].some(pos => canUseItem(p, slot, pos));
@@ -114,7 +124,7 @@ function chargeOverlay(e, a) {
     a.replaceChildren();
     e.mg = { kind: s.game, acc: 0, balls: [], spawn: 0, lap: 0, next: 0, last: null, step: 0, full: !1 };
     const head = q("div", "mg-head");
-    head.append(q("div", "mg-name", g.name), q("div", "title", `${Ze(u).name} の${s.grand ? "大奥義" : "奥義"}「${Ze(u).ultName}」`), q("div", "help", g.help));
+    head.append(q("div", "mg-name", g.name), q("div", "title", `${Ze(u).name} の${s.grand ? "Gわざ" : "ひっさつわざ"}「${Ze(u).ultName}」`), q("div", "help", g.help));
     const stage = q("div", "mg-stage " + s.game + (s.grand ? " grand" : ""));
     const face = q("div", "mg-face");
     face.innerHTML = da(Ze(u).id, "");
@@ -258,6 +268,13 @@ function tickCharge(e, stage, s) {
 }
 
 // ---- おはらい（本家の 5 種） ----
+// 後衛の妖怪を選んだ：いま「あとで」にしているおはらいの妖怪なら、画面を開きなおして続きから
+function purifyPick(e, slot) {
+  const p = e.state.players[0];
+  if (p.purify && p.wheel[slot] === p.purify.unit) { e.purifyHidden = null; return; }
+  zt(e, { t: "purify", allySlot: slot });
+}
+
 function purifyOverlay(e, a) {
   const p = e.state.players[0], pu = p.purify;
   const u = p.units[pu.unit];
@@ -275,7 +292,7 @@ function purifyOverlay(e, a) {
     stage.append(face, q("div", "mg-chains"));
     const gauge = q("div", "gauge mg-gauge purify");
     gauge.append(q("i"));
-    const later = q("button", "btn", "あとで（自然に少しずつはらう）");
+    const later = q("button", "btn", "あとで（もう一度この妖怪をおはらいすると続きから）");
     later.onclick = () => { e.purifyHidden = pu.unit; a.dataset.key = ""; };
     a.append(head, stage, gauge, later);
     setupPurify(e, stage, pu.game);

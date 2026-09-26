@@ -6,7 +6,7 @@
 
 var TRIBE_JA = { takeru: "猛", ayashi: "怪", tsuwamono: "剛", kage: "影", nagomi: "和", miyabi: "雅", tatari: "祟", shizume: "鎮", maga: "禍" };
 var ELEM_JA = { fire: "火", water: "水", thunder: "雷", earth: "土", ice: "氷", wind: "風" };
-var CURSE_JA = { slow: "鈍重", weaken: "衰弱", brittle: "脆化", poison: "蝕毒", seal: "封気", stun: "行動停止", confuse: "混乱", allDown: "全能力低下", lazy: "怠け", money: "散財" };
+var CURSE_JA = { slow: "すばやさダウン", weaken: "ちから・ようりょくダウン", brittle: "まもりダウン", poison: "HPが減る", seal: "妖気がたまらない", stun: "動けない", confuse: "混乱", allDown: "全ステータスダウン", lazy: "サボる", money: "お金をばらまく" };
 
 // 効果キー → 説明文
 function fxLine(k, v) {
@@ -41,12 +41,12 @@ function fxLine(k, v) {
     case "scapegoat": return "ねらわれると となりの前衛の味方に代わってもらう";
     case "guardian": return "たおれそうな前衛の味方をかばう";
     case "relay": return `行動すると となりの前衛の味方の番が ${pct(v)} 早く来る`;
-    case "oil": return `チームにいると ホイールを回したあとの待ち時間-${pct(v)}`;
+    case "oil": return `チームにいると メンバーサークルを回したあとの待ち時間-${pct(v)}`;
     case "up": return `${STAT_JA[arg]}+${pct(v)}`;
     case "atkUp": return `こうげきの威力+${pct(v)}`;
     case "skillUp": return `ようじゅつの威力+${pct(v)}`;
     case "ultUp": return `ひっさつわざの威力+${pct(v)}`;
-    case "healUp": return `回復するひっさつわざ・特性の回復量+${pct(v)}`;
+    case "healUp": return `回復するひっさつわざ・スキルの回復量+${pct(v)}`;
     case "hitSg": return `ダメージを受けると 妖気+${v}`;
     case "killSg": return `相手をたおすと 妖気+${v}`;
     case "regen": return `行動するたび HP を ${pct(v)} 回復`;
@@ -119,8 +119,8 @@ function fxLine(k, v) {
     case "healDown": return `前衛にいる間 敵味方全員の回復量-${pct(v)}`;
     case "poisonUp": return `前衛にいる間 毒のダメージ+${pct(v)}`;
     case "purifyHard": return `前衛にいる間 相手のおはらいが ${pct(v)} おそくなる`;
-    case "wheelLock": return "前衛にいる間 相手はホイールを回せない";
-    case "oilFree": return "相手にホイールを止められても 回せる";
+    case "wheelLock": return "前衛にいる間 相手はメンバーサークルを回せない";
+    case "oilFree": return "相手にメンバーサークルを止められても 回せる";
     case "thunderDefUp": return `雷の技を受けると まもり+${pct(v)}`;
     case "sameSkillUp": return `となりに同じスキルの妖怪がいると 能力+${pct(v)}`;
     case "pairA": return `となりに「うん」の妖怪がいると ようりょく+${pct(v)}`;
@@ -129,7 +129,7 @@ function fxLine(k, v) {
     case "sgPower": return `妖気がたまっているほど ちから・ようりょくアップ（最大+${pct(v)}）`;
     case "drainUp": return `吸いとる量+${pct(v)}`;
     case "leech": return `行動すると となりの味方の HP を ${pct(v)} 吸いとる`;
-    case "shuffle": return `行動すると ${pct(v)} で 敵味方のホイールをバラバラに回す`;
+    case "shuffle": return `行動すると ${pct(v)} で 敵味方のメンバーサークルをバラバラに回す`;
     case "stealItem": return `こうげきが当たると ${pct(v)} で相手のアイテムをとる`;
     case "swapDeath": return "たおれそうになると 1 度だけ となりの味方と入れかわる（味方がかわりにたおれる）";
     case "endureChance": return `たおれるダメージを ${pct(v)} で HP1 でこらえる`;

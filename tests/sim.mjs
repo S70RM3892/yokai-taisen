@@ -162,6 +162,75 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`ult: fires only when finished (fast ${fast.f.charge} ticks / slow ${slow.f.charge} ticks, same quality "${fast.f.quality}")`);
 }
 
+// ひっさつわざの「敵全体」と「敵複数」（本家）：全体は前衛の敵それぞれに全部、複数は ○ 発を散らして当てる
+{
+  const fire = (name, seed) => {
+    const walls = ["ヨロイさん", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
+    const me = [{ unit: E.units.find(u => u.name === name).id }, ...walls.slice(1)];
+    const s = E.newBattle(seed, me, walls, { noItems: true });
+    const p = s.players[0], u = p.units[p.wheel[0]];
+    u.sg = 1000, u.ultLockout = 0;
+    // 構えの間に相手のとりつきで解けないよう、相手は行動できなくしておく
+    for (const f of s.players[1].units) f.curse = { kind: "stun", tier: 0, elapsed: 0, remaining: 1e9 };
+    E.step(s, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], []);
+    if (!p.stance) throw new Error(`${name}: stance did not start`);
+    p.stance.game = "mawase";
+    for (let i = 0; i < 50; i++) {
+      const ev = [];
+      E.step(s, [{ player: 0, input: { t: "ultCharge", amount: 300 } }], ev);
+      if (ev.some(e => e.t === "ult")) return ev.filter(e => e.t === "damage" && e.src === u.uid && e.source === "ult");
+    }
+    throw new Error(`${name}: ult did not fire`);
+  };
+  const def = n => E.units.find(u => u.name === n).ult;
+  if (!def("ぶようじん坊").spread || def("ぶようじん坊").hits !== 5 || def("ゲンマ将軍").spread) throw new Error("ult spread data wrong");
+  let spreadTargets = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const d = fire("ぶようじん坊", seed); // いりょく 18 x 5 (敵複数に攻撃)
+    const hits = d.reduce((a, e) => a + (e.hits ?? 1), 0);
+    if (hits !== 5) throw new Error(`spread ult landed ${hits} hits, not 5`);
+    spreadTargets += d.length;
+  }
+  const all = fire("ゲンマ将軍", 1); // いりょく 130 x 1 (敵全体に攻撃)
+  if (all.length !== 3) throw new Error(`all-target ult hit ${all.length} foes`);
+  console.log(`ult spread: 5 hits scattered (avg ${(spreadTargets / 20).toFixed(1)} foes), all-target hits 3`);
+}
+
+// おはらい：本家どおり、タッチアクションをしないと進まない。とりつかれた敵を攻撃すると妖気が多くたまる
+{
+  const s = E.newBattle(5, E.randomTeam(E.seedRng(5, 1)), E.randomTeam(E.seedRng(5, 2)), { noItems: true });
+  const p = s.players[0], u = p.units[p.wheel[4]];
+  u.curse = { kind: "weaken", tier: 0, elapsed: 0, remaining: 1e9 };
+  E.step(s, [{ player: 0, input: { t: "purify", allySlot: 4 } }], []);
+  if (!p.purify) throw new Error("purify did not start");
+  for (let i = 0; i < 600; i++) E.step(s, [], []);
+  if (!u.curse || !p.purify || p.purify.progress !== 0) throw new Error("purify progressed without touch action");
+  for (let i = 0; i < 100 && u.curse; i++) E.step(s, [{ player: 0, input: { t: "purifyTap", amount: 50 } }], []);
+  if (u.curse) throw new Error("purify taps did not clear the curse");
+  const gain = { on: [0, 0], off: [0, 0] };
+  for (let g = 0; g < 40; g++) {
+    const seed = g * 31 + 7, lv = { perfectPermil: 0, pokeHitPermil: 0, grandPermil: 0, itemPermil: 0 };
+    const st = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    const cpus = [E.newCpu(0, seed ^ 5, lv), E.newCpu(1, seed ^ 6, lv)];
+    while (!st.outcome && st.tick < 2000) {
+      const inputs = [];
+      for (const q of [0, 1]) for (const i of E.cpuInputs(cpus[q], st)) if (i.t !== "ultStart" && i.t !== "pokeStart") inputs.push({ player: q, input: i });
+      const before = new Map(st.players.flatMap(P => P.units).map(x => [x.uid, { sg: x.sg, bad: x.loafing || x.curse !== null }]));
+      const ev = [];
+      E.step(st, inputs, ev);
+      const a = ev.find(e => e.t === "action" && e.action === "attack"), d = a && ev.find(e => e.t === "damage" && e.src === a.uid && e.source === "attack");
+      if (!d) continue;
+      const x = st.players.flatMap(P => P.units).find(y => y.uid === a.uid);
+      if (x.sg >= 1000) continue;
+      const k = before.get(d.dst).bad ? "on" : "off";
+      gain[k][0] += x.sg - before.get(a.uid).sg, gain[k][1]++;
+    }
+  }
+  const on = gain.on[0] / gain.on[1], off = gain.off[0] / gain.off[1];
+  if (!(on > off * 1.5)) throw new Error(`sg vs loafing/cursed ${on} not above normal ${off}`);
+  console.log(`purify needs touch action; sg per attack: normal ${off.toFixed(0)}, vs loafing/cursed ${on.toFixed(0)}`);
+}
+
 // とりつきのルール（本家）：悪いとりつき中は奥義を撃てない・時間では消えない。ちょうはつ魂は攻撃を集める
 {
   const id = n => E.units.find(u => u.name === n).id;
@@ -193,7 +262,7 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`inspirit: cursed cannot ult, curse persists; taunt soul drew ${hitTaunt}/${hitTaunt + hitOther} hits`);
 }
 
-// 前衛が全滅したら、倒れる演出を待ってから（32 tick 以上）ホイールが回る
+// 前衛が全滅したら、倒れる演出を待ってから（32 tick 以上）メンバーサークルが回る
 {
   let checked = 0;
   for (let g = 0; g < 40 && checked < 5; g++) {
@@ -217,6 +286,37 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   }
   if (!checked) throw new Error("no forced rotate happened");
   console.log(`forced rotate waits for the KO effect (${checked} checked)`);
+}
+
+// メンバーサークルの回転は行動と同じ判定：行動のモーション中（tick < busyUntil）に回しても反映せず、
+// モーションが終わって次の行動が選ばれる前に回る
+{
+  let queued = 0, now = 0;
+  for (let g = 0; g < 20 && queued < 5; g++) {
+    const seed = (g * 104729 + 11) >>> 0;
+    const st = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    const cpu = E.newCpu(1, seed ^ 9, levels[0]);
+    let sent = false;
+    while (!st.outcome && st.tick < 3000) {
+      const p = st.players[0], inputs = [];
+      for (const input of E.cpuInputs(cpu, st)) inputs.push({ player: 1, input });
+      if (!sent && st.tick > 40 && p.rotateCooldown === 0 && !p.pendingRotate) inputs.push({ player: 0, input: { t: "rotate", dir: "cw", steps: 1 } }), sent = true;
+      const busy = st.tick < st.busyUntil, before = p.wheel.join(), ev = [];
+      E.step(st, inputs, ev);
+      const rot = ev.find(e => e.t === "rotate" && e.player === 0);
+      if (sent && busy && inputs.some(x => x.player === 0)) {
+        if (rot || st.players[0].wheel.join() !== before) throw new Error("rotated during a motion");
+        if (!st.players[0].pendingRotate) throw new Error("rotation during a motion was not queued");
+        queued++;
+      } else if (inputs.some(x => x.player === 0)) now++;
+      if (rot && st.players[0].pendingRotate) throw new Error("pending rotation not cleared");
+      if (st.players[0].pendingRotate && st.tick > st.busyUntil + 1) throw new Error("queued rotation not applied after the motion");
+      if (rot) sent = false;
+      if (ev.some(e => e.t === "rotateDropped" && e.player === 0)) sent = false;
+    }
+  }
+  if (!queued) throw new Error("no rotation was queued");
+  console.log(`rotate during a motion: queued ${queued}, applied at once ${now}`);
 }
 
 // 妖怪は本家の妖怪だけ（id は本家の No）。能力値 Lv60・ランク・スキルが本家どおり。赤鬼・青鬼・黒鬼はあわせて 1 体まで

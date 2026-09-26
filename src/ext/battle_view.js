@@ -2,7 +2,7 @@
 // 対戦画面の「見えている状態」と演出の段取り。
 //   ・HP は、ダメージの数字が出た瞬間に減る（エンジンは先に減らしているので、画面では遅れて減らす）
 //   ・多段の技は、ダメージを当たった数に分けて 1 発ずつ数字とヒットストップを出す
-//   ・陣：ホイールを回して陣ができたら、カットインで見せる
+//   ・陣：メンバーサークルを回して陣ができたら、カットインで見せる
 //   ・とりつき：よい／わるいとりつき中の妖怪に、ずっとオーラを出す
 // ============================================================================
 
@@ -72,7 +72,7 @@ function showDamage(e, ev, eff) {
     const last = k === n - 1;
     const go = () => {
       v.hp = Math.max(0, v.hp - amt);
-      const crit = ev.crit && last; // 会心の派手な演出は最後の 1 発に
+      const crit = ev.crit && last; // クリティカルの派手な演出は最後の 1 発に
       r.hit(ev.dst, crit, color);
       if (n > 1) r.hitStop = Math.max(r.hitStop, last ? 0.16 : 0.07); // 1 発ごとに止める
       dmgPop(e, { ...ev, amount: amt, crit, part: n > 1 ? k + 1 : 0 }, eff);
@@ -140,10 +140,10 @@ function jinCutin(e, pid, list) {
   const [tribe, j] = list[0];
   el.style.setProperty("--jc", Pi[tribe] ?? "#f2a541");
   const band = q("div", "jc-band");
-  const mark = q("div", "jc-mark", Hl[tribe]);
+  const mark = q("div", "jc-mark", Hl[tribe].slice(0, 1));
   const txt = q("div", "jc-txt");
-  txt.append(q("span", "jc-kind", (ally ? "" : "敵の") + (j.bonus >= _h ? "三連の陣" : "二連の陣")),
-    q("span", "jc-name", list.map(([t]) => `${Hl[t]}の陣`).join("・")),
+  txt.append(q("span", "jc-kind", (ally ? "" : "敵の") + "陣形効果" + (j.bonus >= _h ? "（3 体）" : "（2 体）")),
+    q("span", "jc-name", list.map(([t]) => `${Hl[t]}族`).join("・")),
     q("span", "jc-fx", list.map(([t, x]) => jinText(t, x.bonus)).join(" / ")));
   const arts = q("div", "jc-arts");
   for (const uid of j.uids) { const a = q("div", "jc-art"); a.innerHTML = da(Ze(Ot(e, uid)).id, ""); arts.append(a); }

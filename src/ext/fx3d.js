@@ -245,7 +245,7 @@ Object.assign(e2.prototype, {
     const f = this.figs.get(uid);
     if (!f) return;
     const h = f.model.userData.height ?? 1.6, p = f.root.position.clone().setY(h * 0.55);
-    this.hitStop = Math.max(this.hitStop, crit ? 0.24 : 0.06); // 当たった瞬間に止める（会心は長く）
+    this.hitStop = Math.max(this.hitStop, crit ? 0.24 : 0.06); // 当たった瞬間に止める（クリティカルは長く）
     if (!crit) {
       // ふつう：白い光と小さな火花、斬撃 1 本
       this.flare(p, color, 1.3, 0.22);
@@ -253,7 +253,7 @@ Object.assign(e2.prototype, {
       this.slash(p, 0xffffff, 0.9);
       return;
     }
-    // 会心：金の大きな光、斬撃 3 本、金のかけら、二重の衝撃波
+    // クリティカル：金の大きな光、斬撃 3 本、金のかけら、二重の衝撃波
     this.flare(p, 0xfff2a0, 3.6, 0.35);
     this.flare(p, 0xffffff, 1.8, 0.18);
     for (let i = 0; i < 3; i++) this.slash(p, i === 1 ? 0xffffff : 0xf2c14a, 1.5 + i * 0.35);
@@ -348,8 +348,8 @@ function sfxCharged() {
   Tt(0.5, 0.35, "bandpass", 400, 0, 1.5, 4e3), qe(330, 0.4, "sawtooth", 0.12, 0, 1320), qe(660, 0.5, "triangle", 0.12, 0.1, 1760);
 }
 
-// ---- ダメージの数字・会心の演出・連続ヒット ----
-// 与えたダメージは白〜金、受けたダメージは赤。会心は大きな金の数字に「CRITICAL!!」、放射線、
+// ---- ダメージの数字・クリティカルの演出・連続ヒット ----
+// 与えたダメージは白〜金、受けたダメージは赤。クリティカルは大きな金の数字に「CRITICAL!!」、放射線、
 // 一瞬の止め（ヒットストップ）と画面のフラッシュ。こちらの攻撃が続くと「○ HIT」と合計を数える。
 function dmgPop(e, ev, eff) {
   const p = e.scene.project(ev.dst, 2);

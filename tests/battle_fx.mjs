@@ -36,7 +36,7 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(350);
 const cut = await page.evaluate(() => document.querySelector(".jincut")?.textContent ?? null);
-if (!cut || !cut.includes("の陣")) fail(`陣のカットインが出ない: ${cut}`);
+if (!cut || !cut.includes("陣形効果")) fail(`陣のカットインが出ない: ${cut}`);
 await page.screenshot({ path: `${out}/fx-1-jin.png` });
 console.log("jin cut-in:", cut);
 await page.waitForTimeout(1300);

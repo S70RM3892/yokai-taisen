@@ -15,7 +15,10 @@ import json, re, os, hashlib
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 D = os.path.join(ROOT, "tools", "honke_data")
 gp = json.load(open(os.path.join(D, "gamepedia_yw2.json"), encoding="utf-8"))
-hrs = {d["name"]: d for d in json.load(open(os.path.join(D, "hrs_yw2.json"), encoding="utf-8"))}
+# HRS で書き方がちがう名前 → 攻略大百科の名前（ここでつながないと、こうげきの威力・弱点が推定になる）
+HRS_ALIAS = {"とどろき獅子 (轟獅子)": "とどろき獅子", "ズルズルつる": "ズルズルづる", "TETSUYA (てつや)": "TETSUYA",
+             "KANTSUYA (かんてつ)": "KANTETSU", "かりパックリ": "かりパックン", "カブニャン": "ガブニャン", "青龍(青竜)": "青龍"}
+hrs = {HRS_ALIAS.get(d["name"], d["name"]): d for d in json.load(open(os.path.join(D, "hrs_yw2.json"), encoding="utf-8"))}
 souls = json.load(open(os.path.join(D, "game8_souls.json"), encoding="utf-8"))
 SOUL_ALIAS = {"U.S.O.": "USO", "大ヤモリ": "大やもり"}
 
@@ -99,8 +102,13 @@ def ult_of(d):
         o = {"kind": "single", "power": max(80, total)}
         hits = h
     else:
-        o = {"kind": "all", "power": max(60, min(170, round(total * 0.55)))}
-        hits = max(1, round(h / 3))
+        # 本家どおり：「敵全体」は前衛の敵それぞれに いりょく x 回数 を当てる。
+        # 「敵複数」は x 回数 の 1 発ずつを前衛の敵へ散らして当てる（当たった回数の分だけダメージ）
+        o = {"kind": "all", "power": total}
+        hits = h
+        if "複数" in tgt:
+            o["spread"], o["hits"] = 1, h
+            hits = 1
         if "味方" in tgt: o["blast"] = 1
     if "自爆" in extra: o["selfKo"] = 1
     if "キャンセル" in extra: o["cancel"] = 1
@@ -265,4 +273,6 @@ js.append("var HONKE_SKILL_TEXT = " + json.dumps(skills_used, ensure_ascii=False
 js.append("// レア魂（合成）")
 js.append("var HONKE_RARE_SOULS = " + json.dumps(RARE, ensure_ascii=False, indent=0) + ";")
 open(os.path.join(ROOT, "src", "ext", "honke_roster_data.js"), "w", encoding="utf-8").write("\n".join(js) + "\n")
+missing = [d["name"] for d in gp if d["name"] not in hrs]
+print("HRS にない（威力・弱点は推定）:", " ".join(missing))
 print(f"{len(out)} yokai, {len(skills_used)} skills, {len(RARE)} rare souls")
