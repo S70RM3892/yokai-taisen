@@ -74,7 +74,38 @@ function honkeTribeShape(tribe, c, h) {
   return ["blob", { skin: c }];
 }
 
+// 流行りの型に出てくる妖怪など、1 体ずつ手で形を決めた妖怪（名前から自動で決めるより本家に近い）
+var HONKE_NAME_MODEL = {
+  化け草履: ["object", { thing: "sandal", skin: 0xc8a878 }],
+  天狗: ["hum", { build: "bulky", skin: 0xc8443a, nose: "long", wings: 0x3f8f5a, hat: "tokin", weapon: "fan", hair: "wild", hairColor: 0xf4f4f4, eyeStyle: "angry" }],
+  河童: ["hum", { build: "child", skin: 0x5aa55a, dish: !0, hair: "wild", hairColor: 0x2f5f3a, shell: 0x6b8f3a, head: "bird", beak: 0xf2c14a }],
+  ろくろ首: ["hum", { build: "slim", skin: 0xf1d9c4, longNeck: !0, robe: !0, cloth: 0xc75b8a, hair: "bun", hairColor: 0x20243a, eyeStyle: "sleepy" }],
+  ブリー隊長: ["hum", { build: "bulky", skin: 0xe8b890, torsoColor: 0x4a6a3a, sleeve: 0x4a6a3a, sash: 0xf2d15c, hat: "tokin", hair: "topknot", hairColor: 0x3a2a1a, eyeStyle: "angry", mouth: "open" }],
+  マスクドニャーン: ["hum", { build: "slim", skin: 0xd9483b, headSize: 0.4, ears: "cat", mask: 0x2a6fd9, torsoColor: 0xf4f4f4, sash: 0xf2d15c, tail: "thin", tailN: 2, eyeStyle: "angry" }],
+  ブシニャン: ["hum", { build: "child", skin: 0xd9483b, headSize: 0.42, ears: "cat", hat: "crown", torsoColor: 0x4a4a5a, sleeve: 0x4a4a5a, sash: 0x2a2a34, weapon: "sword", tail: "thin", tailN: 2, eyeStyle: "round" }],
+  肉くいおとこ: ["hum", { build: "fat", skin: 0xd9a070, pelt: 0x8a4a2a, hair: "wild", hairColor: 0x2a1a14, weapon: "club", eyeStyle: "round", mouth: "open" }],
+  オオクワノ神: ["quad", { skin: 0x2a1a14, belly: 0x4a3020, horns: "antler", long: !0, shortLegs: !0, snout: 0, ears: "none", eyeStyle: "glow", hat: "crown", size: 1.25 }],
+  赤鬼: ["hum", { build: "bulky", skin: 0xd9483b, horns: 2, hair: "wild", hairColor: 0x1c1820, weapon: "club", pelt: 0xf2d15c, eyeStyle: "angry", mouth: "fang" }],
+  さきがけの助: ["hum", { build: "slim", skin: 0xf1d9c4, hat: "kasa", hatColor: 0x8a6a3a, hair: "topknot", hairColor: 0x1c1820, torsoColor: 0xc8443a, sleeve: 0xc8443a, weapon: "spear", eyeStyle: "angry" }],
+  ミツマタノヅチ: ["serpent", { skin: 0x6a8a3a, segments: 12, eyeStyle: "slit", mane: 0xd9b24a, stripe: 0.18 }],
+  ばか頭巾: ["ghost", { skin: 0x5a3a6a, headColor: 0xe07a2a, hat: "hood", hatColor: 0xe07a2a, eyeStyle: "glow", mouth: "fang", alpha: 0.95 }],
+  ひとまか仙人: ["hum", { build: "slim", skin: 0xe8d6bc, hair: "long", hairColor: 0xf2f2f2, robe: !0, cloth: 0x5a7ec8, sash: 0xe8c04a, weapon: "staff", eyeStyle: "sleepy", hat: "tokin", headSize: 0.36 }],
+  草くいおとこ: ["hum", { build: "fat", skin: 0x9ac870, pelt: 0x3f8f5a, hat: "leaf", hair: "wild", hairColor: 0x2f5f3a, eyeStyle: "sleepy", mouth: "open" }],
+  ガマンモス: ["quad", { skin: 0x8a5a3a, trunk: !0, ears: "floppy", horns: "ox", mane: 0x5a3a2a, eyeStyle: "angry", size: 1.5, snout: 0.3 }],
+  大ガマ: ["critter", { kind: "frog", skin: 0x7a6a3a, size: 1.3 }],
+  から傘お化け: ["object", { thing: "umbrella", skin: 0x7a5bc4 }],
+  黒鬼: ["hum", { build: "bulky", skin: 0x2a2a34, horns: 2, hair: "wild", hairColor: 0xd8d8d8, weapon: "club", pelt: 0xd9483b, eyeStyle: "glow", mouth: "fang" }],
+  ドケチング: ["hum", { build: "fat", skin: 0xe8c04a, hat: "crown", robe: !0, cloth: 0x6a3a8a, sash: 0xd9b24a, eyeStyle: "angry", mouth: "smile" }],
+  しどろもどろ: ["blob", { skin: 0x7ab8e0, eyeStyle: "sleepy", mouth: "open", tall: 1.1 }],
+  びきゃく: ["blob", { skin: 0xf2e6d0, eyeStyle: "round", mouth: "smile", size: 0.8, wide: 1.1 }],
+  万尾獅子: ["quad", { skin: 0xe8b84a, mane: 0xd9483b, tail: "bushy", tails: 5, ears: "round", eyeStyle: "angry", mouth: "fang", size: 1.2 }],
+  むりだ城: ["stone", { shape: "wall", skin: 0x7a746a, feet: !0, eyeStyle: "angry" }],
+  あせっか鬼: ["hum", { build: "child", skin: 0xe05a4a, horns: 1, blush: !0, mouth: "open", eyeStyle: "round", hair: "wild", hairColor: 0x1c1820 }],
+  シロカベ: ["stone", { shape: "wall", skin: 0xefece2, feet: !0, eyeStyle: "sleepy" }],
+};
+
 function honkeAutoModel(def) {
+  if (HONKE_NAME_MODEL[def.name]) return HONKE_NAME_MODEL[def.name];
   const h = hash32("hm:" + def.name), c = honkeColor(def.name, def.tribe, h);
   const nm = def.name.replace(/・怪$/, "");
   for (const [re, f] of HONKE_SHAPES) if (re.test(nm)) {

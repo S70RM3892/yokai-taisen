@@ -40,7 +40,7 @@ const used = await page.evaluate(() => [...document.querySelectorAll(".log p")].
 const hpAfter = await page.evaluate(() => { const p = __yokaiDebug.ga().state.players[0]; return p.units[p.wheel[0]].hp; });
 console.log(`HP ${hpBefore} -> ${hpAfter}`);
 if (!used) fail("item was not used"); else console.log("item:", used);
-await page.evaluate(old => { __yokaiDebug.ga().cpu.params = old; }, cpuParams);
+// 相手の CPU はこのテストの最後まで止めたまま（途中で決着がつくと、パワーチャージやおはらいを確かめられない）
 
 // 2) パワーチャージ 4 種
 for (const game of ["mawase", "nazore", "ute", "awasero"]) {
@@ -49,6 +49,8 @@ for (const game of ["mawase", "nazore", "ute", "awasero"]) {
     if (p.stance) __yokaiDebug.send({ t: "ultCancel" });
     const u = p.units[p.wheel[1]];
     u.hp = Math.max(u.hp, 1), u.sg = 1000, u.ultLockout = 0, u.curse = null; // とりつかれていると奥義を撃てない
+    // 確かめているあいだに相手のとりつきで構えが解けないよう、相手は全員「行動できない」にしておく
+    for (const f of g.state.players[1].units) f.maxHp = f.hp = 99999, f.curse = { kind: "stun", tier: 0, remaining: 1e9, elapsed: 0 };
   }, game);
   await page.waitForTimeout(120);
   await page.evaluate(() => __yokaiDebug.send({ t: "ultStart", allySlot: 1, grand: false }));
@@ -58,6 +60,7 @@ for (const game of ["mawase", "nazore", "ute", "awasero"]) {
   const st = await page.$(".mg-stage");
   if (!st) { fail(`no charge stage for ${game}`); continue; }
   const box = await st.boundingBox();
+  if (!box) { fail(`charge stage for ${game} vanished`); continue; }
   const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
   if (game === "mawase") {
     await page.mouse.move(cx + 80, cy); await page.mouse.down();
@@ -69,7 +72,8 @@ for (const game of ["mawase", "nazore", "ute", "awasero"]) {
     for (let lap = 0; lap < 3; lap++) for (let i = 0; i <= 10; i++) { const [x, y] = star[i % 10]; await page.mouse.move(box.x + x * box.width / 200, box.y + y * box.height / 200, { steps: 3 }); }
     await page.mouse.up();
   } else if (game === "ute") {
-    for (let i = 0; i < 40; i++) { const b = await page.$(".mg-ball:not(.hit)"); if (b) { try { await b.click({ timeout: 300 }); } catch {} } await page.waitForTimeout(60); }
+    // 玉は動きつづけるので、クリックの代わりに押した瞬間（pointerdown）を起こす
+    for (let i = 0; i < 40; i++) { await page.evaluate(() => { const b = document.querySelector(".mg-ball:not(.hit)"); b?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true })); }); await page.waitForTimeout(60); }
   } else {
     for (let i = 0; i < 40; i++) { await page.mouse.click(cx, cy); await page.waitForTimeout(90); }
   }

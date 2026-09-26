@@ -22,16 +22,16 @@ var FOOD_CATS = {
 // ---- 装備（本家 74 種 + このゲーム独自 9 種） ----
 // mods: 足し引きする能力値。special: 数値以外の効果。only: 装備できる妖怪の条件（本家の専用装備）。
 var EQUIP_ONLY = {
-  cat: { label: "ネコの妖怪専用", test: d => /猫|nekomata|kasha/.test(__famOf(d)) || d.id === "kasha" },
-  jiba: { label: "化け猫の一族専用（本家：ジバニャン専用）", test: d => __famOf(d) === "化け猫" || d.id === "nekomata" },
-  tengu: { label: "天狗の妖怪専用", test: d => /天狗|天魔|大魔縁/.test(__famOf(d)) || d.id === "tengu" },
-  kappa: { label: "カッパの妖怪専用", test: d => d.id === "kappa" || /河童|共潜き/.test(__famOf(d)) },
-  ninja: { label: "忍びの妖怪専用（本家：セミまる・カゲまる専用）", test: d => /疾風丸|隼人|鎌風/.test(__famOf(d)) || d.id === "kamaitachi" },
-  oni: { label: "鬼の妖怪専用（本家：ゴクドー・アニ鬼専用）", test: d => { const s = __famOf(d) + d.name; return /童子|鬼|羅刹|夜叉|温羅|悪路王|牛頭|馬頭|宿儺/.test(s) && !/鬼火|陰摩羅鬼|栄螺鬼|縊鬼|餓鬼|座敷童子/.test(s); } },
-  hayashi: { label: "囃子の妖怪専用（本家：どんちゃん専用）", test: d => /狸囃子|家鳴り/.test(__famOf(d)) },
-  umi: { label: "海の妖怪専用（本家：ワカメくん・コンブさん・メカブちゃん専用）", test: d => /人魚|磯女|濡れ女|海和尚|共潜き|蟹坊主|栄螺鬼/.test(__famOf(d)) },
-  tsukumo: { label: "器物の妖怪専用（本家：ロボ妖怪専用）", test: d => /瀬戸大将|木魚達磨|琵琶牧々|琴古主|三味長老|文車妖妃|払子守|古籠火|化け草履|鳴釜|化け提灯|埴輪武者|鎧武者|面霊気/.test(__famOf(d)) || d.id === "karakasa" || d.id === "ittan" },
-  muscle: { label: "力自慢の妖怪専用（本家：ブリー隊長専用）", test: d => /大入道|山男|見上げ入道/.test(__famOf(d)) },
+  cat: { label: "ネコの妖怪専用（ジバニャン・ロボニャン・ブシニャンなど）", test: d => /ニャン|ニャーン/.test(d.name) },
+  jiba: { label: "ジバニャン専用", test: d => /^ジバニャン/.test(d.name) },
+  tengu: { label: "天狗の妖怪専用（天狗・ほむら天狗）", test: d => /天狗/.test(d.name) },
+  kappa: { label: "カッパの妖怪専用（河童・河童・怪）", test: d => /^河童/.test(d.name) },
+  ninja: { label: "セミまる・カゲまる専用", test: d => /^(セミまる|カゲまる)$/.test(d.name) },
+  oni: { label: "ゴクドー・アニ鬼専用", test: d => /^(ゴクドー|アニ鬼)$/.test(d.name) },
+  hayashi: { label: "どんちゃん専用", test: d => d.name === "どんちゃん" },
+  umi: { label: "ワカメくん・コンブさん・メカブちゃん専用", test: d => /^(ワカメくん|ワカメ☆スター|コンブさん|メカブちゃん)$/.test(d.name) },
+  tsukumo: { label: "ロボ妖怪専用（ロボニャン・ロボガッパなど）", test: d => /^ロボ|^ゴルニャン/.test(d.name) },
+  muscle: { label: "ブリー隊長専用", test: d => d.name === "ブリー隊長" },
   rankD: { label: "D ランク以下の妖怪専用", test: d => d.rank === "D" || d.rank === "E" },
   rankB: { label: "B ランク以下の妖怪専用", test: d => d.rank !== "S" && d.rank !== "A" },
 };
@@ -187,10 +187,6 @@ var BATTLE_ITEMS = [
 var BAG_SIZE = 6;            // 持ち物は 6 つまで（同じものを重ねてもよい）
 var ITEM_COOLDOWN = 100;     // アイテムを使ったあと、次に使えるまで 5 秒
 var FAVORITE_MULT = 1250;    // 好物は 1.25 倍
-
-function __famOf(d) {
-  return typeof zi !== "undefined" && zi[d.id] ? zi[d.id].family : d.id;
-}
 
 function battleItem(id) {
   return BATTLE_ITEMS.find(x => x.id === id) ?? null;

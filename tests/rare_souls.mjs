@@ -56,12 +56,15 @@ check(total >= 20, `ちょうはつ魂: only ${total} attacks reached the taunte
 // 3. おんみつ魂：ねらう指定がなければ、ほかの前衛がいる間はこうげきされない
 for (let seed = 1; seed <= 20; seed++) {
   const st = battle(seed, "rsoul_onmitsu");
-  let hit = 0;
+  let hit = 0, tauntBefore = false;
   run(st, 1500, (s, ev) => {
     // ほかの前衛に、ねらわれる妖怪（おんみつでない・ちょうはつでない）がいる間だけ数える
     const p1 = s.players[0];
     const others = [1, 2].map(i => p1.units[p1.wheel[i]]).some(u => u.hp > 0 && !u.fx.hidden);
-    if (p1.units.some(u => u.hp > 0 && u.blessing?.kind === "taunt")) return;
+    // よいとりつき「ちょうはつ」は、その tick の行動の前についていたら先に攻撃を集める（行動のあと消えることがある）
+    const taunt = tauntBefore || p1.units.some(u => u.hp > 0 && u.blessing?.kind === "taunt");
+    tauntBefore = p1.units.some(u => u.hp > 0 && u.blessing?.kind === "taunt");
+    if (taunt) return;
     for (const e of ev) if (e.t === "damage" && e.source === "attack" && e.dst === 0 && e.src >= 6 && others && s.players[0].wheel.indexOf(0) < 3) hit++;
   });
   check(hit === 0, `おんみつ魂 seed ${seed}: attacked ${hit} times`);

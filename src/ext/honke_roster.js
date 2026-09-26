@@ -142,24 +142,12 @@ var HONKE_BY_ID = new Map();
   for (const e of HONKE_ROSTER) {
     if (ct.some(d => d.id === e.id)) continue;
     const def = { ...e };
-    if (e.hp + e.atk + e.spa + e.def + e.spd >= 930) def.group = "ogre"; // 青鬼・上級怪魔は「大物」（1 体まで）
+    if (/^(赤鬼|青鬼|黒鬼)$/.test(e.name)) def.group = "oni"; // 本家の公式ルール：赤鬼・青鬼・黒鬼はどれか 1 体まで
     ct.push(def);
     HONKE_BY_ID.set(def.id, def);
     const r = role(e), ms = MOTION[r];
     zi[def.id] = { family: e.name, form: e.rank === "S" || e.rank === "A" ? 2 : e.rank === "B" || e.rank === "C" ? 1 : 0, role: r,
       motion: ms[e.seed % ms.length], line: e.ultName + "！", pitch: 180 + e.seed % 360, seed: e.seed };
-  }
-  // もういる妖怪（流行りの型で名前だけ本家にした 22 体と、もとから同じ名前の 4 体）は、中身をまるごと本家にする。
-  // id・3D モデル・動きの癖（zi）はこのゲームのものを残す（保存した編成がそのまま読めるように）
-  for (const e of HONKE_REPLACE) {
-    const d = ct.find(x => x.name === e.name);
-    if (!d) continue;
-    const keep = { id: d.id, honkeModel: d.honkeModel };
-    for (const k of Object.keys(d)) delete d[k];
-    Object.assign(d, e, keep);
-    if (!d.honkeModel) delete d.honkeModel;
-    if (e.hp + e.atk + e.spa + e.def + e.spd >= 930) d.group = "ogre"; // 赤鬼・黒鬼も「大物」（本家の公式ルール：赤鬼・青鬼・黒鬼は 1 体まで）
-    HONKE_BY_ID.set(d.id, d);
   }
   for (const s of HONKE_RARE_SOULS) {
     Ni.push({ id: "rsoul_" + RARE_SOUL_ID[s.name], name: s.name, cat: "レア魂", mods: {}, special: null, only: null, honke: true,
