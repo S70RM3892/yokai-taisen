@@ -76,11 +76,14 @@ function renderDetail(host, slot, onChange) {
   showPreview(view, d);
 
   host.insertAdjacentHTML("beforeend", statTable(d, st));
-  host.insertAdjacentHTML("beforeend", `<div class="dt-trait"><div class="dt-h">特性「${tr.name}」</div><div>${tr.desc}</div></div>
+  const hk = d.trait === "honke";
+  const skillLine = d.skillMode === "heal" ? `回復・威力 ${d.skillPower}（味方を回復）` : d.skillMode === "drain" ? `吸収・威力 ${d.skillPower}（与えたダメージの半分を回復）` : `${d.skillElement ? Gl[d.skillElement] : "無"}・威力 ${d.skillPower}`;
+  const inspLine = hk ? (d.inspKind === "bless" ? `${Ad[d.blessing]}${Bn[d.inspTier] ?? ""}（味方）` : `${Wl[d.curse]}${Bn[d.inspTier] ?? ""}（相手）`) : `${Wl[d.curse]}（相手）／${Ad[d.blessing]}（味方）`;
+  host.insertAdjacentHTML("beforeend", `<div class="dt-trait"><div class="dt-h">${hk ? "スキル" : "特性"}「${tr.name}」</div><div>${tr.desc}</div>${hk && tr.detail && !tr.fx.noBattle ? `<div class="dt-note">このゲームでは：${tr.detail}</div>` : ""}</div>
     <div class="dt-moves">
-      <div><span class="dt-k">こうげき</span> 威力 ${d.attackPower}</div>
-      <div><span class="dt-k">ようじゅつ</span> ${Gl[d.skillElement]}・威力 ${d.skillPower}</div>
-      <div><span class="dt-k">とりつく</span> ${Wl[d.curse]}（相手）／${Ad[d.blessing]}（味方）</div>
+      <div><span class="dt-k">こうげき</span> ${hk ? d.attackName + "・" : ""}威力 ${d.attackPower}${d.attackHits > 1 ? `（${d.attackHits} 回に分けて当たる）` : ""}</div>
+      <div><span class="dt-k">ようじゅつ</span> ${hk ? d.skillName + "・" : ""}${skillLine}</div>
+      <div><span class="dt-k">とりつく</span> ${hk ? d.inspName + "・" : ""}${inspLine}</div>
       <div><span class="dt-k">ひっさつわざ</span> ${d.ultName}${ultDesc(d.ult)}</div>
       <div><span class="dt-k">弱点・耐性</span> ${d.weak ? Gl[d.weak] : "なし"}／${d.resist ? Gl[d.resist] : "なし"}</div>
     </div>`);
@@ -117,6 +120,23 @@ function natureDesc(id) {
 }
 
 function ultDesc(u) {
+  const x = [];
+  if (u.power && ["single", "all", "heal"].includes(u.kind)) x.push(`威力 ${u.power}`);
+  if (u.cancel) x.push("当たると相手の奥義の構えを解く");
+  if (u.curse) x.push(`${Wl[u.curse]}にすることがある`);
+  if (u.gamble) x.push("会心が出やすいが外れやすい");
+  else if (u.crit) x.push("会心が出やすい");
+  if (u.recoil) x.push("反動でダメージを受ける");
+  if (u.randPow) x.push("威力が毎回変わる");
+  if (u.drain) x.push("与えたダメージの半分を回復");
+  if (u.blast) x.push("味方の前衛にも当たる");
+  if (u.selfKo) x.push("使うと自分は気絶");
+  if (u.full) x.push("HP を全回復");
+  if (u.bless) x.push(`${Ad[u.bless]}もつける`);
+  if (u.purify) x.push("おはらいもする");
+  return ultKindDesc(u) + (x.length ? `・${x.join("・")}` : "");
+}
+function ultKindDesc(u) {
   switch (u.kind) {
     case "single": return `（相手 1 体に${u.element ? Gl[u.element] + "の" : ""}大ダメージ）`;
     case "break": return "（ガードを破る大ダメージ）";
@@ -124,6 +144,10 @@ function ultDesc(u) {
     case "heal": return "（味方の前衛全員を回復）";
     case "curseAll": return `（相手の前衛全員を${Wl[u.curse]}に）`;
     case "blessAll": return `（味方の前衛全員に${Ad[u.blessing]}）`;
+    case "selfBless": return "（まもりを上げて、相手の攻撃を自分に集める）";
+    case "dispel": return "（相手のよいとりつきを消す）";
+    case "purifyAll": return "（味方全員をおはらい）";
+    case "revive": return "（気絶した味方を復活）";
   }
   return "";
 }
@@ -273,9 +297,10 @@ function openNaturePicker(d, lo, onPick) {
 
 // 持ち物（装備・魂）：この妖怪に付けたときの能力の変化で並べられる
 var EQUIP_TABS = [
-  ["all", "装備すべて", e => e && e.cat !== "魂"],
+  ["all", "装備すべて", e => e && e.cat !== "魂" && e.cat !== "レア魂"],
   ...["うでわ", "ゆびわ", "おまもり", "バッジ", "専用", "呪言", "そのほか", "勲章"].map(c => [c, c, e => e?.cat === c]),
   ["soul", "魂", e => e?.cat === "魂"],
+  ["rare", "レア魂", e => e?.cat === "レア魂"],
   ["none", "なし", e => e === null],
 ];
 
@@ -291,14 +316,14 @@ function openEquipPicker(d, cur, onPick) {
     }
     return deltas.get(e.id);
   };
-  const statSort = k => e => e && e.cat !== "魂" ? deltaOf(e)[k] ?? 0 : null;
+  const statSort = k => e => e ? deltaOf(e)[k] ?? 0 : null;
   const special = e => e ? equipDesc({ ...e, mods: {} }) : "";
   openSortPicker({
     key: "equip", title: `${d.name} の持ち物`, items: [null, ...equipChoices(d), ...soulChoices()], tabs: EQUIP_TABS,
     sorts: [
       ["order", "本家の順", () => null],
       ...STAT_ROWS.map(([k, , label]) => [k, label + "が上がる", statSort(k)]),
-      ["sum", "能力の合計", e => e && e.cat !== "魂" ? Object.values(deltaOf(e)).reduce((a, b) => a + b, 0) : null],
+      ["sum", "能力の合計", e => e ? Object.values(deltaOf(e)).reduce((a, b) => a + b, 0) : null],
       ["name", "名前", e => e?.name ?? "", !0],
     ],
     search: e => e ? e.name + equipDesc(e) : "なし",

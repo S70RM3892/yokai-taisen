@@ -13,7 +13,7 @@ var ULT_STYLE_JA = { meteor: "跳び叩きつけ", rush: "連撃", drill: "回�
 
 function ultStyleOf(def) {
   const u = def.ult ?? {}, m = p0(def.id), h = hash32("ult:" + def.id);
-  if (u.kind === "heal" || u.kind === "blessAll") return "bloom";
+  if (["heal", "blessAll", "selfBless", "purifyAll", "revive", "dispel"].includes(u.kind)) return "bloom";
   if (u.kind === "curseAll") return h % 3 ? "phantom" : "tornado";
   if (m === "stretch") return "stretch";
   if (u.kind === "all") {

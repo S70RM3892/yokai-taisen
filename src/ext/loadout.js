@@ -33,7 +33,7 @@ function equipById(id) {
     const d = ct.find(x => x.id === id.slice(SOUL_PREFIX.length));
     if (!d) return null;
     const t = traitOf(d);
-    return { id, name: t.soulName, cat: "魂", mods: {}, special: null, only: null, honke: true, soulOf: d.id, fx: t.soulFx, desc: t.soulDesc };
+    return { id, name: t.soulName, cat: "魂", mods: t.soulMods ?? {}, special: null, only: null, honke: true, soulOf: d.id, fx: t.soulFx, desc: t.soulDesc };
   }
   return Ni.find(x => x.id === id) ?? null;
 }
@@ -47,11 +47,11 @@ function equipAllowed(def, id) {
 
 function equipDesc(e) {
   if (!e) return "";
-  if (e.cat === "魂") return e.desc;
+  if (e.cat === "魂" || e.cat === "レア魂") return e.desc + (e.mods && Object.keys(e.mods).length ? "" : "");
   const parts = Object.entries(e.mods).map(([k, v]) => `${STAT_JA[k]}${v > 0 ? "+" : ""}${v}`);
   const s = e.special ?? {};
   if (s.sgRate) parts.push(`妖気のたまり方+${s.sgRate / 10}%`);
-  if (s.curseHalf) parts.push("悪いとりつきの時間が半分");
+  if (s.curseHalf) parts.push("おはらいされる速さ+50%");
   if (s.doll) parts.push("たおれるダメージを 1 回だけ HP1 でこらえる");
   if (s.noLoaf) parts.push("サボらない");
   if (s.waterUp) parts.push("水の技の威力アップ・水の技に強くなる");
@@ -129,7 +129,7 @@ function equipChoices(def) {
   return list;
 }
 function soulChoices() {
-  return ct.map(d => equipById(SOUL_PREFIX + d.id));
+  return ct.filter(d => !(d.trait === "honke" && !d.soulText)).map(d => equipById(SOUL_PREFIX + d.id));
 }
 
 // CPU のための持ち物（回復多め、漢方 1 つ、たまに妖気・おふだ）
@@ -149,7 +149,7 @@ function randomBag(rng) {
 function randomEquip(rng, def) {
   const r = gt(rng, 10);
   if (r === 0) return null;
-  if (r <= 2) return SOUL_PREFIX + ct[gt(rng, ct.length)].id;
+  if (r <= 2) { const s = soulChoices(); return s[gt(rng, s.length)].id; }
   const list = equipChoices(def).filter(e => !e.special?.allMult && !e.special?.noBattleEffect);
   return list[gt(rng, list.length)].id;
 }

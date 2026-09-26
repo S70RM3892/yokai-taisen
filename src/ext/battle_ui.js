@@ -411,6 +411,14 @@ function debugHook() {
       if (ev.dst === -2) ev = { ...ev, dst: uidOf(0, 0), src: uidOf(1, 0) };
       Od(Ga, ev);
     },
+    // エンジンから出た出来事の並びとして画面に流す（遅らせて見せる・HP を止める も含めて）
+    events(list) { playEvents(Ga, list); },
+    tribe: i => ct[i].tribe,
+    // 陣の確認用：同じ族（猛）の 3 体と、ばらばらの族の 3 体
+    twoTribes() {
+      const idx = t => ct.findIndex(d => d.tribe === t);
+      return [ct.map((d, i) => [d, i]).filter(([d]) => d.tribe === "takeru").slice(0, 3).map(x => x[1]), ["ayashi", "tsuwamono", "kage"].map(idx)];
+    },
     // 自分の側を CPU に操作させる（対人戦の通しテスト用）
     autoplay(params = or[3].params) {
       let cpu = null, g = null;

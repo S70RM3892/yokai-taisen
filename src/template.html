@@ -395,6 +395,24 @@ body { margin: 0; }
 @keyframes ci-art-r { 0% { transform: translate(140%, -50%) scaleX(-1); } 18% { transform: translate(0, -50%) scaleX(-1); } 80% { transform: translate(-12%, -50%) scaleX(-1); opacity: 1; } 100% { transform: translate(-40%, -50%) scaleX(-1); opacity: 0; } }
 @keyframes ci-txt { 0%, 14% { opacity: 0; letter-spacing: .6em; } 28%, 82% { opacity: 1; letter-spacing: 0; } 100% { opacity: 0; } }
 
+/* 陣のカットイン（ホイールを回して陣ができたとき） */
+.jincut { position: absolute; left: 0; right: 0; top: 18%; height: 30%; pointer-events: none; z-index: 5; overflow: hidden; }
+.jincut .jc-band { position: absolute; inset: 0; display: flex; align-items: center; gap: 10px; padding: 0 5%; background: linear-gradient(90deg, #05060cdd, color-mix(in srgb, var(--jc) 70%, #05060c) 40%, #05060cdd); border-top: 2px solid var(--jc); border-bottom: 2px solid var(--jc); box-shadow: 0 0 24px var(--jc); animation: jc-in 1.4s cubic-bezier(.2,.9,.2,1) forwards; transform-origin: left center; }
+.jincut.foe .jc-band { flex-direction: row-reverse; transform-origin: right center; }
+.jincut .jc-band::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(-60deg, #fff0 0 26px, #ffffff14 26px 30px); animation: ci-lines .5s linear infinite; }
+.jincut .jc-mark { position: relative; flex: none; width: min(22vw, 96px); aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; border: 3px solid #fff; background: radial-gradient(circle, var(--jc), color-mix(in srgb, var(--jc) 40%, #000)); font-family: var(--display); font-size: min(12vw, 54px); color: #fff; text-shadow: 0 3px 0 #000; box-shadow: 0 0 0 4px var(--jc), 0 0 30px var(--jc); animation: jc-mark 1.4s ease-out forwards; }
+.jincut .jc-arts { position: relative; display: flex; }
+.jincut .jc-art { width: min(15vw, 70px); aspect-ratio: 1; margin-left: -12px; filter: drop-shadow(0 4px 0 #0008); animation: jc-art 1.4s cubic-bezier(.2,1.4,.3,1) both; }
+.jincut .jc-art:nth-child(2) { animation-delay: .06s; } .jincut .jc-art:nth-child(3) { animation-delay: .12s; }
+.jincut .jc-txt { position: relative; display: grid; gap: 1px; min-width: 0; }
+.jincut.foe .jc-txt { text-align: right; }
+.jincut .jc-kind { font-weight: 700; font-size: 12px; letter-spacing: .3em; color: #fffc; }
+.jincut .jc-name { font-family: var(--display); font-size: clamp(22px, 7vw, 42px); color: #fff; line-height: 1.05; text-shadow: 0 3px 0 #000, 0 0 16px var(--jc); }
+.jincut .jc-fx { font-weight: 700; font-size: clamp(12px, 3.4vw, 16px); color: #fff6c8; text-shadow: 0 1px 0 #000; }
+@keyframes jc-in { 0% { transform: scaleX(0); opacity: 1; } 14%, 80% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+@keyframes jc-mark { 0% { transform: scale(2.2) rotate(-40deg); opacity: 0; } 18% { transform: scale(1) rotate(0); opacity: 1; } 80% { transform: scale(1); opacity: 1; } 100% { transform: scale(.9); opacity: 0; } }
+@keyframes jc-art { 0% { transform: translateY(40%) scale(.4); opacity: 0; } 25% { transform: none; opacity: 1; } 100% { transform: none; opacity: 1; } }
+
 /* 開幕・サドンデス・判定の大きな文字 */
 .banner { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 6; pointer-events: none; font-family: var(--display); font-size: clamp(30px, 9vw, 64px); color: #fff; white-space: nowrap; text-shadow: 0 4px 0 #000, 0 0 24px var(--bn, var(--lantern)); animation: bn-pop var(--bd, 1s) cubic-bezier(.2,1.4,.3,1) forwards; }
 .banner small { display: block; text-align: center; font-family: var(--body); font-weight: 700; font-size: .3em; letter-spacing: .3em; color: #fffd; }
@@ -592,6 +610,11 @@ body { margin: 0; }
 .pvp-codebox { display: grid; gap: 4px; }
 .pvp-status { min-height: 1.4em; font-size: 13px; text-align: center; color: var(--muted); }
 .pvp-status.ok { color: var(--good); } .pvp-status.bad { color: var(--foe); }
+.pvp-status.wait { color: var(--lantern); animation: pvp-pulse 1.4s ease-in-out infinite; }
+@keyframes pvp-pulse { 50% { opacity: .55; } }
+.pvp-go { font-size: 17px; padding: 12px; }
+.pvp-go.busy { background: var(--panel-2); color: var(--lantern); border-color: var(--lantern); }
+.pvp-roomrow { align-items: center; flex-wrap: wrap; }
 .bottom3d .corner.off { filter: grayscale(1) brightness(.6); }
 .bottom3d .corner.off .clabel { font-size: 15px; }
 
