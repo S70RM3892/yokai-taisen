@@ -279,6 +279,8 @@ body { margin: 0; }
   .wheel3d .rotor[data-drag], .wheel3d .rotor.snap { transition: none; }
   .wheel3d.deny .cool-ring, .wheel3d.deny { animation: wh-deny .35s; }
   @keyframes wh-deny { 30% { filter: drop-shadow(0 0 10px #e0655a) brightness(1.2); } }
+  .wheel3d.queued .rotor { animation: wh-queued .6s ease-in-out infinite alternate; }
+  @keyframes wh-queued { to { filter: drop-shadow(0 0 8px #ffd66b) brightness(1.12); } }
   .wedge { cursor: pointer; }
   .wedge .wbase { fill: url(#wback); stroke: #0b0e1a; stroke-width: 4; }
   .wedge.front .wbase { fill: url(#wfront); }

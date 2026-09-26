@@ -219,6 +219,37 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`forced rotate waits for the KO effect (${checked} checked)`);
 }
 
+// ホイールの回転は行動と同じ判定：行動のモーション中（tick < busyUntil）に回しても反映せず、
+// モーションが終わって次の行動が選ばれる前に回る
+{
+  let queued = 0, now = 0;
+  for (let g = 0; g < 20 && queued < 5; g++) {
+    const seed = (g * 104729 + 11) >>> 0;
+    const st = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    const cpu = E.newCpu(1, seed ^ 9, levels[0]);
+    let sent = false;
+    while (!st.outcome && st.tick < 3000) {
+      const p = st.players[0], inputs = [];
+      for (const input of E.cpuInputs(cpu, st)) inputs.push({ player: 1, input });
+      if (!sent && st.tick > 40 && p.rotateCooldown === 0 && !p.pendingRotate) inputs.push({ player: 0, input: { t: "rotate", dir: "cw", steps: 1 } }), sent = true;
+      const busy = st.tick < st.busyUntil, before = p.wheel.join(), ev = [];
+      E.step(st, inputs, ev);
+      const rot = ev.find(e => e.t === "rotate" && e.player === 0);
+      if (sent && busy && inputs.some(x => x.player === 0)) {
+        if (rot || st.players[0].wheel.join() !== before) throw new Error("rotated during a motion");
+        if (!st.players[0].pendingRotate) throw new Error("rotation during a motion was not queued");
+        queued++;
+      } else if (inputs.some(x => x.player === 0)) now++;
+      if (rot && st.players[0].pendingRotate) throw new Error("pending rotation not cleared");
+      if (st.players[0].pendingRotate && st.tick > st.busyUntil + 1) throw new Error("queued rotation not applied after the motion");
+      if (rot) sent = false;
+      if (ev.some(e => e.t === "rotateDropped" && e.player === 0)) sent = false;
+    }
+  }
+  if (!queued) throw new Error("no rotation was queued");
+  console.log(`rotate during a motion: queued ${queued}, applied at once ${now}`);
+}
+
 // 妖怪は本家の妖怪だけ（id は本家の No）。能力値 Lv60・ランク・スキルが本家どおり。赤鬼・青鬼・黒鬼はあわせて 1 体まで
 {
   const by = n => E.units.find(u => u.name === n);

@@ -422,6 +422,7 @@
         wheel: [0, 1, 2, 3, 4, 5],
         units: l,
         rotateCooldown: 0,
+        pendingRotate: null,
         target: null,
         targetCooldown: 0,
         purify: null,
@@ -521,7 +522,7 @@
     let n = [0, 1, 2].map(c => a.units[a.wheel[c]]),
       s = [3, 4, 5].map(c => a.units[a.wheel[c]]),
       l = n.some(li) && s.some(Se);
-    if (!a.stance && a.rotateCooldown === 0 && l && !((FIELD ?? EMPTY_FIELD).wheelLock[e.player] && !a.units.some(x => Se(x) && x.fx.oilFree))) {
+    if (!a.stance && a.rotateCooldown === 0 && !a.pendingRotate && l && !((FIELD ?? EMPTY_FIELD).wheelLock[e.player] && !a.units.some(x => Se(x) && x.fx.oilFree))) {
       let c = a.units[a.wheel[5]],
         h = a.units[a.wheel[3]],
         f = n[2],
@@ -633,6 +634,7 @@
         })
       }
       for (let r of [0, 1]) Xh(e, r, a);
+      for (let r of [0, 1]) rotateFlush(e, r, a);
       Zh(e, a);
       for (let r of [0, 1]) e0(e, r, a);
       for (let r of [0, 1]) t0(e, r, a);
@@ -937,7 +939,18 @@
         if (s || i.rotateCooldown > 0 || a.dir !== "cw" && a.dir !== "ccw") return !1;
         if ((FIELD ?? EMPTY_FIELD).wheelLock[t] && !i.units.some(x => Se(x) && x.fx.oilFree)) return !1; // まわSEN：前衛にいる間 相手はホイールを回せない
         let l = a.steps ?? 1;
-        return gr(l, 1, 5) ? (Wh(e, t, a.dir, l, r), !0) : !1
+        if (!gr(l, 1, 5) || i.pendingRotate) return !1;
+        // 回転も妖怪の行動と同じ判定：だれかの行動（こうげき・術・奥義など）のモーション中は反映しない。
+        // 入力は受けておき、モーションが終わって次の行動が選ばれる前に回す（rotateFlush）
+        return e.tick < e.busyUntil ? (i.pendingRotate = {
+          dir: a.dir,
+          steps: l
+        }, r.push({
+          t: "rotateQueued",
+          player: t,
+          dir: a.dir,
+          steps: l
+        }), !0) : (Wh(e, t, a.dir, l, r), !0)
       }
       case "target":
         return !gr(a.enemyUnit, 0, 5) || i.targetCooldown > 0 || !Se(n.units[a.enemyUnit]) || i.target === a.enemyUnit ? !1 : (i.target = a.enemyUnit, i.targetCooldown = Gc, r.push({
@@ -1027,6 +1040,22 @@
       default:
         return !1
     }
+  }
+
+  // モーション中に受けた回転を、モーションが終わったところで反映する（行動の順番を決める前）
+  function rotateFlush(e, t, a) {
+    let n = e.players[t],
+      q = n.pendingRotate;
+    if (!q || e.tick < e.busyUntil) return;
+    n.pendingRotate = null;
+    if (n.poke || (FIELD ?? EMPTY_FIELD).wheelLock[t] && !n.units.some(x => Se(x) && x.fx.oilFree)) {
+      a.push({
+        t: "rotateDropped",
+        player: t
+      });
+      return
+    }
+    Wh(e, t, q.dir, q.steps, a)
   }
 
   function Wh(e, t, a, r, i) {
@@ -1469,7 +1498,7 @@
     // 倒れる演出が終わるまで待ってから回す
     if (e.tick < (r.koWait ?? 0)) return;
     let i = r.wheel;
-    r.wheel = [i[3], i[4], i[5], i[0], i[1], i[2]], a.push({
+    r.pendingRotate = null, r.wheel = [i[3], i[4], i[5], i[0], i[1], i[2]], a.push({
       t: "forcedRotate",
       player: t
     }), Pu(r, a), r.stance && Ii(e, t, a, "rotate"), r.purify && Vt(r, r.purify.unit) && (r.purify = null)
@@ -19559,7 +19588,7 @@ void main() {
   }
 
   function Un(e, t) {
-    e.state.players[0].rotateCooldown > 0 || e.state.players[0].poke || (e.preview = Math.max(-5, Math.min(5, e.preview + t)), e.previewTimer !== null && clearTimeout(e.previewTimer), e.previewTimer = window.setTimeout(() => wheelRelease(e, e.preview * Math.PI / 3), 220))
+    e.state.players[0].rotateCooldown > 0 || e.state.players[0].poke || e.state.players[0].pendingRotate || (e.preview = Math.max(-5, Math.min(5, e.preview + t)), e.previewTimer !== null && clearTimeout(e.previewTimer), e.previewTimer = window.setTimeout(() => wheelRelease(e, e.preview * Math.PI / 3), 220))
   }
 
   function Ld(e) {
@@ -19587,7 +19616,7 @@ void main() {
       };
     t.addEventListener("pointerdown", l => {
       let u = t.getBoundingClientRect();
-      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.mode !== "none", e.wheelResist = !noSpin && (e.state.players[0].rotateCooldown > 0 || !!e.state.players[0].poke), noSpin || (e.svg.rotor.setAttribute("data-drag", "1"), e.wheelHold = null), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
+      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.mode !== "none", e.wheelResist = !noSpin && (e.state.players[0].rotateCooldown > 0 || !!e.state.players[0].poke || !!e.state.players[0].pendingRotate), noSpin || (e.svg.rotor.setAttribute("data-drag", "1"), e.wheelHold = null), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
     }), t.addEventListener("pointermove", l => {
       if (!a || noSpin) return;
       let u = n(l),
@@ -19774,6 +19803,9 @@ void main() {
       }
       case "stanceCancel":
         t.reason === "curse" ? (ma(e, t.uid, "とりつかれて奥義が解けた", "info"), Rt(e, `${la(e,t.uid)} はとりつかれて奥義の構えが解けた`, a(t.uid))) : t.player === 0 && t.reason !== "input" && Rt(e, "構えがキャンセルされた", "a");
+        break;
+      case "rotateDropped":
+        t.player === 0 && wheelDenied(e);
         break;
       case "rotate":
       case "forcedRotate":
@@ -19968,12 +20000,12 @@ void main() {
     });
     let i = t.rotateCooldown / cu,
       n = 2 * Math.PI * 152;
-    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? "アイテムなし" : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
+    e.svg.cool.setAttribute("stroke-dasharray", `${n*i} ${n}`), e.svg.wheel.classList.toggle("queued", !!t.pendingRotate), e.svg.wheel.classList.toggle("zero", e.zero), e.refs.bottom.classList.toggle("zero", e.zero), e.refs.bUlt.querySelector(".clabel").textContent = e.zero ? "大奥義" : "奥義", e.refs.bTarget.querySelector(".clabel").textContent = e.zero ? "つつき" : "標的", e.refs.bPurify.querySelector(".clabel").textContent = "浄化", e.refs.bEmpty.querySelector(".clabel").textContent = e.state.noItems ? "アイテムなし" : t.itemCooldown > 0 ? `アイテム ${Ti(t.itemCooldown)}` : `アイテム ${t.bag.length}`, e.refs.bEmpty.classList.toggle("off", !!e.state.noItems), e.refs.bEmpty.classList.toggle("on", e.mode === "item" || e.mode === "itemTarget"), e.refs.bUlt.classList.toggle("on", e.mode === "ult"), e.refs.bPurify.classList.toggle("on", e.mode === "purify")
   }
 
   function Z2(e) {
     let t = e.state.players[0];
-    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をホイールで選ぶ` : e.mode === "item" ? "持ち物から選ぶ" : e.mode === "ult" ? e.zero ? "大奥義を撃つ前衛を選ぶ（自分と両隣の妖気が満タン）" : "奥義を撃つ前衛を選ぶ（妖気が満タン・とりつかれていない）" : e.mode === "purify" ? "浄化する後衛（呪付のかかったユニット）を選ぶ" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "ゼロ：光っている敵をタップでつつき" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "ホイールをなぞって回す・敵をタップで標的"
+    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をホイールで選ぶ` : e.mode === "item" ? "持ち物から選ぶ" : e.mode === "ult" ? e.zero ? "大奥義を撃つ前衛を選ぶ（自分と両隣の妖気が満タン）" : "奥義を撃つ前衛を選ぶ（妖気が満タン・とりつかれていない）" : e.mode === "purify" ? "浄化する後衛（呪付のかかったユニット）を選ぶ" : t.pendingRotate ? "行動のモーションが終わったら回る" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "ゼロ：光っている敵をタップでつつき" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "ホイールをなぞって回す・敵をタップで標的"
   }
 
   /*@@include ext/battle_ui.js@@*/

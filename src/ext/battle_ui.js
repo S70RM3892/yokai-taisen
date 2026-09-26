@@ -32,14 +32,16 @@ function wheelDrag(e, rad) {
   e.wheelDeg = deg;
 }
 
+// 回せなかった：もとの位置へ戻して赤く光らせる
+function wheelDenied(e) {
+  e.wheelResist = !1, e.preview = 0, e.wheelHold = null, wheelSet(e, 0);
+  const w = e.svg.wheel;
+  w.classList.remove("deny"), w.getBoundingClientRect(), w.classList.add("deny");
+  qe(160, 0.12, "square", 0.08);
+}
+
 function wheelRelease(e, rad) {
-  if (e.wheelResist) {
-    e.wheelResist = !1, e.preview = 0, wheelSet(e, 0);
-    const w = e.svg.wheel;
-    w.classList.remove("deny"), w.getBoundingClientRect(), w.classList.add("deny");
-    qe(160, 0.12, "square", 0.08);
-    return;
-  }
+  if (e.wheelResist) { wheelDenied(e); return; }
   const steps = Math.max(-5, Math.min(5, Math.round(rad / (Math.PI / 3))));
   if (!steps) { e.preview = 0; wheelSet(e, 0); return; }
   e.preview = steps;
@@ -49,8 +51,16 @@ function wheelRelease(e, rad) {
 }
 
 // 毎フレーム：なぞっていないときの角度
+// 行動のモーション中に回した分（pendingRotate）は、エンジンが反映するまでその角度で待つ
 function wheelIdle(e) {
   if (e.svg.rotor.hasAttribute("data-drag")) return;
+  const q = e.state.players[0].pendingRotate;
+  if (q) {
+    if (e.wheelHold) { e.wheelHold.until = performance.now() + 900; return; }
+    const d = (q.dir === "cw" ? 1 : -1) * q.steps * 60;
+    if ((e.wheelDeg ?? 0) !== d) wheelSet(e, d);
+    return;
+  }
   if (e.wheelHold) {
     if (performance.now() < e.wheelHold.until) return;
     e.wheelHold = null; // 回らなかった（はじかれた）ので戻す

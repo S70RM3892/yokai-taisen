@@ -15,7 +15,10 @@ import json, re, os, hashlib
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 D = os.path.join(ROOT, "tools", "honke_data")
 gp = json.load(open(os.path.join(D, "gamepedia_yw2.json"), encoding="utf-8"))
-hrs = {d["name"]: d for d in json.load(open(os.path.join(D, "hrs_yw2.json"), encoding="utf-8"))}
+# HRS で書き方がちがう名前 → 攻略大百科の名前（ここでつながないと、こうげきの威力・弱点が推定になる）
+HRS_ALIAS = {"とどろき獅子 (轟獅子)": "とどろき獅子", "ズルズルつる": "ズルズルづる", "TETSUYA (てつや)": "TETSUYA",
+             "KANTSUYA (かんてつ)": "KANTETSU", "かりパックリ": "かりパックン", "カブニャン": "ガブニャン", "青龍(青竜)": "青龍"}
+hrs = {HRS_ALIAS.get(d["name"], d["name"]): d for d in json.load(open(os.path.join(D, "hrs_yw2.json"), encoding="utf-8"))}
 souls = json.load(open(os.path.join(D, "game8_souls.json"), encoding="utf-8"))
 SOUL_ALIAS = {"U.S.O.": "USO", "大ヤモリ": "大やもり"}
 
@@ -265,4 +268,6 @@ js.append("var HONKE_SKILL_TEXT = " + json.dumps(skills_used, ensure_ascii=False
 js.append("// レア魂（合成）")
 js.append("var HONKE_RARE_SOULS = " + json.dumps(RARE, ensure_ascii=False, indent=0) + ";")
 open(os.path.join(ROOT, "src", "ext", "honke_roster_data.js"), "w", encoding="utf-8").write("\n".join(js) + "\n")
+missing = [d["name"] for d in gp if d["name"] not in hrs]
+print("HRS にない（威力・弱点は推定）:", " ".join(missing))
 print(f"{len(out)} yokai, {len(skills_used)} skills, {len(RARE)} rare souls")
