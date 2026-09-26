@@ -11567,7 +11567,7 @@
       l = a === "cw" ? r : 6 - r,
       u = new Array(6);
     for (let d = 0; d < 6; d++) u[(d + l) % 6] = s[d];
-    n.wheel = u, n.rotateCooldown = cu, i.push({
+    n.wheel = u, n.rotateCooldown = rotateCd(n, cu), i.push({
       t: "rotate",
       player: t,
       dir: a,
@@ -11699,7 +11699,7 @@
         let i = e.units[e.wheel[r]];
         tt(i, "benchHeal") && $a(a, t, healAmt(i, t.maxHp, i.fx.benchHeal), i.uid), tt(i, "benchSg") && gainSg(i, i.fx.benchSg), tt(i, "benchRegen") && $a(a, i, healAmt(i, i.maxHp, i.fx.benchRegen), i.uid)
       }
-      tt(t, "regen") && $a(a, t, healAmt(t, t.maxHp, t.fx.regen), t.uid)
+      tt(t, "regen") && $a(a, t, healAmt(t, t.maxHp, t.fx.regen), t.uid), tt(t, "relay") && relayTurn(e, t, a)
     }
   }
 
@@ -15391,7 +15391,7 @@
       }
     },
     Te = "#1a1420";
-
+  /*@@include ext/roster_plus.js@@*/
   buildTraits();
   /*@@include ext/engine_exports.js@@*/
   /*@@ENGINE_END@@*/
@@ -32663,6 +32663,7 @@ void main() {
   }
 
   /*@@include ext/builder_ui.js@@*/
+  /*@@include ext/presets.js@@*/
   function Sd() {
     Kr.replaceChildren();
     let e = q("h1", "", "妖怪大戦");
@@ -32683,7 +32684,7 @@ void main() {
     let c = q("div", "b-rules"),
       h = q("div", "b-sets"),
       bagBox = q("div", "b-rules b-bag");
-    l.append(B2(), c, bagBox, h);
+    l.append(B2(), c, presetBox(p => { t = 0, DETAIL_FOR = null, Me(); }), bagBox, h);
     let f = Ke("svg", {
       class: "b-wheel",
       viewBox: "-160 -160 320 320"
@@ -33374,7 +33375,7 @@ void main() {
   }
 
   function Un(e, t) {
-    e.state.players[0].rotateCooldown > 0 || e.state.players[0].poke || (e.preview = Math.max(-5, Math.min(5, e.preview + t)), e.previewTimer !== null && clearTimeout(e.previewTimer), e.previewTimer = window.setTimeout(() => Ld(e), 450))
+    e.state.players[0].rotateCooldown > 0 || e.state.players[0].poke || (e.preview = Math.max(-5, Math.min(5, e.preview + t)), e.previewTimer !== null && clearTimeout(e.previewTimer), e.previewTimer = window.setTimeout(() => wheelRelease(e, e.preview * Math.PI / 3), 220))
   }
 
   function Ld(e) {
@@ -33402,20 +33403,20 @@ void main() {
       };
     t.addEventListener("pointerdown", l => {
       let u = t.getBoundingClientRect();
-      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.state.players[0].rotateCooldown > 0 || e.mode !== "none", noSpin || e.svg.rotor.setAttribute("data-drag", "1"), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
+      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.mode !== "none", e.wheelResist = !noSpin && (e.state.players[0].rotateCooldown > 0 || !!e.state.players[0].poke), noSpin || (e.svg.rotor.setAttribute("data-drag", "1"), e.wheelHold = null), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
     }), t.addEventListener("pointermove", l => {
       if (!a || noSpin) return;
       let u = n(l),
         o = u - r;
-      o > Math.PI && (o -= 2 * Math.PI), o < -Math.PI && (o += 2 * Math.PI), i += o, r = u, e.preview = Math.max(-5, Math.min(5, Math.round(i / (Math.PI / 3)))), e.svg.rotor.setAttribute("transform", `rotate(${i*180/Math.PI})`)
+      o > Math.PI && (o -= 2 * Math.PI), o < -Math.PI && (o += 2 * Math.PI), i += o, r = u, wheelDrag(e, i)
     });
     let s = l => {
       if (!a) return;
       a = !1, e.svg.rotor.removeAttribute("data-drag");
-      if (Math.abs(i) > .2) Cd = performance.now(), Ld(e);
+      if (!noSpin && Math.abs(i) > .2) Cd = performance.now(), wheelRelease(e, i);
       else {
         // ほとんど動かしていなければ「タップ」：押した場所の枠を選ぶ
-        e.preview = 0, e.svg.rotor.removeAttribute("transform");
+        e.preview = 0, e.wheelResist = !1, wheelSet(e, 0);
         let u = t.getBoundingClientRect(),
           dx = l.clientX - (u.left + u.width / 2),
           dy = l.clientY - (u.top + u.height / 2),
@@ -33620,6 +33621,9 @@ void main() {
       case "revive":
         ma(e, t.uid, "復活！", "heal"), g2(), Rt(e, `${la(e,t.uid)} が復活した（HP ${t.amount}）`, a(t.uid));
         break;
+      case "relay":
+        ma(e, t.to, "順送り", "info");
+        break;
       case "evade":
         ma(e, t.uid, "かわした", "info");
         break;
@@ -33748,13 +33752,14 @@ void main() {
     let t = e.state.players[0],
       a = t.wheel.join(","),
       r = e.svg.rotor;
+    let oldWheelKey = e.wheelKey;
     e.wheelKey !== a && (e.wheelKey = a, r.querySelectorAll(".wedge").forEach(s => {
       let l = Number(s.dataset.pos),
         u = t.units[t.wheel[l]],
         [o, d] = cr(-150 + l * 60, 104),
         c = da(Ze(u).id, Ze(u).name.slice(0, 1)).replace('width="100%" height="100%"', `x="${o-32}" y="${d-32}" width="64" height="64"`);
       s.querySelector(".wart").innerHTML = c
-    }), r.removeAttribute("transform")), e.preview !== 0 && !r.hasAttribute("data-drag") ? r.setAttribute("transform", `rotate(${e.preview*60})`) : e.preview === 0 && !r.hasAttribute("data-drag") && r.removeAttribute("transform"), r.querySelectorAll(".wedge").forEach(s => {
+    }), wheelChanged(e, oldWheelKey, a)), wheelIdle(e), r.querySelectorAll(".wedge").forEach(s => {
       let l = Number(s.dataset.pos),
         u = t.units[t.wheel[l]];
       s.classList.toggle("front", l < 3), s.classList.toggle("dead", !Se(u)), s.classList.toggle("cursed", !!u.curse), s.classList.toggle("purifying", t.purify?.unit === u.index), s.classList.toggle("pick", e.mode === "purify" && l >= 3 && !!u.curse || e.mode === "ult" && l < 3 && u.sg >= Nt && Se(u) || e.mode === "itemTarget" && canUseItem(t, e.itemSlot, l));
