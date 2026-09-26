@@ -413,6 +413,7 @@
           dollUsed: !1,
           endures: 0,
           firstStrikeUsed: !1,
+          flashArmed: !1,
           conquests: 0,
           pendingAction: null,
           rng: ni(e, c)
@@ -440,7 +441,7 @@
       for (let n of i.units) n.ap = bu(i, n), n.endures = n.fx.endure ?? 0, n.sg = Math.min(Nt, n.fx.startSg ?? 0);
       for (let n = 0; n < 3; n++) {
         let s = i.units[i.wheel[n]];
-        s.ap = Math.floor(s.ap * Xn(s.rng, 400, 600) / 1e3), tt(s, "firstStrike") && (s.ap = 0, s.firstStrikeUsed = !0)
+        s.ap = Math.floor(s.ap * Xn(s.rng, 400, 600) / 1e3), armFlash(s)
       }
     }
     return {
@@ -548,7 +549,9 @@
       }
     let u = null,
       o = e.params.smart ? c => Lh(a, c) : mr;
-    for (let c of Ht(r))(!u || o(c) < o(u)) && (u = c);
+    // おんみつの妖怪はねらっても当たらないので、ほかにいればねらわない
+    let pool = Ht(r).filter(c => !untargetable(c));
+    for (let c of pool.length ? pool : Ht(r))(!u || o(c) < o(u)) && (u = c);
     u && a.targetCooldown === 0 && a.target !== u.index && i.push({
       t: "target",
       enemyUnit: u.index
@@ -653,9 +656,10 @@
     let a = [0, 1, 2].map(u => t.units[t.wheel[u]]).filter(Se),
       r = a.find(u => u.blessing?.kind === "taunt") ?? a.find(u => u.fx.taunt);
     if (r) return r;
+    // おんみつ（本家）：ねらう指定（ピン）をしても、前衛にほかの妖怪がいればそちらをこうげきする
     if (e.target !== null) {
       let u = t.units[e.target];
-      if (Se(u) && Vt(t, u.index)) return u
+      if (Se(u) && Vt(t, u.index) && !(untargetable(u) && a.some(x => !untargetable(x)))) return u
     }
     let i = a.filter(u => !tt(u, "hidden") && !untargetable(u));
     i.length === 0 && (i = a.filter(u => !untargetable(u)));
@@ -845,7 +849,7 @@
   }
 
   function Vh(e, t, a, r) {
-    r.hp = 0, r.ap = 0, r.sg = 0, r.curse = null, r.blessing = null, r.guarding = !1, r.loafing = !1, r.pendingAction = null, t.push({
+    r.hp = 0, r.ap = 0, r.flashArmed = !1, r.sg = 0, r.curse = null, r.blessing = null, r.guarding = !1, r.loafing = !1, r.pendingAction = null, t.push({
       t: "ko",
       uid: r.uid
     });
@@ -1101,11 +1105,18 @@
     for (let a = 0; a < 3; a++) {
       let r = e.units[e.wheel[a]];
       tt(r, "blocker") && (r.guarding = !0); // ブロッカー：ガードしながら前に出る
-      tt(r, "firstStrike") && !r.firstStrikeUsed && (r.firstStrikeUsed = !0, r.ap = 0, t.push({
+      armFlash(r) && t.push({
         t: "firstStrike",
         uid: r.uid
-      }))
+      })
     }
+  }
+
+  // 閃光（本家のスキル・閃光魂）：1 度だけ先に行動する。前衛にいると、次に動くはずだった妖怪のかわりにすぐ動き、
+  // その妖怪の番はとばされる。使ったことになるのは実際に動いたとき（動く前に後衛へ下がれば、次に前へ出たときにまた効く）
+  function armFlash(u) {
+    if (!tt(u, "firstStrike") || u.firstStrikeUsed || u.flashArmed) return !1;
+    return u.flashArmed = !0, u.ap = 0, !0
   }
 
   function Ii(e, t, a, r) {
@@ -1336,6 +1347,16 @@
       return
     }
     let act = by ?? r.u;
+    if (r.u.flashArmed) {
+      r.u.flashArmed = !1, r.u.firstStrikeUsed = !0;
+      // かわりに動いた相手（閃光で動く妖怪をのぞいて、いちばん先に動くはずだった妖怪）の番をとばす
+      let sk = a.find(x => x !== r && !x.u.flashArmed && Se(x.u));
+      sk && (sk.u.ap = bu(e.players[sk.pid], sk.u)), t.push({
+        t: "flashSkip",
+        uid: r.u.uid,
+        skipped: sk ? sk.u.uid : null
+      })
+    }
     e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), Yh(e), e.busyUntil = e.tick + pc[s]
   }
 
@@ -19868,8 +19889,8 @@ void main() {
       case "endure":
         viewOf(e, t.uid).hp = Math.max(1, viewOf(e, t.uid).hp), ma(e, t.uid, "踏ん張り", "info"), Rt(e, `${la(e,t.uid)} は踏ん張った`, a(t.uid));
         break;
-      case "firstStrike":
-        ma(e, t.uid, "閃光", "info");
+      case "flashSkip": // 閃光で動いたとき（前に出たときの firstStrike では出さない。2 つ重なるので）
+        flashShown(e, t.uid) && ma(e, t.uid, "閃光", "info"), t.skipped !== null && Rt(e, `${la(e,t.uid)} が先に動いて、${la(e,t.skipped)} の番がとばされた`, a(t.uid));
         break;
       case "suddenDeath":
         yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になる", "f");

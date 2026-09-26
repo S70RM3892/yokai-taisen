@@ -3,10 +3,19 @@
 // e: 対戦の画面状態（Ga）。入力は zt(e, input) でエンジンへ送る。
 // ============================================================================
 
+// 魂（○○の魂・レア魂）は相手に見せない（本家も対戦で相手の魂はわからない）
+function hiddenSoul(u, eq) {
+  return u.owner !== 0 && !!eq && (eq.cat === "魂" || eq.cat === "レア魂");
+}
 // 名札に出す持ち物（装備）の名前
 function eqLabel(u) {
   const eq = equipById(u.equipment ?? null);
-  return eq ? eq.name : "";
+  return eq && !hiddenSoul(u, eq) ? eq.name : "";
+}
+// 「閃光」の文字：相手の閃光が魂から来ているときは出さない（スキルの閃光なら出す）
+function flashShown(e, uid) {
+  const u = Ot(e, uid);
+  return u.owner === 0 || !!traitOf(ct[u.defIndex]).fx.firstStrike;
 }
 
 // ---- メンバーサークル（サークル）を回す ----
