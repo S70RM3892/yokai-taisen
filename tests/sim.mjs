@@ -53,7 +53,9 @@ let equipPairs = 0;
 for (const d of E.units) {
   const t = E.traitOf(d);
   if (!t || !t.name || !t.desc) throw new Error(`no trait for ${d.id}`);
-  if (tNames.has(t.name)) throw new Error(`dup trait name ${t.name}`);
+  // このゲームの妖怪は 1 体ずつ別の特性。本家の妖怪は本家のスキル（同じスキルを持つ妖怪がいる）
+  if (!t.honke && tNames.has(t.name)) throw new Error(`dup trait name ${t.name}`);
+  if (t.honke && !Object.keys(t.fx).length) throw new Error(`honke skill without effect: ${d.name} ${t.name}`);
   tNames.add(t.name);
   if (!t.soulDesc) throw new Error(`empty soul for ${d.id}`);
   for (const eq of E.equipChoices(d)) {
@@ -64,6 +66,7 @@ for (const d of E.units) {
 }
 const cats = {};
 for (const e of E.equips) cats[e.cat] = (cats[e.cat] ?? 0) + 1;
+console.log(`honke yokai: ${E.units.filter(d => d.trait === "honke").length}, rare souls: ${E.equips.filter(e => e.cat === "レア魂").length}`);
 console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSON.stringify(cats)}), allowed pairs ${equipPairs}, battle items: ${E.battleItems.length}`);
 
 // 対人戦の前提：同じ種・同じ入力なら、JSON で送った状態からでも同じ結果になる（ゲストの再現）。
@@ -156,4 +159,60 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (!fast || !slow) throw new Error("ult did not fire after finishing");
   if (fast.f.quality !== slow.f.quality || fast.f.charge >= slow.f.charge) throw new Error("quality should not depend on speed");
   console.log(`ult: fires only when finished (fast ${fast.f.charge} ticks / slow ${slow.f.charge} ticks, same quality "${fast.f.quality}")`);
+}
+
+// とりつきのルール（本家）：悪いとりつき中は奥義を撃てない・時間では消えない。ちょうはつ魂は攻撃を集める
+{
+  const id = n => E.units.find(u => u.name === n).id;
+  const mk = names => names.map(n => ({ unit: id(n) }));
+  const A = mk(["ブリー隊長", "むりだ城", "大入道", "石妖", "殺生石", "岩魚坊主"]);
+  const B = mk(["牛打ち坊", "むりだ城", "大入道", "石妖", "殺生石", "岩魚坊主"]);
+  const st = E.newBattle(7, A, B, { noItems: true });
+  const p = st.players[0], u = p.units[p.wheel[0]];
+  u.sg = 1000, u.curse = { kind: "weaken", tier: 0, remaining: 1, elapsed: 0 };
+  const ev = [];
+  E.step(st, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], ev);
+  if (!ev.some(e => e.t === "dropped" && e.input.t === "ultStart") || p.stance) throw new Error("cursed unit must not start an ult");
+  for (let i = 0; i < 600 && u.hp > 0; i++) E.step(st, [], []);
+  if (u.hp > 0 && !u.curse) throw new Error("bad inspirit must stay until purified");
+  // ちょうはつ魂
+  const T = mk(["ブリー隊長", "むりだ城", "大入道", "石妖", "殺生石", "岩魚坊主"]).map((m, i) => i === 2 ? { ...m, equipment: "rsoul_chouhatsu" } : m);
+  const s2 = E.newBattle(11, T, mk(["牛打ち坊", "大入道", "石妖", "殺生石", "岩魚坊主", "むりだ城"]), { noItems: true });
+  let hitTaunt = 0, hitOther = 0;
+  for (let i = 0; i < 3000 && !s2.outcome; i++) {
+    const e2 = [];
+    E.step(s2, [], e2);
+    for (const e of e2) if (e.t === "damage" && (e.source === "attack" || e.source === "skill") && e.src >= 6 && e.dst < 6) {
+      const d = s2.players[0].units[e.dst];
+      d.fx.taunt || d.blessing?.kind === "taunt" ? hitTaunt++ : hitOther++; // よいとりつき「挑発」も同じく攻撃を集める
+    }
+  }
+  if (hitTaunt < (hitTaunt + hitOther) * 0.7) throw new Error(`taunt soul did not draw attacks (${hitTaunt} / ${hitOther})`);
+  console.log(`inspirit: cursed cannot ult, curse persists; taunt soul drew ${hitTaunt}/${hitTaunt + hitOther} hits`);
+}
+
+// 前衛が全滅したら、倒れる演出を待ってから（32 tick 以上）ホイールが回る
+{
+  let checked = 0;
+  for (let g = 0; g < 40 && checked < 5; g++) {
+    const seed = (g * 7919 + 3) >>> 0;
+    const st = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    const cpus = [E.newCpu(0, seed ^ 5, levels[0]), E.newCpu(1, seed ^ 6, levels[0])];
+    const lastKo = [-1e9, -1e9];
+    while (!st.outcome) {
+      const inputs = [];
+      for (const p of [0, 1]) for (const input of E.cpuInputs(cpus[p], st)) if (input.t !== "rotate") inputs.push({ player: p, input });
+      const ev = [];
+      E.step(st, inputs, ev);
+      for (const e of ev) {
+        if (e.t === "ko") lastKo[e.uid < 6 ? 0 : 1] = st.tick;
+        if (e.t === "forcedRotate") {
+          if (st.tick - lastKo[e.player] < 32) throw new Error(`forced rotate ${st.tick - lastKo[e.player]} ticks after KO`);
+          checked++;
+        }
+      }
+    }
+  }
+  if (!checked) throw new Error("no forced rotate happened");
+  console.log(`forced rotate waits for the KO effect (${checked} checked)`);
 }

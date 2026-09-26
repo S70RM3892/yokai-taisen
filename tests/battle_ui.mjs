@@ -48,7 +48,7 @@ for (const game of ["mawase", "nazore", "ute", "awasero"]) {
     const g = __yokaiDebug.ga(), p = g.state.players[0];
     if (p.stance) __yokaiDebug.send({ t: "ultCancel" });
     const u = p.units[p.wheel[1]];
-    u.hp = Math.max(u.hp, 1), u.sg = 1000, u.ultLockout = 0;
+    u.hp = Math.max(u.hp, 1), u.sg = 1000, u.ultLockout = 0, u.curse = null; // とりつかれていると奥義を撃てない
   }, game);
   await page.waitForTimeout(120);
   await page.evaluate(() => __yokaiDebug.send({ t: "ultStart", allySlot: 1, grand: false }));
