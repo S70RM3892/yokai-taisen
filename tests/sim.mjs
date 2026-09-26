@@ -381,15 +381,15 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`honke replace ok; foe attack share: 肉食オーラ ${(meat * 100).toFixed(0)}% / 草食オーラ ${(grass * 100).toFixed(0)}%`);
 }
 
-// このゲームだけの調整：山吹鬼の超クリティカルは威力 +200%、いのちとりの魂はクリティカル率 45%
+// このゲームだけの調整：山吹鬼の超クリティカルは威力 +75%、いのちとりの魂はクリティカル率 30%
 {
   const id = n => E.units.find(u => u.name === n).id;
   const soul = "soul:" + id("いのちとり");
   const team = ["山吹鬼", "ブシニャン", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"].map((n, i) => ({ unit: id(n), equipment: i === 1 ? soul : null }));
   const s = E.newBattle(1, team, team, { noItems: true });
   const [yama, bushi] = s.players[0].units;
-  if (yama.fx.critDmg !== 2000) throw new Error(`山吹鬼 critDmg ${yama.fx.critDmg}`);
+  if (yama.fx.critDmg !== 750) throw new Error(`山吹鬼 critDmg ${yama.fx.critDmg}`);
   if (bushi.fx.critDmg !== 500) throw new Error(`ほかの超クリティカルは +50% のまま: ${bushi.fx.critDmg}`);
-  if (bushi.fx.critEye !== 29 || !E.equipById(soul).desc.includes("45%")) throw new Error(`いのちとりの魂 ${bushi.fx.critEye}`);
+  if (bushi.fx.critEye !== 19 || !E.equipById(soul).desc.includes("30%")) throw new Error(`いのちとりの魂 ${bushi.fx.critEye}`);
   console.log(`tune: 山吹鬼 crit +${yama.fx.critDmg / 10}%, いのちとりの魂 crit ${Math.round(bushi.fx.critEye * 100 / 64)}%`);
 }
