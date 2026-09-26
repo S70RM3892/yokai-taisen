@@ -324,7 +324,7 @@ function mirrorState(s) {
 
 function mirrorEvent(ev) {
   const o = { ...ev };
-  for (const k of ["uid", "src", "dst", "from", "to"]) if (k in o) o[k] = flipUid(o[k]);
+  for (const k of ["uid", "src", "dst", "from", "to", "skipped"]) if (k in o) o[k] = flipUid(o[k]);
   if ("player" in o) o.player = flipPid(o.player);
   if (ev.t === "pokeStart" || ev.t === "pokeEnd") o.target = flipUid(o.target);
   if (ev.t === "end") o.outcome = flipOutcome(o.outcome);
@@ -439,7 +439,8 @@ function startPvpBattle(net, seed, teams) {
   Rt(Ga, `相手：${net.peerName}（${foe}）`, "f");
   Rt(Ga, "対人戦：アイテムはなし。そうびは効く", "a");
   for (const pid of [1, 0]) {
-    const eqs = Ga.state.players[pid].units.map(u => { const eq = equipById(u.equipment ?? null); return eq ? `${ct[u.defIndex].name}＝${eq.name}` : null; }).filter(Boolean);
+    // 相手の魂は見せない（装備だけ出す）
+    const eqs = Ga.state.players[pid].units.map(u => { const eq = equipById(u.equipment ?? null); return eq && !hiddenSoul(u, eq) ? `${ct[u.defIndex].name}＝${eq.name}` : null; }).filter(Boolean);
     Rt(Ga, `${pid ? "相手" : "こちら"}のそうび：${eqs.length ? eqs.join("・") : "なし"}`, pid ? "f" : "a");
   }
   xd(), requestAnimationFrame(Ud);

@@ -31,7 +31,7 @@ function fxLine(k, v) {
     case "drain": return `こうげき・ようじゅつで与えたダメージの ${pct(v)} を吸いとる`;
     case "waterEater": return "水の技を受けると HP が回復する";
     case "hidden": return "相手からねらわれにくい（ねらう指定がないと選ばれない）";
-    case "firstStrike": return "前衛に出たとき 最初の 1 回はすぐ行動する";
+    case "firstStrike": return "1 度だけ先に行動する（前衛にいると 次に動くはずだった妖怪のかわりにすぐ動き、その妖怪の番はとばされる）";
     case "spiritSmoke": return `となりの味方の妖気のたまり方+${pct(v)}`;
     case "prayer": return `となりの味方が行動すると その味方の HP を ${pct(v)} 回復`;
     case "benchHeal": return `後衛にいると 行動した前衛の味方の HP を ${pct(v)} 回復`;
@@ -76,7 +76,7 @@ function fxLine(k, v) {
     // 本家のスキル・魂・レア魂
     case "noBattle": return null;
     case "taunt": return "いつも相手のこうげき・ようじゅつを引きつける（ねらう指定より先。全体わざはのぞく）";
-    case "hideFull": return "前衛にほかの味方がいる間は ねらわれない";
+    case "hideFull": return "前衛にほかの味方がいる間は ねらわれない（ねらう指定をされても ほかの妖怪がこうげきされる）";
     case "guardOnly": return "ガードしかしない";
     case "blocker": return "前衛に出るとき ガードしながら出る";
     case "pierce": return "相手の耐性（得意な属性）を無視してダメージを与える";
