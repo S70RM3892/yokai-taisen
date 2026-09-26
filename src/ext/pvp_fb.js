@@ -22,7 +22,7 @@
 // テストでは localStorage の yokai-taisen:fbDb にエミュレーターの URL（http://127.0.0.1:9000?ns=xxx）を入れる。
 // ============================================================================
 
-var FB_DB = "";
+var FB_DB = "https://minin-48ece-default-rtdb.asia-southeast1.firebasedatabase.app";
 var FB_ALIVE = 30000; // これより長く合図がない人は、いなくなったとみなす
 var FB_BEAT = 10000;
 
