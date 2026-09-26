@@ -43,8 +43,8 @@ var ARCH = {
   ultEvade: { w: ["身かわし", "見切り", "明鏡止水"], fx: [{ ultEvade: 700 }, { ultEvade: 850 }, { ultEvade: 1000 }] },
   scapegoat: { w: ["盾頼み", "身代わり頼み", "影武者"], fx: [{ scapegoat: 1 }, { scapegoat: 1, up_spd: 50 }, { scapegoat: 1, up_spd: 100 }] },
   guardian: { w: ["かばう", "かばい手", "守護神"], fx: [{ guardian: 1 }, { guardian: 1, up_def: 50 }, { guardian: 1, up_def: 100 }] },
-  relay: { w: ["順送り", "順譲り", "千手の采配"], fx: [{ relay: 250 }, { relay: 300 }, { relay: 350 }] },
-  oil: { w: ["油差し", "油回し", "油の極み"], fx: [{ oil: 250 }, { oil: 350 }, { oil: 450 }] },
+  relay: { w: ["ひとまかせ", "おまかせ", "まるなげ"], fx: [{ relay: 250 }, { relay: 300 }, { relay: 350 }] },
+  oil: { w: ["オイル", "なめらかオイル", "極上オイル"], fx: [{ oil: 250 }, { oil: 350 }, { oil: 450 }] },
 };
 
 // 一族の効果：[一族の言葉, 効果キー, 基準値]（段階 小 ×0.7 / 並 ×1.0 / 大 ×1.3）
@@ -83,7 +83,7 @@ var FAMILY_FX = {
   栄螺鬼: ["栄螺の殻", "resist_thunder", 250], 鉄鼠: ["経喰い", "inflict_seal", 110], 大亀: ["万年", "regen", 40],
   鎧武者: ["大鎧", "vsTribe_takeru", 200], 埴輪武者: ["埴輪", "startSg", 300], 石塔: ["石塔", "curseShort", 300],
   // 追加（roster_plus.js）
-  久米仙人: ["雲の術", "sgRate", 150], 油坊: ["灯明の油", "benchSg", 30],
+  久米仙人: ["仙人", "sgRate", 150], 油坊: ["あせっか", "benchSg", 30],
   // 鎮（しずめの一族）
   獏: ["夢喰い", "purifyFast", 500], 八咫烏: ["導き", "up_spd", 90], 守宮: ["家守", "guardHeal", 60],
   石敢當: ["魔除け", "curseResist", 300], 道祖神: ["塞の神", "lowDef", 250], 霊亀: ["霊亀の甲", "regen", 30],
@@ -115,7 +115,7 @@ var FAMILY_FX = {
 
 // 最初からいる 24 体は、名前も効果も手で決める
 var HAND_TRAITS = {
-  oni: ["鬼の逆鱗", { rage: 500, atkUp: 120 }],
+  oni: ["鬼の逆鱗", { guardBreak: 1, rage: 500, atkUp: 120 }], // 赤鬼：ガードくずし（本家の対戦での使われ方）
   karakasa: ["傘の一本足", { ironGuard: 250, resist_water: 250 }],
   yukionna: ["吹雪の化身", { adept_ice: 1250, resist_ice: 300 }],
   nekomata: ["二股の尾", { drain: 250, evade: 80 }],

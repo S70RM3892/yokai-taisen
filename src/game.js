@@ -11609,7 +11609,7 @@
       cr0 = chargeResult(e, i);
     if (!cr0) return;
     let [u, l, s] = cr0,
-      o = u === "perfect" ? Mc : u === "good" ? Ac : Sc,
+      o = 1e3, // 出来による威力の変化はなし（本家に合わせる）
       d = r.units[i.unit];
     d.sg = 0;
     for (let c of i.partners) r.units[c].sg = 0;
@@ -15392,6 +15392,7 @@
     },
     Te = "#1a1420";
   /*@@include ext/roster_plus.js@@*/
+  /*@@include ext/honke_names.js@@*/
   buildTraits();
   /*@@include ext/engine_exports.js@@*/
   /*@@ENGINE_END@@*/
@@ -32863,7 +32864,7 @@ void main() {
       if (document.querySelector(".result") || /INPUT|SELECT|TEXTAREA/.test(X.target.tagName)) return;
       Ga || (X.key === "Enter" ? re.click() : X.key === "Tab" ? (X.preventDefault(), ee.click()) : X.key.toLowerCase() === "m" ? L.click() : X.key === "Backspace" ? W.click() : X.key === "ArrowLeft" || X.key.toLowerCase() === "q" ? y(-1) : (X.key === "ArrowRight" || X.key.toLowerCase() === "e") && y(1))
     };
-    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じにして、色・絵・言葉はオリジナル。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && (() => {
+    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じ。左の「流行りの型」で本家の流行り編成をそのまま入れられる。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && (() => {
       let X = s0(ni(Xl(), 77));
       bt = X.map(te => te.unit), loFromMembers(X)
     })(), Me()
@@ -33573,11 +33574,10 @@ void main() {
           s = ui(e.state.players[i.owner], e.state.players[1 - i.owner]),
           l = n.kind === "heal" || n.kind === "blessAll",
           u = s ? s.uid : null;
-        e.stats.ult[i.owner]++, t.quality === "perfect" && e.stats.perfect[i.owner]++, L2(e, i, t.grand, t.grand ? e.partners[i.owner] : []), T2(t.grand), setTimeout(() => {
-          r.action(t.uid, l ? null : u, t.grand ? "grand" : "ult", Id("element" in n ? n.element : null)), t.quality === "perfect" && r.perfectFx(t.uid), v2(t.grand), ql(e)
-        }, 1100), i.owner === 0 && !t.auto && setTimeout(() => Jr(e, t.quality === "perfect" ? "PERFECT!!" : t.quality === "good" ? "GOOD!" : "MISS…", t.quality, t.quality === "perfect" ? "威力 ×1.15" : "", 800), 1150);
-        let o = t.quality === "perfect" ? "Perfect" : t.quality === "good" ? "Good" : "Miss";
-        Rt(e, `${la(e,t.uid)} の${t.grand?"大奥義":"奥義"}「${Ze(i).ultName}」 ${o}`, a(t.uid));
+        e.stats.ult[i.owner]++, L2(e, i, t.grand, t.grand ? e.partners[i.owner] : []), T2(t.grand), setTimeout(() => {
+          r.action(t.uid, l ? null : u, t.grand ? "grand" : "ult", Id("element" in n ? n.element : null)), r.perfectFx(t.uid), v2(t.grand), ql(e)
+        }, 1100);
+        Rt(e, `${la(e,t.uid)} の${t.grand?"大奥義":"奥義"}「${Ze(i).ultName}」`, a(t.uid));
         break
       }
       case "stance": {
@@ -33622,7 +33622,7 @@ void main() {
         ma(e, t.uid, "復活！", "heal"), g2(), Rt(e, `${la(e,t.uid)} が復活した（HP ${t.amount}）`, a(t.uid));
         break;
       case "relay":
-        ma(e, t.to, "順送り", "info");
+        ma(e, t.to, "ひとまかせ", "info");
         break;
       case "evade":
         ma(e, t.uid, "かわした", "info");
@@ -33849,8 +33849,7 @@ void main() {
       ["撃破", u.ko],
       ["クリティカル", u.crit],
       ["弱点ヒット", u.weak],
-      ["奥義", u.ult],
-      ["Perfect", u.perfect]
+      ["奥義", u.ult]
     ].map(([g, k]) => `<span>${g}</span><span class="a">${k[0]}</span><span class="f">${k[1]}</span>`).join(""), r.append(o);
     let d = q("div", "rs-rec");
     d.innerHTML = `${e.net ? "対人戦" : or[e.diff].name}：<b>${n.w}</b>勝 ${n.l}敗${n.d?` ${n.d}分`:""}　連勝 <b>${n.streak}</b>（最高 ${n.best}）`, r.append(d);

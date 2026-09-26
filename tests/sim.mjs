@@ -117,15 +117,43 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
 // 足した妖怪の特性：油差し（回転の待ちが短い）・順送り（となりの番が早まる）
 {
   const id = n => E.units.find(u => u.name === n).id;
-  const base = ["牛打ち坊", "塗仏", "大入道", "石妖", "殺生石", "岩魚坊主"].map(n => ({ unit: id(n) }));
-  const withOil = base.map((m, i) => i === 5 ? { unit: id("油坊") } : m);
+  const base = ["牛打ち坊", "むりだ城", "大入道", "石妖", "殺生石", "岩魚坊主"].map(n => ({ unit: id(n) }));
+  const withOil = base.map((m, i) => i === 5 ? { unit: id("あせっか鬼") } : m);
   const cd = team => { const s = E.newBattle(7, team, base, { noItems: true }); E.step(s, [{ player: 0, input: { t: "rotate", dir: "cw", steps: 1 } }], []); return s.players[0].rotateCooldown; };
   const [a, b] = [cd(base), cd(withOil)];
   if (!(b < a)) throw new Error(`oil should shorten rotate cooldown: ${a} -> ${b}`);
-  const withRelay = base.map((m, i) => i === 1 ? { unit: id("久米仙人") } : m);
+  const withRelay = base.map((m, i) => i === 1 ? { unit: id("ひとまか仙人") } : m);
   const s = E.newBattle(9, withRelay, base, { noItems: true });
   let relays = 0;
   for (let i = 0; i < 1200 && !s.outcome; i++) { const ev = []; E.step(s, [], ev); relays += ev.filter(e => e.t === "relay" && e.uid < 6).length; }
   if (!relays) throw new Error("relay never fired");
   console.log(`oil: rotate wait ${a} -> ${b} ticks, relay fired ${relays} times`);
+}
+
+// 奥義：タッチアクションを最後まで終えないと発動しない（時間切れの自動発動なし）。速さで威力は変わらない
+{
+  const teams = [E.randomTeam(E.seedRng(11, 1)), E.randomTeam(E.seedRng(12, 1))];
+  const run = (fillAt, amounts) => {
+    const s = E.newBattle(3, teams[0], teams[1], { noItems: true });
+    const p = s.players[0], u = p.units[p.wheel[0]];
+    u.sg = 1000, u.ultLockout = 0;
+    E.step(s, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], []);
+    if (!p.stance) throw new Error("stance did not start");
+    p.stance.game = "mawase";
+    let fired = null, dmg = 0;
+    for (let i = 0; i < 400 && !fired; i++) {
+      const inputs = i >= fillAt ? amounts.map(a => ({ player: 0, input: { t: "ultCharge", amount: a } })) : [];
+      const ev = [];
+      E.step(s, inputs, ev);
+      const f = ev.find(e => e.t === "ult" && e.player === 0);
+      if (f) fired = { tick: s.tick, f };
+      if (fired) dmg = ev.filter(e => e.t === "damage" && e.src === u.uid).reduce((a, e) => a + e.amount, 0);
+    }
+    return fired;
+  };
+  if (run(9999, [300])) throw new Error("ult fired without finishing the touch action");
+  const fast = run(0, [300, 300, 300, 300]), slow = run(150, [50]);
+  if (!fast || !slow) throw new Error("ult did not fire after finishing");
+  if (fast.f.quality !== slow.f.quality || fast.f.charge >= slow.f.charge) throw new Error("quality should not depend on speed");
+  console.log(`ult: fires only when finished (fast ${fast.f.charge} ticks / slow ${slow.f.charge} ticks, same quality "${fast.f.quality}")`);
 }
