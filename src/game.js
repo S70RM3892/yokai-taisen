@@ -18481,6 +18481,8 @@ void main() {
 
   /*@@include ext/fx3d.js@@*/
   /*@@include ext/ult_motion.js@@*/
+  /*@@include ext/motion3d.js@@*/
+  /*@@include ext/fx_spells.js@@*/
   function t2(e) {
     return 1 - (1 - e) * (1 - e)
   }
@@ -19665,7 +19667,7 @@ void main() {
     }
     if (q2(t, a / 1e3), t.state.outcome) {
       let i = t.state.outcome.winner;
-      Jr(t, i === 0 ? "勝利！" : i === 1 ? "敗北…" : "引き分け", i === 0 ? "win" : i === 1 ? "sudden" : "miss", "", 1500), t.running = !1, zl(), setTimeout(() => K2(t), 1500);
+      Jr(t, i === 0 ? "勝利！" : i === 1 ? "敗北…" : "引き分け", i === 0 ? "win" : i === 1 ? "sudden" : "miss", "", 1500), t.running = !1, zl(), endPoses(t, i), setTimeout(() => K2(t), 1500);
       return
     }
     requestAnimationFrame(Ud)
@@ -19874,7 +19876,7 @@ void main() {
       i = a.players[0],
       n = a.players[1],
       s = e.scene;
-    s.setLine(!0, dr(e, 0)), s.setLine(!1, dr(e, 1)), syncView(e), inspiritAuras(e);
+    s.setLine(!0, dr(e, 0)), s.setLine(!1, dr(e, 1)), syncView(e), inspiritAuras(e), statusFx(e);
     for (let h of a.players)
       for (let f of h.units) {
         s.setAlive(f.uid, viewAlive(e, f));

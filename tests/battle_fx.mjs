@@ -96,7 +96,7 @@ const dir = await page.evaluate(() => {
   target.hp = 0; // もう倒れている（エンジンの状態）。ほかの相手は生きている
   __yokaiDebug.play({ t: "action", uid: me.uid, action: "attack", dst: target.uid });
   const f = g.scene.figs.get(me.uid), tf = g.scene.figs.get(target.uid);
-  const to = f.anim?.to;
+  const to = f.anim?.to ?? f.anim?.T; // こうげきの動き（motion3d）は T が相手の位置
   return to ? Math.hypot(to.x - tf.home.x, to.z - tf.home.z) : -1;
 });
 if (!(dir >= 0 && dir < 1.5)) fail(`攻撃の向きが倒した相手に向いていない (距離 ${dir})`);

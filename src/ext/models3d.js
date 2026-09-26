@@ -155,6 +155,7 @@ function humanoid(k, o) {
     k.sph(sh, skin, [0, -armLen, 0], [0.1 + b[0] * 0.07]);
     if (i === 1 && o.weapon) weapon(k, sh, o.weapon, armLen, o);
     k.swing(sh, "x", 0.18, 1.6, i);
+    (k.arms ??= []).push(sh); // 行動のモーションで腕を動かす（0 = 左、1 = 右。右は武器を持つ）
   }
   // 翼
   if (o.wings) wings(k, body, [0, neckY - 0.15, -b[2] * 0.8], o.wings, 0.9);
@@ -441,7 +442,7 @@ var PLANS = {
       if (o.mouth !== "none") k.mouth(fg, -0.18 * s, fz, 0.2 * s, o.mouth ?? "smile");
       if (o.blush) for (const x of [-1, 1]) k.sph(fg, 0xf29aa8, [x * 0.3 * s, -0.1 * s, fz * 0.9], [0.06 * s, 0.04 * s, 0.03 * s]);
     }
-    if (o.arms) for (const x of [-1, 1]) { const a = k.group(body, [x * 0.5 * s * (o.wide ?? 1), 0.55 * s, 0], [0, 0, x * 0.8]); k.cyl(a, c, [0, -0.2 * s, 0], [0.07 * s, 0.4 * s, 0.07 * s]); k.swing(a, "x", 0.3, 2, x); }
+    if (o.arms) for (const x of [-1, 1]) { const a = k.group(body, [x * 0.5 * s * (o.wide ?? 1), 0.55 * s, 0], [0, 0, x * 0.8]); k.cyl(a, c, [0, -0.2 * s, 0], [0.07 * s, 0.4 * s, 0.07 * s]); k.swing(a, "x", 0.3, 2, x); (k.arms ??= []).push(a); }
     if (o.feet) for (const x of [-1, 1]) k.sph(body, shade(c, -0.15), [x * 0.25 * s, 0.06 * s, 0.1 * s], [0.14 * s, 0.07 * s, 0.2 * s]);
     if (o.spots) for (let i = 0; i < 7; i++) k.sph(body, o.spots, [Math.cos(i * 1.3) * 0.4 * s, 0.4 * s + Math.sin(i * 2.1) * 0.25 * s, Math.sin(i * 1.3) * 0.35 * s - 0.05], [0.06 * s]);
     if (o.cap) k.sph(body, o.cap, [0, 0.95 * s * (o.tall ?? 1), 0], [0.7 * s, 0.32 * s, 0.7 * s], 0, { outline: true });
@@ -778,7 +779,7 @@ function buildYokaiModel(def) {
     outer.add(aura);
     k.anim.push({ obj: aura, spin: true, speed: 0.8 });
   }
-  outer.userData = { anim: k.anim, mats: [...k.mats.values()], height: target, headObj: res.head };
+  outer.userData = { anim: k.anim, mats: [...k.mats.values()], height: target, headObj: res.head, arms: k.arms ?? [], plan, weapon: !!base.weapon };
   return outer;
 }
 
