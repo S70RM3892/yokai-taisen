@@ -561,6 +561,9 @@
       for (let c = 0; c < 3; c++) {
         let h = a.units[a.wheel[c]];
         if (!Se(h) || h.sg < Nt || h.ultLockout > 0 || h.curse) continue;
+        // 復活の必殺技は、前衛に気絶した味方がいるとき（全回復つきなら HP が減った前衛がいるときも）だけ使う
+        let uk = ct[h.defIndex].ult, fr = [0, 1, 2].map(x => a.units[a.wheel[x]]);
+        if (uk.kind === "revive" && !fr.some(x => !Se(x) || uk.full && x.hp * 5 < x.maxHp * 3)) continue;
         let f = a.units[a.wheel[(c + 5) % 6]],
           g = a.units[a.wheel[(c + 1) % 6]],
           k = Se(f) && Se(g) && f.sg >= Nt && g.sg >= Nt && gt(e.rng, 1e3) < e.params.grandPermil;
@@ -1269,22 +1272,30 @@
         }));
         return
       }
+      // 本家の「味方全体」は前衛の 3 体（後衛はおはらいしない）
       case "purifyAll": {
-        for (let h of l.units) Se(h) && h.curse && (h.curse = null, s.push({
+        for (let h of Ht(l)) h.curse && (h.curse = null, s.push({
           t: "curseCleared",
           uid: h.uid,
           by: "ult"
         }));
         return
       }
-      // 気絶した味方を復活させる
+      // 気絶した味方を復活させる（本家：前衛の味方だけ。後衛で気絶している妖怪は起きない）
+      //   full（花さか爺・心オバア）：前衛の気絶した味方を HP 満タンで復活し、気絶していない前衛も HP を全回復
+      //   one（おでんじん）：前衛の気絶した味方 1 体を HP 40% で復活
       case "revive": {
-        if (noRevive(l)) return;
-        for (let h of l.units) Se(h) || (h.hp = Math.max(1, Math.floor(h.maxHp * 400 / 1e3)), h.sg = 0, h.curse = null, h.blessing = null, h.loafing = !1, h.guarding = !1, h.pendingAction = null, h.ap = bu(l, h), s.push({
+        let front = [0, 1, 2].map(i => l.units[l.wheel[i]]),
+          down = noRevive(l) ? [] : front.filter(h => !Se(h));
+        o.one && (down = down.slice(0, 1));
+        let alive = front.filter(Se);
+        for (let h of down) h.hp = o.full ? h.maxHp : Math.max(1, Math.floor(h.maxHp * 400 / 1e3)), h.sg = 0, h.curse = null, h.blessing = null, h.loafing = !1, h.guarding = !1, h.pendingAction = null, h.ap = bu(l, h), s.push({
           t: "revive",
           uid: h.uid,
           amount: h.hp
-        }));
+        });
+        if (o.full)
+          for (let h of alive) $a(s, h, h.maxHp, a.uid);
         return
       }
     }

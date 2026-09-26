@@ -81,7 +81,9 @@ def ult_of(d):
             return {"kind": "selfBless", "blessing": "taunt", "tier": tier(u)}, 1
         if "解除" in u: return {"kind": "dispel"}, 1
         if "おはらい" in u: return {"kind": "purifyAll"}, 1
-        if "戦闘不能" in u or "復活" in u: return {"kind": "revive", "power": 120}, 1
+        # 本家：おでんじん「戦闘不能を回復」＝味方 1 体を復活。花さか爺・心オバア「復活させ（つつ）HPも回復」＝前衛の味方全体を復活＆HP 全回復
+        if "戦闘不能" in u: return {"kind": "revive", "one": 1}, 1
+        if "復活" in u: return {"kind": "revive", "full": 1}, 1
         if "全回復" in u: return {"kind": "heal", "full": 1}, 1
         if "最強の状態" in u: return {"kind": "heal", "power": 110, "bless": "allUp"}, 1
         if "味方全体の全ステータス" in u: return {"kind": "blessAll", "blessing": "allUp", "tier": 1}, 1

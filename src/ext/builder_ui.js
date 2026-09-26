@@ -147,8 +147,8 @@ function ultKindDesc(u) {
     case "blessAll": return `（味方の前衛全員に${Ad[u.blessing]}）`;
     case "selfBless": return "（まもりを上げて、相手の攻撃を自分に集める）";
     case "dispel": return "（相手のよいとりつきを消す）";
-    case "purifyAll": return "（味方全員をおはらい）";
-    case "revive": return "（気絶した味方を復活）";
+    case "purifyAll": return "（味方の前衛全員をおはらい）";
+    case "revive": return u.one ? "（気絶した前衛の味方 1 体を復活）" : "（前衛の気絶した味方を復活し、前衛全員の HP を全回復）";
   }
   return "";
 }

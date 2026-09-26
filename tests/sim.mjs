@@ -213,6 +213,43 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`ult spread: 5 hits scattered (avg ${(spreadTargets / 20).toFixed(1)} foes), all-target hits 3`);
 }
 
+// 復活のひっさつわざ（本家）：前衛の味方だけ。花さか爺・心オバアは復活＋前衛全員 HP 全回復、おでんじんは 1 体だけ
+{
+  const fire = (name, seed) => {
+    const walls = ["ヨロイさん", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
+    const me = [{ unit: E.units.find(u => u.name === name).id }, ...walls.slice(1)];
+    const s = E.newBattle(seed, me, walls, { noItems: true });
+    const p = s.players[0], u = p.units[p.wheel[0]];
+    const front = [1, 2].map(i => p.units[p.wheel[i]]), back = [3, 4].map(i => p.units[p.wheel[i]]);
+    front[0].hp = 0, back[0].hp = 0, back[1].hp = 0; // 前衛 1 体・後衛 2 体が気絶
+    front[1].hp = 1; // 前衛のもう 1 体は HP が減っている
+    u.sg = 1000, u.ultLockout = 0;
+    for (const f of s.players[1].units) f.curse = { kind: "stun", tier: 0, elapsed: 0, remaining: 1e9 };
+    E.step(s, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], []);
+    if (!p.stance) throw new Error(`${name}: stance did not start`);
+    p.stance.game = "mawase";
+    for (let i = 0; i < 50; i++) {
+      const ev = [];
+      E.step(s, [{ player: 0, input: { t: "ultCharge", amount: 300 } }], ev);
+      if (ev.some(e => e.t === "ult")) return { front, back };
+    }
+    throw new Error(`${name}: ult did not fire`);
+  };
+  for (const name of ["花さか爺", "心オバア"]) {
+    const { front, back } = fire(name, 1);
+    if (front[0].hp !== front[0].maxHp) throw new Error(`${name}: front ally revived with ${front[0].hp}/${front[0].maxHp}`);
+    if (front[1].hp !== front[1].maxHp) throw new Error(`${name}: front ally not fully healed (${front[1].hp}/${front[1].maxHp})`);
+    if (back.some(b => b.hp > 0)) throw new Error(`${name}: back-row ally revived`);
+  }
+  {
+    const { front, back } = fire("おでんじん", 1);
+    if (front[0].hp <= 0 || front[0].hp === front[0].maxHp) throw new Error(`おでんじん: front ally ${front[0].hp}/${front[0].maxHp}`);
+    if (front[1].hp !== 1) throw new Error("おでんじん: healed a living ally");
+    if (back.some(b => b.hp > 0)) throw new Error("おでんじん: back-row ally revived");
+  }
+  console.log("revive ult: front row only (花さか爺・心オバア full HP, おでんじん one ally)");
+}
+
 // おはらい：本家どおり、タッチアクションをしないと進まない。とりつかれた敵を攻撃すると妖気が多くたまる
 {
   const s = E.newBattle(5, E.randomTeam(E.seedRng(5, 1)), E.randomTeam(E.seedRng(5, 2)), { noItems: true });
