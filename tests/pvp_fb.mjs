@@ -30,6 +30,10 @@ await new Promise((res, rej) => {
   emu.stdout.on("data", on), emu.stderr.on("data", on), emu.on("exit", rej);
   setTimeout(res, 15000);
 });
+// 「Listening」が出ても、まだ受け付けていないことがあるので、答えが返るまで待つ
+for (let i = 0; i < 60; i++) {
+  try { await fetch(`http://127.0.0.1:${port}/.json?ns=probe`); break; } catch { await new Promise(r => setTimeout(r, 500)); }
+}
 const NS = "yt-test";
 const E = `http://127.0.0.1:${port}`;
 const errors = [];
@@ -129,6 +133,9 @@ const queue = async pool => (await (await fetch(`${E}/m/v3/q/${pool}.json?ns=${N
   if (hosts !== 3 || guests !== 3) fail(`random x6: ${hosts} hosts / ${guests} guests`);
   await ps[0].waitForTimeout(800);
   if (Object.keys(await queue("rand")).length) fail("random: queue not cleaned");
+  // 受け箱も空になっている（ルールで受け箱ごとは消せないので、1 件ずつ消す）
+  const boxes = await (await fetch(`${E}/m/v3/s.json?ns=${NS}`, { headers: { Authorization: "Bearer owner" } })).json();
+  if (boxes && Object.keys(boxes).length) fail(`random: mailboxes not cleaned (${JSON.stringify(boxes).slice(0, 120)})`);
   for (const p of ps) await p.context().close();
 }
 

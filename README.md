@@ -88,7 +88,7 @@ python3 tools/gen_honke.py # 本家の妖怪のデータ（tools/honke_data/）�
 1. <https://console.firebase.google.com> で プロジェクトを作成（アナリティクスは無効でよい）
 2. 構築 → Realtime Database → データベースを作成 → ロケーション「シンガポール（asia-southeast1）」→「ロックモードで開始」
 3. 「ルール」タブに `firebase/database.rules.json` の中身を貼って「公開」
-4. 「データ」タブの上に出る URL（`https://<プロジェクト>-default-rtdb.asia-southeast1.firebasedatabase.app`）を `src/ext/pvp_fb.js` の `FB_DB` に入れる
+4. 「データ」タブの上に出る URL（`https://<プロジェクト>-default-rtdb.asia-southeast1.firebasedatabase.app`）を `src/ext/pvp_fb.js` の `FB_DB` に入れる（いまは `minin-48ece` を使っている）
 
 URL はブラウザに書かれる公開の値（守りはルールがする）。読み書きできるのは `m/`（行列と受け箱）だけで、つながったら消す。
 ログインなしで使うので、無料枠（Spark：同時接続 100）で足りる。確かめるときは `node tests/pvp_fb.mjs`（本物と同じ動きのエミュレーターで、ルール・あいことば・6 人同時のランダムマッチを見る。Java が要る）。

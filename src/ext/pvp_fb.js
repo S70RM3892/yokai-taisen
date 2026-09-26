@@ -37,14 +37,17 @@ function fbUrl(path, params = "") {
   return `${base}/m/v${NET_VER}/${path}.json${qs ? "?" + qs : ""}`;
 }
 
+// 通信が一瞬切れた・サーバーが混んでいる（5xx）ときは、少し待って 3 回までやり直す。
+// 同じものを二度送っても困らない（受け箱は届いた順に 1 回だけ読み、招待や返事の二通目は捨てる）
 async function fbReq(method, path, body, params) {
-  let r;
-  try {
-    r = await fetch(fbUrl(path, params), { method, body: body === undefined ? undefined : JSON.stringify(body), cache: "no-store" });
-  } catch { throw new Error("マッチングのサーバーにつながらない"); }
-  if (r.status === 401 || r.status === 403) return { denied: !0 };
-  if (!r.ok) throw new Error("マッチングのサーバーにつながらない");
-  return { ok: !0, data: await r.json() };
+  for (let i = 0; ; i++) {
+    let r = null;
+    try { r = await fetch(fbUrl(path, params), { method, body: body === undefined ? undefined : JSON.stringify(body), cache: "no-store" }); } catch {}
+    if (r && (r.status === 401 || r.status === 403)) return { denied: !0 };
+    if (r?.ok) return { ok: !0, data: await r.json() };
+    if (i >= 2 || (r && r.status < 500 && r.status !== 429)) throw new Error("マッチングのサーバーにつながらない");
+    await new Promise(res => setTimeout(res, 300 * 3 ** i));
+  }
 }
 
 var FB_SV = { ".sv": "timestamp" };
@@ -70,11 +73,13 @@ function fbInbox(me, fn) {
   };
   es.addEventListener("put", on);
   es.addEventListener("patch", on);
-  return { close() { es.close(); } };
+  // 閉じるときは届いたものを 1 件ずつ消す（受け箱ごと消すのはルールで禁止）
+  return { close() { es.close(); for (const k of seen) fbReq("DELETE", `s/${me}/${k}`).catch(() => {}); } };
 }
 
-function fbSend(me, dst, type, payload) {
-  return fbReq("POST", `s/${dst}`, { f: me, d: JSON.stringify({ type, payload }) });
+// 送ったもの（相手の受け箱の場所）。つながったら・やめたら消す
+function fbSend(me, dst, type, payload, sent) {
+  return fbReq("POST", `s/${dst}`, { f: me, d: JSON.stringify({ type, payload }) }).then(r => { r.ok && r.data?.name && sent?.push(`s/${dst}/${r.data.name}`); return r; });
 }
 
 // 招待（offer）を作る側の WebRTC
@@ -98,6 +103,7 @@ function fbOpened(pc, ch, role, ms) {
 // pool："rand" か "room-<あいことば>"。返り値は autoMatch と同じ { opened, cancel }
 function fbMatch(pool, say, opts = {}) {
   const me = fbId(), st = { cancelled: !1, pcs: [], timers: [] };
+  const sent = [];
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const t0 = performance.now();
   let inbox = null, listener = null, mine = !1;
@@ -106,7 +112,7 @@ function fbMatch(pool, say, opts = {}) {
     st.timers.forEach(clearInterval), st.timers = [];
     inbox?.close(), inbox = null;
     if (mine) fbReq("DELETE", q(me)).catch(() => {}), mine = !1;
-    fbReq("DELETE", `s/${me}`).catch(() => {});
+    for (const p of sent.splice(0)) fbReq("DELETE", p).catch(() => {});
   };
   const check = () => { if (st.cancelled) throw new Error("やめた"); };
 
@@ -129,7 +135,7 @@ function fbMatch(pool, say, opts = {}) {
     const { pc, ch, sdp } = await fbOfferPc(st);
     check();
     const ans = waitAnswer(dst, 15000);
-    await fbSend(me, dst, "OFFER", { sdp });
+    await fbSend(me, dst, "OFFER", { sdp }, sent);
     try {
       await pc.setRemoteDescription(await ans);
       return await fbOpened(pc, ch, "guest", 20000);
@@ -160,7 +166,7 @@ function fbMatch(pool, say, opts = {}) {
       await pc.setRemoteDescription(m.payload.sdp);
       await pc.setLocalDescription(await pc.createAnswer());
       await iceGathered(pc);
-      await fbSend(me, m.from, "ANSWER", { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+      await fbSend(me, m.from, "ANSWER", { type: pc.localDescription.type, sdp: pc.localDescription.sdp }, sent);
       hostResolve(await opened);
     } catch {
       // 入ってきた人がいなくなった：行を並び直して、また待つ
