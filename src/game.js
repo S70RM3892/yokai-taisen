@@ -10132,55 +10132,29 @@
       }
     },
     yu = ["attack", "skill", "guard", "curse", "bless"],
-    $n = [{
-      id: "fierce",
-      name: "猛攻",
-      weights: [80, 20, 0, 0, 0]
-    }, {
-      id: "arcane",
-      name: "術重",
-      weights: [20, 60, 0, 10, 10]
-    }, {
-      id: "balanced",
-      name: "均衡",
-      weights: [30, 20, 20, 20, 10]
-    }, {
-      id: "wild",
-      name: "奔放",
-      weights: [40, 40, 0, 10, 10]
-    }, {
-      id: "hinder",
-      name: "妨害",
-      weights: [20, 20, 10, 40, 10]
-    }, {
-      id: "devoted",
-      name: "献身",
-      weights: [0, 30, 20, 10, 40]
-    }, {
-      id: "stalwart",
-      name: "堅守",
-      weights: [20, 20, 40, 10, 10]
-    }, {
-      id: "careful",
-      name: "慎重",
-      weights: [30, 30, 30, 0, 10]
-    }];
+    // 本家（妖怪ウォッチ2）の性格 12 種。weights はこうげき・ようじゅつ・ガード・とりつく(敵)・とりつく(味方) を選ぶ割合（%）。
+    // bonus は本家の性格ボーナス（1 回の対戦ごとの伸び、合計 20 まで）を 20 まで伸ばしきった値。
+    $n = [
+      { id: "tanki", name: "短気", kind: "こうげき重視", weights: [60, 20, 10, 5, 5], bonus: { atk: 7, hp: 13 } },
+      { id: "arakure", name: "荒くれ", kind: "こうげき特化", weights: [80, 10, 5, 5, 0], bonus: { atk: 20 } },
+      { id: "reisei", name: "れいせい", kind: "ようじゅつ（攻め）重視", weights: [20, 60, 10, 5, 5], bonus: { spa: 10, spd: 10 } },
+      { id: "zunouteki", name: "ずのう的", kind: "ようじゅつ（攻め）特化", weights: [10, 80, 5, 5, 0], bonus: { spa: 20 } },
+      { id: "yasashii", name: "やさしい", kind: "ようじゅつ・回復重視", weights: [20, 40, 10, 0, 30], bonus: { spa: 7, hp: 13 } },
+      { id: "nasakebukai", name: "情け深い", kind: "ようじゅつ・回復特化", weights: [10, 40, 10, 0, 40], bonus: { hp: 20 } },
+      { id: "iyarashii", name: "いやらしい", kind: "とりつく（じゃま）重視", weights: [20, 20, 10, 45, 5], bonus: { atk: 10, spd: 10 } },
+      { id: "hidou", name: "非道", kind: "とりつく（じゃま）特化", weights: [10, 15, 5, 65, 5], bonus: { spd: 20 } },
+      { id: "kyouryokuteki", name: "協力的", kind: "とりつく（味方）重視", weights: [20, 20, 10, 5, 45], bonus: { spd: 7, hp: 13 } },
+      { id: "kenshinteki", name: "けんしん的", kind: "とりつく（味方）特化", weights: [10, 15, 5, 5, 65], bonus: { atk: 10, def: 10 } },
+      { id: "shinchou", name: "しんちょう", kind: "ガード重視", weights: [25, 25, 40, 5, 5], bonus: { spa: 10, def: 10 } },
+      { id: "doujinai", name: "動じない", kind: "ガード特化", weights: [15, 15, 60, 5, 5], bonus: { def: 20 } }
+    ];
 
   function qn(e) {
-    let t = $n.find(a => a.id === e);
+    let t = $n.find(a => a.id === (NATURE_ALIAS[e] ?? e));
     if (!t) throw new Error(`unknown nature ${e}`);
     return t
   }
   var Ni = [
-      { id: "power_bangle", name: "剛力の腕輪", cat: "このゲーム", mods: { atk: 15 } },
-      { id: "spirit_bangle", name: "妖力の腕輪", cat: "このゲーム", mods: { spa: 15 } },
-      { id: "iron_beads", name: "鉄の数珠", cat: "このゲーム", mods: { def: 15 } },
-      { id: "swift_geta", name: "韋駄天の下駄", cat: "このゲーム", mods: { spd: 15 } },
-      { id: "life_jewel", name: "命の勾玉", cat: "このゲーム", mods: { hp: 60 } },
-      { id: "spirit_bell", name: "妖気の鈴", cat: "このゲーム", mods: {}, special: { sgRate: 500 } },
-      { id: "ward_charm", name: "厄除けの守り", cat: "このゲーム", mods: {}, special: { curseHalf: 1 } },
-      { id: "stand_in_doll", name: "形代", cat: "このゲーム", mods: {}, special: { doll: 1 } },
-      { id: "diligence_band", name: "精勤の鉢巻", cat: "このゲーム", mods: {}, special: { noLoaf: 1 } }
     ].map(x => ({ special: null, only: null, honke: false, ...x })),
     st = 25,
     Mh = [{
@@ -12143,16 +12117,12 @@
       let i = ct[gt(e, ct.length)];
       if (t[i.rank] >= Gn[i.rank] || i.group && (a.get(i.group) ?? 0) >= Eu[i.group].limit) continue;
       t[i.rank]++, i.group && a.set(i.group, (a.get(i.group) ?? 0) + 1);
-      let n = Tu[gt(e, Tu.length)],
-        l = randomEquip(e, i);
+      let l = randomEquip(e, i);
       r.push({
         unit: i.id,
         nature: $n[gt(e, $n.length)].id,
-        effort: {
-          ...n.effort
-        },
-        equipment: l,
-        effortPreset: n.id
+        diligence: DILIGENCE[gt(e, DILIGENCE.length)].id,
+        equipment: l
       })
     }
     return r
@@ -32978,7 +32948,7 @@ void main() {
       i = !i, Me()
     }, H.onclick = () => {
       let X = s0(ni(Xl(), 77));
-      bt = X.map(te => te.unit), loFromMembers(X), Me()
+      bt = X.map(te => te.unit), loFromMembers(X.map(te => ({ ...te, diligence: "choumajime" }))), Me()
     }, re.onclick = () => {
       re.disabled || openConfirm(teamMembers(), BAG.slice(), () => {
         document.removeEventListener("keydown", $), Fd(teamMembers(), BAG.slice())
@@ -32990,7 +32960,7 @@ void main() {
     };
     document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じ。左の「流行りの型」で本家の流行り編成をそのまま入れられる。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && (() => {
       let X = s0(ni(Xl(), 77));
-      bt = X.map(te => te.unit), loFromMembers(X)
+      bt = X.map(te => te.unit), loFromMembers(X.map(te => ({ ...te, diligence: "choumajime" })))
     })(), Me()
   }
 
@@ -33158,7 +33128,7 @@ void main() {
       r = s0(ni(Wn(a), 77)).map(l => ({
         unit: l.unit,
         nature: l.nature,
-        effort: l.effort,
+        diligence: l.diligence,
         equipment: l.equipment
       })),
       i = Rh(t, e, r, {

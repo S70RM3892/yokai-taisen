@@ -23,13 +23,15 @@ const page = async name => {
   return p;
 };
 const host = await page("あお"), guest = await page("あか");
-await host.click('.pvp-tabs [data-m="host"]');
+await host.click('.pvp-tabs [data-m="code"]');
+await host.click('.pvp-tabs [data-r="host"]');
 await host.click("text=招待コードを作る");
 await host.waitForSelector(".pvp-codebox textarea", { timeout: 20000 });
 const invite = await host.inputValue(".pvp-codebox textarea");
 console.log(`invite code: ${invite.length} chars`);
-await guest.click('.pvp-tabs [data-m="guest"]');
-await guest.fill(".pvp-body textarea", invite);
+await guest.click('.pvp-tabs [data-m="code"]');
+await guest.click('.pvp-tabs [data-r="guest"]');
+await guest.fill('.pvp-body textarea[placeholder*="招待"]', invite);
 await guest.click("text=返事コードを作る");
 await guest.waitForSelector(".pvp-codebox textarea", { timeout: 20000 });
 const answer = await guest.inputValue(".pvp-codebox textarea");
