@@ -43,6 +43,8 @@ var ARCH = {
   ultEvade: { w: ["身かわし", "見切り", "明鏡止水"], fx: [{ ultEvade: 700 }, { ultEvade: 850 }, { ultEvade: 1000 }] },
   scapegoat: { w: ["盾頼み", "身代わり頼み", "影武者"], fx: [{ scapegoat: 1 }, { scapegoat: 1, up_spd: 50 }, { scapegoat: 1, up_spd: 100 }] },
   guardian: { w: ["かばう", "かばい手", "守護神"], fx: [{ guardian: 1 }, { guardian: 1, up_def: 50 }, { guardian: 1, up_def: 100 }] },
+  relay: { w: ["順送り", "順譲り", "千手の采配"], fx: [{ relay: 250 }, { relay: 300 }, { relay: 350 }] },
+  oil: { w: ["油差し", "油回し", "油の極み"], fx: [{ oil: 250 }, { oil: 350 }, { oil: 450 }] },
 };
 
 // 一族の効果：[一族の言葉, 効果キー, 基準値]（段階 小 ×0.7 / 並 ×1.0 / 大 ×1.3）
@@ -80,6 +82,8 @@ var FAMILY_FX = {
   山地乳: ["寝息吸い", "sgSteal", 90], 野槌: ["野槌", "lowDef", 220], 蟹坊主: ["蟹の甲", "resist_ice", 250],
   栄螺鬼: ["栄螺の殻", "resist_thunder", 250], 鉄鼠: ["経喰い", "inflict_seal", 110], 大亀: ["万年", "regen", 40],
   鎧武者: ["大鎧", "vsTribe_takeru", 200], 埴輪武者: ["埴輪", "startSg", 300], 石塔: ["石塔", "curseShort", 300],
+  // 追加（roster_plus.js）
+  久米仙人: ["雲の術", "sgRate", 150], 油坊: ["灯明の油", "benchSg", 30],
   // 鎮（しずめの一族）
   獏: ["夢喰い", "purifyFast", 500], 八咫烏: ["導き", "up_spd", 90], 守宮: ["家守", "guardHeal", 60],
   石敢當: ["魔除け", "curseResist", 300], 道祖神: ["塞の神", "lowDef", 250], 霊亀: ["霊亀の甲", "regen", 30],
@@ -173,6 +177,8 @@ function fxLine(k, v) {
     case "ultEvade": return v >= 1000 ? "相手のひっさつわざを必ずかわす" : `相手のひっさつわざを ${pct(v)} でかわす`;
     case "scapegoat": return "ねらわれると となりの前衛の味方に代わってもらう";
     case "guardian": return "たおれそうな前衛の味方をかばう";
+    case "relay": return `行動すると となりの前衛の味方の番が ${pct(v)} 早く来る`;
+    case "oil": return `チームにいると ホイールを回したあとの待ち時間-${pct(v)}`;
     case "up": return `${STAT_JA[arg]}+${pct(v)}`;
     case "atkUp": return `こうげきの威力+${pct(v)}`;
     case "skillUp": return `ようじゅつの威力+${pct(v)}`;

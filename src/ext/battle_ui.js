@@ -9,6 +9,70 @@ function eqLabel(u) {
   return eq ? eq.name : "";
 }
 
+// ---- ホイール（サークル）を回す ----
+// 指に遅れずについていく（なぞっている間は補間なし）。離すと 60° ごとの位置へぴたりと止まり、
+// エンジンが回転を反映するまでその位置で待つ（以前は一瞬もとの位置に戻ってから跳んでいた）。
+// CPU の回転・強制回転・キー操作のときも、絵が飛ばずに回って見えるようにする。
+// 回転の待ち時間中は、少しだけ動いてから戻る（押せないことが手ざわりでわかる）。
+function wheelSet(e, deg, instant = !1) {
+  const r = e.svg.rotor;
+  if (instant) r.classList.add("snap");
+  r.style.transform = `rotate(${deg}deg)`;
+  e.wheelDeg = deg;
+  if (instant) r.getBoundingClientRect(), r.classList.remove("snap");
+}
+
+function wheelDrag(e, rad) {
+  const deg = rad * 180 / Math.PI;
+  if (e.wheelResist) { e.preview = 0; e.svg.rotor.style.transform = `rotate(${18 * Math.tanh(deg / 40)}deg)`; return; }
+  const p = Math.max(-5, Math.min(5, Math.round(rad / (Math.PI / 3))));
+  if (p !== e.preview) { qe(900 + Math.abs(p) * 60, 0.03, "square", 0.05); try { navigator.vibrate?.(6); } catch {} }
+  e.preview = p;
+  e.svg.rotor.style.transform = `rotate(${deg}deg)`;
+  e.wheelDeg = deg;
+}
+
+function wheelRelease(e, rad) {
+  if (e.wheelResist) {
+    e.wheelResist = !1, e.preview = 0, wheelSet(e, 0);
+    const w = e.svg.wheel;
+    w.classList.remove("deny"), w.getBoundingClientRect(), w.classList.add("deny");
+    qe(160, 0.12, "square", 0.08);
+    return;
+  }
+  const steps = Math.max(-5, Math.min(5, Math.round(rad / (Math.PI / 3))));
+  if (!steps) { e.preview = 0; wheelSet(e, 0); return; }
+  e.preview = steps;
+  e.wheelHold = { deg: steps * 60, until: performance.now() + 900 };
+  wheelSet(e, steps * 60);
+  Ld(e);
+}
+
+// 毎フレーム：なぞっていないときの角度
+function wheelIdle(e) {
+  if (e.svg.rotor.hasAttribute("data-drag")) return;
+  if (e.wheelHold) {
+    if (performance.now() < e.wheelHold.until) return;
+    e.wheelHold = null; // 回らなかった（はじかれた）ので戻す
+  }
+  const target = e.preview * 60;
+  if ((e.wheelDeg ?? 0) !== target) wheelSet(e, target);
+}
+
+// ホイールの並びが変わった：いま見えている角度から 0° へ回して見せる
+function wheelChanged(e, oldKey, newKey) {
+  if (!oldKey) { wheelSet(e, 0, !0); return; }
+  const o = oldKey.split(",").map(Number), n = newKey.split(",").map(Number);
+  let s = -1;
+  for (let k = 0; k < 6 && s < 0; k++) if (o.every((v, d) => n[(d + k) % 6] === v)) s = k;
+  const cur = e.wheelHold ? e.wheelHold.deg : e.wheelDeg ?? 0;
+  e.wheelHold = null;
+  if (s < 0) { wheelSet(e, 0, !0); return; }
+  const start = (((cur - s * 60) + 180) % 360 + 360) % 360 - 180;
+  wheelSet(e, start, !0);
+  if (start) wheelSet(e, 0);
+}
+
 // ---- 右下「アイテム」 ----
 function itemMenu(e, a) {
   const p = e.state.players[0];
@@ -327,6 +391,9 @@ function debugHook() {
   if (!location.hash.includes("debug")) return;
   window.__yokaiDebug = {
     ga: () => Ga, send: (i) => zt(Ga, i), lobby: () => openPvpLobby(),
+    team: () => teamMembers().map(m => `${ct.find(x => x.id === m.unit).name}${m.equipment ? "(" + equipById(m.equipment).name + ")" : ""}`).join("・"),
+    // 流行りの型：ルール違反・持ち物の付けそこね
+    presets: () => PRESETS.map(p => { const ms = presetMembers(p); return { name: p.name, errs: ms ? Yn(ms) : ["妖怪が見つからない"], dropped: ms ? p.team.filter((t, i) => t[2] && !ms[i].equipment).map(t => `${t[0]}:${t[2]}`) : [] }; }),
     // 奥義の振り付けの数（全員）
     ultStats() { const c = {}; for (const d of ct) { const k = ultStyleOf(d); c[k] = (c[k] ?? 0) + 1; } return c; },
     // 奥義の振り付けを 1 つ試す（手前のまん中の妖怪を、その振り付けの妖怪に見立てる）

@@ -883,6 +883,8 @@ var FAMILY_MODEL = {
   常闇: ["ghost", { skin: 0x14101c, eyeStyle: "glow", mouth: "none", wisps: 0x7a3ae0, alpha: 0.9 }],
   大魔縁: ["hum", { build: "bulky", skin: 0x6a2a3a, nose: "long", wings: 0x2a1a24, hat: "tokin", weapon: "fan", eyeStyle: "angry", robe: true, cloth: 0x3a1a2a }],
   天魔: ["hum", { build: "slim", skin: 0x3a2a4a, horns: 2, wings: 0x1a1024, nose: "long", eyeStyle: "glow", weapon: "staff" }],
+  久米仙人: ["hum", { build: "slim", skin: 0xe8d6bc, hair: "long", hairColor: 0xf2f2f2, robe: true, cloth: 0x5a7ec8, sash: 0xe8c04a, weapon: "staff", eyeStyle: "sleepy", hat: "tokin", headSize: 0.36 }],
+  油坊: ["ghost", { skin: 0x3a2a44, headColor: 0xe8c8a0, eyeStyle: "round", mouth: "open", hat: "kasa", hatColor: 0x5a4030, wisps: 0xffa040, alpha: 0.9 }],
   夜刀神: ["serpent", { skin: 0x3a3a24, horns: true, hornColor: 0xd9b24a, eyeColor: 0xff6a2a, segments: 13 }],
 };
 

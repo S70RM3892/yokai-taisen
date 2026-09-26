@@ -113,3 +113,19 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (p.stance && p.stance.lastPress !== 40) throw new Error("press within 4 ticks should be ignored");
   console.log(`pvp replay: ${pvp} games identical, no items, equipment applied`);
 }
+
+// 足した妖怪の特性：油差し（回転の待ちが短い）・順送り（となりの番が早まる）
+{
+  const id = n => E.units.find(u => u.name === n).id;
+  const base = ["牛打ち坊", "塗仏", "大入道", "石妖", "殺生石", "岩魚坊主"].map(n => ({ unit: id(n) }));
+  const withOil = base.map((m, i) => i === 5 ? { unit: id("油坊") } : m);
+  const cd = team => { const s = E.newBattle(7, team, base, { noItems: true }); E.step(s, [{ player: 0, input: { t: "rotate", dir: "cw", steps: 1 } }], []); return s.players[0].rotateCooldown; };
+  const [a, b] = [cd(base), cd(withOil)];
+  if (!(b < a)) throw new Error(`oil should shorten rotate cooldown: ${a} -> ${b}`);
+  const withRelay = base.map((m, i) => i === 1 ? { unit: id("久米仙人") } : m);
+  const s = E.newBattle(9, withRelay, base, { noItems: true });
+  let relays = 0;
+  for (let i = 0; i < 1200 && !s.outcome; i++) { const ev = []; E.step(s, [], ev); relays += ev.filter(e => e.t === "relay" && e.uid < 6).length; }
+  if (!relays) throw new Error("relay never fired");
+  console.log(`oil: rotate wait ${a} -> ${b} ticks, relay fired ${relays} times`);
+}
