@@ -2,6 +2,7 @@
 //   ・firebase/database.rules.json のルール（横取りできない・ほかの場所は読み書きできない）
 //   ・あいことば：2 人がつながる／やめたら行列から消える
 //   ・ランダムマッチ：6 人が同時に押しても、3 組にきちんと分かれる
+//   ・いなくなった人（返事をしない行・押さえたまま消えた人）がいても、残りの人はつながる
 // エミュレーターは Java で動く。jar は FB_EMU_JAR か、なければ一時フォルダへ取ってくる。
 //   node tests/pvp_fb.mjs
 import { createRequire } from "node:module";
@@ -96,7 +97,7 @@ const queue = async pool => (await (await fetch(`${E}/m/v3/q/${pool}.json?ns=${N
     if (a?.kind !== "rtc" || !b || a.role === b.role) fail("room: bad link");
   } catch { fail(`room: not connected (${await status(p1)} / ${await status(p2)})`); }
   await p1.waitForTimeout(500);
-  if (Object.keys(await queue(`room-${word}`)).length) fail("room: queue not cleaned");
+  if (Object.keys(await queue(`p2-room-${word}`)).length) fail("room: queue not cleaned");
   await p1.context().close(), await p2.context().close();
 }
 
@@ -107,10 +108,10 @@ const queue = async pool => (await (await fetch(`${E}/m/v3/q/${pool}.json?ns=${N
   await p1.click('.pvp-tabs [data-m="room"]'); await p1.fill(".pvp-roomrow input", word);
   await p1.click("text=この番号でつなぐ");
   await p1.waitForFunction(() => document.querySelector(".pvp-status")?.textContent.includes("待っています"), null, { timeout: 20000 });
-  if (Object.keys(await queue(`room-${word}`)).length !== 1) fail("cancel: not queued");
+  if (Object.keys(await queue(`p2-room-${word}`)).length !== 1) fail("cancel: not queued");
   await p1.click("text=やめる");
   await p1.waitForTimeout(1500);
-  if (Object.keys(await queue(`room-${word}`)).length) fail("cancel: still queued");
+  if (Object.keys(await queue(`p2-room-${word}`)).length) fail("cancel: still queued");
   await p1.context().close();
   console.log("cancel ok");
 }
@@ -132,11 +133,35 @@ const queue = async pool => (await (await fetch(`${E}/m/v3/q/${pool}.json?ns=${N
   const hosts = nets.filter(n => n?.role === "host").length, guests = nets.filter(n => n?.role === "guest").length;
   if (hosts !== 3 || guests !== 3) fail(`random x6: ${hosts} hosts / ${guests} guests`);
   await ps[0].waitForTimeout(800);
-  if (Object.keys(await queue("rand")).length) fail("random: queue not cleaned");
+  if (Object.keys(await queue("p2-rand")).length) fail("random: queue not cleaned");
   // 受け箱も空になっている（ルールで受け箱ごとは消せないので、1 件ずつ消す）
   const boxes = await (await fetch(`${E}/m/v3/s.json?ns=${NS}`, { headers: { Authorization: "Bearer owner" } })).json();
   if (boxes && Object.keys(boxes).length) fail(`random: mailboxes not cleaned (${JSON.stringify(boxes).slice(0, 120)})`);
   for (const p of ps) await p.context().close();
+}
+
+// 3b) いなくなった人：返事をしない行が並んでいても、押さえた人が招待を送らずに消えても、残りの 2 人はつながる
+{
+  const word = String(100000 + Math.floor(Math.random() * 900000));
+  const pool = `p2-room-${word}`;
+  const put = (id, v) => fetch(`${E}/m/v3/q/${pool}/${id}.json?ns=${NS}`, { method: "PUT", body: JSON.stringify(v) });
+  // 返事をしない行（タブが固まった人）
+  await put("0ghost", { t: { ".sv": "timestamp" } });
+  const p1 = await page("くろ"), p2 = await page("きい");
+  for (const p of [p1, p2]) { await p.click('.pvp-tabs [data-m="room"]'); await p.fill(".pvp-roomrow input", word); }
+  await p1.click("text=この番号でつなぐ");
+  await p1.waitForFunction(() => document.querySelector(".pvp-status")?.textContent.includes("待っています"), null, { timeout: 40000 });
+  // p1 の行を、招待を送らずに消える人が押さえる
+  const q1 = Object.entries(await queue(pool)).find(([id, v]) => id !== "0ghost" && !v.c);
+  if (q1) await fetch(`${E}/m/v3/q/${pool}/${q1[0]}/c.json?ns=${NS}`, { method: "PUT", body: JSON.stringify("1vanished") });
+  else fail("ghost: p1 not queued");
+  await p2.click("text=この番号でつなぐ");
+  const t0 = Date.now();
+  try {
+    await Promise.all([p1.waitForSelector("canvas.stage", { timeout: 60000 }), p2.waitForSelector("canvas.stage", { timeout: 60000 })]);
+    console.log(`ghost ok (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+  } catch { fail(`ghost: not connected (${await status(p1)} / ${await status(p2)})`); }
+  await p1.context().close(), await p2.context().close();
 }
 
 // 4) Firebase につながらない：PeerJS（予備）でさがし直す
