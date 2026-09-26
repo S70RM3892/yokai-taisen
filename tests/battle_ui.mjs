@@ -40,7 +40,7 @@ const used = await page.evaluate(() => [...document.querySelectorAll(".log p")].
 const hpAfter = await page.evaluate(() => { const p = __yokaiDebug.ga().state.players[0]; return p.units[p.wheel[0]].hp; });
 console.log(`HP ${hpBefore} -> ${hpAfter}`);
 if (!used) fail("item was not used"); else console.log("item:", used);
-await page.evaluate(old => { __yokaiDebug.ga().cpu.params = old; }, cpuParams);
+// 相手の CPU はこのテストの最後まで止めたまま（途中で決着がつくと、パワーチャージやおはらいを確かめられない）
 
 // 2) パワーチャージ 4 種
 for (const game of ["mawase", "nazore", "ute", "awasero"]) {

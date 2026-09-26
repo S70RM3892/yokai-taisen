@@ -117,10 +117,10 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`pvp replay: ${pvp} games identical, no items, equipment applied`);
 }
 
-// 足した妖怪の特性：油差し（回転の待ちが短い）・順送り（となりの番が早まる）
+// なめらかオイル（回転の待ちが短い）・ひとまかせ（となりの番が早まる）
 {
   const id = n => E.units.find(u => u.name === n).id;
-  const base = ["牛打ち坊", "むりだ城", "大入道", "石妖", "殺生石", "岩魚坊主"].map(n => ({ unit: id(n) }));
+  const base = ["ヨロイさん", "むりだ城", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"].map(n => ({ unit: id(n) }));
   const withOil = base.map((m, i) => i === 5 ? { unit: id("あせっか鬼") } : m);
   const cd = team => { const s = E.newBattle(7, team, base, { noItems: true }); E.step(s, [{ player: 0, input: { t: "rotate", dir: "cw", steps: 1 } }], []); return s.players[0].rotateCooldown; };
   const [a, b] = [cd(base), cd(withOil)];
@@ -135,7 +135,8 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
 
 // 奥義：タッチアクションを最後まで終えないと発動しない（時間切れの自動発動なし）。速さで威力は変わらない
 {
-  const teams = [E.randomTeam(E.seedRng(11, 1)), E.randomTeam(E.seedRng(12, 1))];
+  const walls = ["ヨロイさん", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
+  const teams = [walls, walls];
   const run = (fillAt, amounts) => {
     const s = E.newBattle(3, teams[0], teams[1], { noItems: true });
     const p = s.players[0], u = p.units[p.wheel[0]];
@@ -165,8 +166,8 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
 {
   const id = n => E.units.find(u => u.name === n).id;
   const mk = names => names.map(n => ({ unit: id(n) }));
-  const A = mk(["ブリー隊長", "むりだ城", "大入道", "石妖", "殺生石", "岩魚坊主"]);
-  const B = mk(["牛打ち坊", "むりだ城", "大入道", "石妖", "殺生石", "岩魚坊主"]);
+  const A = mk(["ブリー隊長", "むりだ城", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"]);
+  const B = mk(["ヨロイさん", "むりだ城", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"]);
   const st = E.newBattle(7, A, B, { noItems: true });
   const p = st.players[0], u = p.units[p.wheel[0]];
   u.sg = 1000, u.curse = { kind: "weaken", tier: 0, remaining: 1, elapsed: 0 };
@@ -176,10 +177,11 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   for (let i = 0; i < 600 && u.hp > 0; i++) E.step(st, [], []);
   if (u.hp > 0 && !u.curse) throw new Error("bad inspirit must stay until purified");
   // ちょうはつ魂
-  const T = mk(["ブリー隊長", "むりだ城", "大入道", "石妖", "殺生石", "岩魚坊主"]).map((m, i) => i === 2 ? { ...m, equipment: "rsoul_chouhatsu" } : m);
-  const s2 = E.newBattle(11, T, mk(["牛打ち坊", "大入道", "石妖", "殺生石", "岩魚坊主", "むりだ城"]), { noItems: true });
+  const T = mk(["ブリー隊長", "むりだ城", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"]).map((m, i) => i === 2 ? { ...m, equipment: "rsoul_chouhatsu" } : m);
+  const s2 = E.newBattle(11, T, mk(["ヨロイさん", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"]), { noItems: true });
   let hitTaunt = 0, hitOther = 0;
-  for (let i = 0; i < 3000 && !s2.outcome; i++) {
+  const holder = s2.players[0].units[2];
+  for (let i = 0; i < 3000 && !s2.outcome && holder.hp > 0; i++) { // ちょうはつ魂の妖怪が倒れるまで
     const e2 = [];
     E.step(s2, [], e2);
     for (const e of e2) if (e.t === "damage" && (e.source === "attack" || e.source === "skill") && e.src >= 6 && e.dst < 6) {
@@ -217,17 +219,18 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`forced rotate waits for the KO effect (${checked} checked)`);
 }
 
-// 流行りの型に出てくる妖怪は、中身も本家（能力値 Lv60・ランク・スキル）。赤鬼・青鬼・黒鬼はあわせて 1 体まで
+// 妖怪は本家の妖怪だけ（id は本家の No）。能力値 Lv60・ランク・スキルが本家どおり。赤鬼・青鬼・黒鬼はあわせて 1 体まで
 {
   const by = n => E.units.find(u => u.name === n);
   const want = { ブシニャン: ["S", 272, 157, "超クリティカル"], 赤鬼: ["S", 438, 200, "ガードくずし"], 大ガマ: ["S", 270, 154, "ガマのまもり"],
     ミツマタノヅチ: ["B", 232, 132, "トリプルヘッド"], びきゃく: ["E", 200, 87, "美脚"], 天狗: ["S", 237, 90, "風あそび"] };
+  if (E.units.length !== 398 || E.units.some(d => d.trait !== "honke" || !/^y\d{3}$/.test(d.id))) throw new Error("本家にない妖怪が残っている");
   for (const [n, [rank, hp, atk, skill]] of Object.entries(want)) {
     const d = by(n);
     if (d.rank !== rank || d.hp !== hp || d.atk !== atk || d.hskill !== skill || d.trait !== "honke") throw new Error(`${n} is not honke data: ${d.rank} ${d.hp} ${d.atk} ${d.hskill}`);
   }
   const oni = ["赤鬼", "黒鬼", "ブリー隊長", "肉くいおとこ", "さきがけの助", "びきゃく"].map(n => ({ unit: by(n).id }));
-  if (!E.validateTeam(oni).some(s => s.includes("大物"))) throw new Error("赤鬼と黒鬼を同じチームに入れられてしまう");
+  if (!E.validateTeam(oni).some(s => s.includes("赤鬼・青鬼・黒鬼"))) throw new Error("赤鬼と黒鬼を同じチームに入れられてしまう");
   // 肉食オーラ（前衛）で こうげきがふえ、草食オーラでへる
   const share = name => {
     const team = [name, "ブリー隊長", "さきがけの助", "びきゃく", "びきゃく", "びきゃく"].map(n => ({ unit: by(n).id, nature: "tanki" }));

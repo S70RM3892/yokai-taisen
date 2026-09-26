@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # 本家（妖怪ウォッチ2 元祖/本家/真打）の妖怪を src/ext/honke_roster_data.js に書き出す。
-#   ・このゲームにまだいない妖怪 → HONKE_ROSTER（新しく足す）
-#   ・もういる妖怪（流行りの型で名前だけ本家にした妖怪・同じ名前の妖怪） → HONKE_REPLACE（中身を本家に置きかえる）
+#   妖怪は本家の妖怪だけ（このゲーム独自の妖怪は消した）。id は本家の No（y001〜）で、ずっと変えない
 #   python3 tools/gen_honke.py
 #
 # もとのデータ（2026-09 取得。tools/honke_data/ に保存）:
@@ -19,10 +18,6 @@ gp = json.load(open(os.path.join(D, "gamepedia_yw2.json"), encoding="utf-8"))
 hrs = {d["name"]: d for d in json.load(open(os.path.join(D, "hrs_yw2.json"), encoding="utf-8"))}
 souls = json.load(open(os.path.join(D, "game8_souls.json"), encoding="utf-8"))
 SOUL_ALIAS = {"U.S.O.": "USO", "大ヤモリ": "大やもり"}
-
-# このゲームにもういる本家の妖怪（honke_names.js で名前を変えた妖怪と、もとからいる同じ名前の妖怪）
-PRESENT = set("""さきがけの助 万尾獅子 ブリー隊長 オオクワノ神 化け草履 ばか頭巾 天狗 むりだ城 シロカベ ガマンモス あせっか鬼 大ガマ びきゃく
-河童 から傘お化け 草くいおとこ 肉くいおとこ ひとまか仙人 ミツマタノヅチ ドケチング ろくろ首 しどろもどろ ブシニャン マスクドニャーン 赤鬼 黒鬼""".split())
 
 # 本家の種族 → このゲームの族（陣の効果が同じものに合わせる）
 #   イサマシ=ちから・フシギ=ようじゅつ・ゴーケツ=まもり・プリチー=すばやさ・ポカポカ=回復・
@@ -190,7 +185,7 @@ def seed_of(name):
     return int(hashlib.md5(("honke:" + name).encode()).hexdigest()[:8], 16)
 
 
-out, repl, skills_used = [], [], {}
+out, skills_used = [], {}
 for d in gp:
     h = hrs.get(d["name"])
     no = h["no"] if h else d["gid"] - 137  # 怪魔（No.355〜369）は HRS にない
@@ -249,7 +244,7 @@ for d in gp:
         if smods: e["soulMods"] = smods
     e["seed"] = seed_of(d["name"])
     skills_used[d["skill"]] = d["skill_d"]
-    (repl if d["name"] in PRESENT else out).append(e)
+    out.append(e)
 
 # レア魂（2 つの魂を合わせてできる魂）
 RARE = []
@@ -265,13 +260,9 @@ js = ["// このファイルは tools/gen_honke.py が作る（手で直さな�
       "var HONKE_ROSTER = ["]
 for e in out: js.append("  " + json.dumps(e, ensure_ascii=False) + ",")
 js.append("];")
-js.append("// もういる妖怪（名前が同じ）の中身を本家に置きかえる分。id はこのゲームのものを残す")
-js.append("var HONKE_REPLACE = [")
-for e in repl: js.append("  " + json.dumps(e, ensure_ascii=False) + ",")
-js.append("];")
 js.append("// 本家のスキル名 → 本家の説明")
 js.append("var HONKE_SKILL_TEXT = " + json.dumps(skills_used, ensure_ascii=False, indent=0) + ";")
 js.append("// レア魂（合成）")
 js.append("var HONKE_RARE_SOULS = " + json.dumps(RARE, ensure_ascii=False, indent=0) + ";")
 open(os.path.join(ROOT, "src", "ext", "honke_roster_data.js"), "w", encoding="utf-8").write("\n".join(js) + "\n")
-print(f"{len(out)} yokai (+{len(repl)} replaced), {len(skills_used)} skills, {len(RARE)} rare souls")
+print(f"{len(out)} yokai, {len(skills_used)} skills, {len(RARE)} rare souls")

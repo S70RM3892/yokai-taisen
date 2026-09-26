@@ -67,8 +67,8 @@ function renderDetail(host, slot, onChange) {
   const view = q("div", "dt-3d");
   top.append(view);
   const info = q("div", "dt-info");
-  info.innerHTML = `<div class="dt-name"><b>${d.name}</b> <span class="rank ${d.rank}">${d.group ? d.rank + "・大物" : d.rank}</span></div>
-    <div class="tag">${Hl[d.tribe]}族・${CAMP_JA[st.camp]}・好物「${FOOD_CATS[st.favorite]}」</div>
+  info.innerHTML = `<div class="dt-name"><b>${d.name}</b> <span class="rank ${d.rank}">${d.group ? d.rank + "・鬼（1 体まで）" : d.rank}</span></div>
+    <div class="tag">${Hl[d.tribe]}族・${st.camp ? CAMP_JA[st.camp] + "・" : ""}${st.favorite ? `好物「${FOOD_CATS[st.favorite]}」` : "好物なし"}</div>
     <div class="tag">妖気ランク ${d.sgRank}・サボり ${Math.round(d.loafPermil / 10)}%</div>
     ${viewing ? '<div class="dt-note">リストで見ているところ。枠に入れるには、もう一度押す。</div>' : ""}`;
   top.append(info);
@@ -468,7 +468,7 @@ function openConfirm(members, bag, onGo) {
   members.forEach((m, i) => {
     const d = ct.find(x => x.id === m.unit), st = memberStats(m), tr = traitOf(d), eq = equipById(m.equipment ?? null);
     const card = q("div", "cf-card" + (i < 3 ? " front" : ""));
-    card.innerHTML = `<div class="cf-head"><span class="cf-pic" style="background:${Pi[d.tribe]}">${da(d.id, d.name.slice(0, 1))}</span><div><b>${d.name}</b> <span class="rank ${d.rank}">${d.rank}</span><div class="tag">${i < 3 ? "前衛" : "後衛"}・${natureFullName(st.nature, st.diligence)}・好物 ${FOOD_CATS[st.favorite]}</div></div></div>
+    card.innerHTML = `<div class="cf-head"><span class="cf-pic" style="background:${Pi[d.tribe]}">${da(d.id, d.name.slice(0, 1))}</span><div><b>${d.name}</b> <span class="rank ${d.rank}">${d.rank}</span><div class="tag">${i < 3 ? "前衛" : "後衛"}・${natureFullName(st.nature, st.diligence)}${st.favorite ? `・好物 ${FOOD_CATS[st.favorite]}` : ""}</div></div></div>
       <div class="cf-stats num">HP ${st.maxHp}　ちから ${st.atk}　ようりょく ${st.spa}　まもり ${st.def}　すばやさ ${st.spd}</div>
       <div class="cf-line"><span class="dt-k">特性</span> ${tr.name}</div>
       <div class="cf-line"><span class="dt-k">持ち物</span> ${eq ? `${eq.name}<small>（${equipDesc(eq)}）</small>` : "なし"}</div>`;
