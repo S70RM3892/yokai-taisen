@@ -88,6 +88,18 @@ if (!hr.o) fail("no outcome");
 if (hFinal !== gr.final) fail("final states differ");
 if (JSON.stringify(hr.o) !== JSON.stringify(gr.c)) fail("canonical outcomes differ");
 if (hr.o && hr.o.winner !== null && gr.o.winner !== 1 - hr.o.winner) fail("guest outcome is not mirrored");
+// リプレイ：両方とも残り、その記録だけで同じ対戦になる。入った側は自分が手前（勝ち負けも自分から見て）
+for (const [p, who] of [[host, "host"], [guest, "guest"]]) {
+  await p.waitForFunction(() => __yokaiDebug.replays().length >= 2, null, { timeout: 15000 }).catch(() => {});
+  const r = await p.evaluate(() => ({ ok: __yokaiDebug.verifyRep(), why: __yokaiDebug.verifyWhy(), list: __yokaiDebug.replays().map(x => ({ mode: x.mode, me: x.me, win: x.win })) }));
+  if (!r.ok) console.log(who, r.why);
+  if (!r.ok) fail(`${who}: replay does not reproduce the pvp battle`);
+  // 同じブラウザの 2 画面なので、保存場所は両方で同じ（2 つ入る）
+  const mine = r.list.find(x => x.mode === "pvp" && x.me === (who === "host" ? 0 : 1));
+  if (r.list.length !== 2 || !mine) fail(`${who}: replay list ${JSON.stringify(r.list)}`);
+  const big = who === "host" ? hr.big : gr.big;
+  if (mine && (big === "勝ち") !== (mine.win === 1)) fail(`${who}: replay result ${mine.win} vs ${big}`);
+}
 await host.screenshot({ path: `${out}/pvp-3-result-host.png` });
 await guest.screenshot({ path: `${out}/pvp-3-result-guest.png` });
 

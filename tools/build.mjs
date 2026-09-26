@@ -20,7 +20,8 @@ function expand(file, seen = new Set()) {
   return src.replace(/\/\*@@include ([^@]+)@@\*\//g, (_, p) => `// ---- ${p.trim()} ----\n${expand(p.trim(), new Set(seen))}\n// ---- end ${p.trim()} ----`);
 }
 
-let js = expand("game.js");
+const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+let js = expand("game.js").replace(/__APP_VERSION__/g, JSON.stringify(pkg.version));
 mkdirSync(join(root, "dist"), { recursive: true });
 
 if (args.has("--engine-only")) {

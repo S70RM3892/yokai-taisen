@@ -4,5 +4,6 @@ function __engineExports() {
     units: ct, newBattle: Rh, step: Uh, newCpu: Nh, cpuInputs: Bh, randomTeam: s0, validateTeam: Yn, seedRng: ni, nextRand: Wn,
     randomBag, traitOf, equipById, equipAllowed, equipChoices, memberStats, battleItems: BATTLE_ITEMS, equips: Ni, itemDesc, equipDesc,
     favoriteOf, campOf, fxDesc,
+    replayNew, replayPush, replayFinish, replayProblem, replayState, replayReview, replayExport, replayImport, APP_VERSION,
   };
 }

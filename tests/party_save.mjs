@@ -19,6 +19,7 @@ const dbg = f => page.evaluate(f);
 
 // 1) 流行りの型を入れる → 開きなおしても同じ編成・持ち物
 await page.goto(url);
+await page.click('.nav-tab[data-tab="deck"]');
 await page.waitForTimeout(800);
 await page.click(".pre-item:nth-child(1)");
 await page.waitForTimeout(200);
@@ -57,6 +58,7 @@ await dbg(() => {
   localStorage.setItem("yokai-taisen:setlo:0", JSON.stringify({ lo: [{ nature: "kyouryokuteki" }, { nature: "arakure", equipment: "kishin_udewa" }, { equipment: "soul:g066" }, {}, {}, {}], bag: ["ikuraonigiri", "nazo_item"] }));
 });
 await page.reload();
+await page.click('.nav-tab[data-tab="deck"]');
 await page.waitForTimeout(800);
 const slot = await dbg(() => __yokaiDebug.party().slots[0]);
 if (!slot) fail("legacy set was not migrated");

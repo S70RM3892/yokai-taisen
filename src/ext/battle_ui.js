@@ -390,6 +390,16 @@ function debugHook() {
   if (!location.hash.includes("debug")) return;
   window.__yokaiDebug = {
     ga: () => Ga, send: (i) => zt(Ga, i), lobby: () => openPvpLobby(),
+    // リプレイ：いまの対戦をこちらも CPU にして一気に最後まで進める・残っているリプレイ
+    autoFinish(level = 2) {
+      const g = Ga, cpu0 = Nh(0, 4242, or[level].params);
+      let n = 0;
+      while (!g.state.outcome && n++ < 20000) { for (const i of Bh(cpu0, g.state)) g.pending.push(i); X2(g); }
+      return g.state.tick;
+    },
+    replays: () => replayIndex(), rep: () => Ga?.rep ?? Ga?.replay?.rep,
+    verifyRep: () => JSON.stringify(replayReview(Ga.rep).final) === JSON.stringify(Ga.canon ?? Ga.state), tick: () => (Ga?.canon ?? Ga?.state)?.tick,
+    verifyWhy() { const r = replayReview(Ga.rep).final, c = Ga.canon ?? Ga.state; return { rTick: r.tick, cTick: c.tick, rOut: r.outcome, cOut: c.outcome, frames: Ga.rep.frames.length, first: Ga.rep.frames[0]?.[0] }; },
     // パーティ保存：いまの編成・書き出しの文字列・読みこみ
     party: () => partyStore(), bt: () => bt.map(id => id && ct.find(x => x.id === id).name), loadout: () => SLOT_LOADOUT, bag: () => BAG,
     partyCode: () => partyEncode(partyFromBuilder("test")), partyImport: code => partyApply(partyDecode(code)),

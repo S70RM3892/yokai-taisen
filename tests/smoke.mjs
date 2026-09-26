@@ -17,6 +17,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => { if (m.type() === "error" && !m.text().includes("Failed to load resource")) errors.push(m.text()); });
 await page.goto(pathToFileURL(resolve("dist/index.html")).href);
+await page.click('.nav-tab[data-tab="deck"]');
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${out}/1-builder.png`, fullPage: true });
 

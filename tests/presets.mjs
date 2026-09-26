@@ -15,6 +15,7 @@ const page = await browser.newPage({ viewport: { width: 1100, height: 1000 } });
 const errors = [];
 page.on("pageerror", e => errors.push(String(e)));
 await page.goto(pathToFileURL(resolve("dist/index.html")).href + "#debug");
+await page.click('.nav-tab[data-tab="deck"]');
 await page.waitForTimeout(800);
 const list = await page.evaluate(() => __yokaiDebug.presets());
 for (const p of list) {

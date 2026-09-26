@@ -246,3 +246,41 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (!(meat > grass + 0.1)) throw new Error(`肉食オーラ ${meat} / 草食オーラ ${grass}`);
   console.log(`honke replace ok; foe attack share: 肉食オーラ ${(meat * 100).toFixed(0)}% / 草食オーラ ${(grass * 100).toFixed(0)}%`);
 }
+
+// リプレイ：tick ごとの入力だけで同じ対戦になる（アイテムこみ）。途中の tick へ飛べる・書き出して読みこんでも同じ・振り返りの数字がそろう
+{
+  let n = 0, chars = 0;
+  for (let g = 0; g < 12; g++) {
+    const seed = (g * 7919 + 3) >>> 0;
+    const teams = [E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2))];
+    const opts = { bags: [["ikuraonigiri", "nigai_kanpou", "chikara_ofuda"], ["cheeseburger", "coffeegyuunyuu"]] };
+    const rep = E.replayNew(seed, teams, opts, { mode: "cpu", me: 0 });
+    const st = E.newBattle(seed, teams[0], teams[1], opts);
+    const cpus = [E.newCpu(0, seed ^ 1, levels[g % levels.length]), E.newCpu(1, seed ^ 2, levels[(g + 1) % levels.length])];
+    let dealt = [0, 0];
+    while (!st.outcome) {
+      const inputs = [], ev = [];
+      for (const p of [0, 1]) for (const input of E.cpuInputs(cpus[p], st)) inputs.push({ player: p, input });
+      E.replayPush(rep, st.tick, inputs);
+      E.step(st, inputs, ev);
+      for (const e of ev) if (e.t === "damage" && e.src !== null && e.src !== undefined) dealt[e.src < 6 ? 0 : 1] += e.amount;
+    }
+    E.replayFinish(rep, st);
+    if (E.replayProblem(rep)) throw new Error(`replay problem: ${E.replayProblem(rep)}`);
+    const rv = E.replayReview(rep);
+    if (JSON.stringify(rv.final) !== JSON.stringify(st)) throw new Error(`replay diverged in game ${g}`);
+    if (rv.team[0].dealt !== dealt[0] || rv.team[1].dealt !== dealt[1]) throw new Error(`review dealt ${rv.team.map(t => t.dealt)} vs ${dealt}`);
+    if (rv.hp.at(-1)[0] !== st.tick) throw new Error("hp series does not reach the end");
+    const mid = E.replayState(rep, Math.floor(st.tick / 2));
+    if (mid.tick !== Math.floor(st.tick / 2)) throw new Error("seek tick");
+    const code = await E.replayExport(rep);
+    const back = await E.replayImport(code);
+    if (JSON.stringify(back) !== JSON.stringify(rep)) throw new Error("export/import changed the replay");
+    chars += code.length, n++;
+  }
+  if (E.replayProblem({ ...JSON.parse("{}"), f: 1, ver: "0.0.0", teams: [], frames: [] }) === null) throw new Error("old version should not play");
+  let bad = null;
+  try { await E.replayImport("YR1:zAAAA"); } catch (e) { bad = e.message; }
+  if (!bad) throw new Error("broken code should fail");
+  console.log(`replay ok: ${n} games reproduced, avg ${Math.round(chars / n)} chars (v${E.APP_VERSION})`);
+}

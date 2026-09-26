@@ -185,6 +185,7 @@ function openSortPicker(o) {
   let tab = o.tabs.some(t => t[0] === pref.tab) ? pref.tab : o.tabs[0][0];
   let sort = o.sorts.some(t => t[0] === pref.sort) ? pref.sort : o.sorts[0][0];
   let hide = o.hide ? pref.hide !== !1 : !1; // 「効果のないものをかくす」は初めは入れておく
+  let rev = !!pref.rev; // 並びを逆にする
   const wrap = q("div", "result picker");
   const box = q("div", "box");
   // 上（見出し・いまの持ち物・しぼりこみ・ならべかえ）は止めて、下の一覧だけスクロールする
@@ -211,7 +212,10 @@ function openSortPicker(o) {
   const done = () => { wrap.remove(); document.removeEventListener("keydown", onKey); };
   const onKey = e => { if (e.key === "Escape") done(); };
   x.onclick = done;
-  const remember = () => saveStored("pick:" + o.key, { tab, sort, hide });
+  const remember = () => saveStored("pick:" + o.key, { tab, sort, hide, rev });
+  const dir = q("button", "pk-chip pk-dir");
+  dir.title = "並びを逆にする";
+  dir.onclick = () => { rev = !rev; remember(); draw(); };
   const chips = (host, list, cur, set, counts) => {
     host.replaceChildren();
     for (const [id, label] of list) {
@@ -237,11 +241,16 @@ function openSortPicker(o) {
     const word = search?.value.trim() ?? "";
     const hit = it => (!word || o.search(it).includes(word)) && !(hide && o.hide.test(it));
     chips(tabs, o.tabs, tab, v => (tab = v), id => o.items.filter(o.tabs.find(t => t[0] === id)[2]).filter(hit).length);
-    chips(sorts, o.sorts.map(([id, label]) => [id, label]), sort, v => (sort = v));
-    const [, , key, asc] = o.sorts.find(t => t[0] === sort);
+    chips(sorts, o.sorts.map(([id, label]) => [id, label]), sort, v => (sort === v ? (rev = !rev) : (sort = v, rev = !1)));
+    const [, , key, asc0] = o.sorts.find(t => t[0] === sort);
+    const asc = asc0 ? !rev : rev;
+    dir.textContent = rev ? "↕ 逆の順" : "↕ ふつうの順";
+    dir.classList.toggle("on", rev);
+    dir.setAttribute("aria-pressed", rev);
+    sorts.append(dir);
     let list = o.items.filter(o.tabs.find(t => t[0] === tab)[2]).filter(hit).map((it, i) => ({ it, i, v: key(it) }));
     list.sort((a, b) => {
-      if (a.v == null || b.v == null) return (a.v == null) - (b.v == null) || a.i - b.i;
+      if (a.v == null || b.v == null) return (a.v == null) - (b.v == null) || (rev ? b.i - a.i : a.i - b.i);
       const c = typeof a.v === "string" ? a.v.localeCompare(b.v, "ja") : a.v - b.v;
       return (asc ? c : -c) || a.i - b.i;
     });

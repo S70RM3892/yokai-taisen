@@ -1590,6 +1590,7 @@
   /*@@include ext/honke_roster_data.js@@*/
   /*@@include ext/honke_roster.js@@*/
   buildTraits();
+  /*@@include ext/replay_core.js@@*/
   /*@@include ext/engine_exports.js@@*/
   /*@@ENGINE_END@@*/
   function oa(e, t, a, r = 4, i = 0, n = "#fff") {
@@ -18869,10 +18870,9 @@ void main() {
   /*@@include ext/builder_ui.js@@*/
   /*@@include ext/party_save.js@@*/
   /*@@include ext/presets.js@@*/
+  /*@@include ext/home.js@@*/
   function Sd() {
-    Kr.replaceChildren();
-    let e = q("h1", "", "妖怪大戦");
-    e.append(q("small", "", "人 vs CPU・人 vs 人")), Kr.append(e, Md());
+    homeShell("deck");
     let t = bt.findIndex(X => X === null);
     t < 0 && (t = 0);
     let a = null,
@@ -18889,7 +18889,7 @@ void main() {
     let c = q("div", "b-rules"),
       h = partyBox(() => Me()),
       bagBox = q("div", "b-rules b-bag");
-    l.append(B2(), c, presetBox(p => { t = 0, DETAIL_FOR = null, Me(); }), bagBox, h);
+    l.append(c, presetBox(p => { t = 0, DETAIL_FOR = null, Me(); }), bagBox, h);
     let f = Ke("svg", {
       class: "b-wheel",
       viewBox: "-160 -160 320 320"
@@ -18917,7 +18917,7 @@ void main() {
       C = "",
       B = q("div", "b-filters"),
       G = q("input", "b-search");
-    G.id = "unit-search", G.placeholder = "名前でさがす", G.oninput = () => {
+    G.id = "unit-search", G.placeholder = "名前・よみでさがす", G.oninput = () => {
       C = G.value.trim(), Me()
     };
     let _ = q("div", "b-chips");
@@ -18934,7 +18934,22 @@ void main() {
         x = X, Me()
       }, E.append(te)
     }
-    B.append(G, _, E);
+    let sortRow = q("div", "b-sortrow"),
+      sortPref = loadStored("unitSort", {}),
+      sk = UNIT_SORTS.some(z => z[0] === sortPref.k) ? sortPref.k : "no",
+      srev = !!sortPref.rev,
+      dirBtn = q("button", "b-dir");
+    dirBtn.title = "並びを逆にする", dirBtn.onclick = () => {
+      srev = !srev, saveStored("unitSort", { k: sk, rev: srev }), Me()
+    };
+    sortRow.append(q("span", "b-lab", "ならべかえ"));
+    for (let [z, zl] of UNIT_SORTS) {
+      let te = q("button", "b-chip", zl);
+      te.dataset.v = z, te.onclick = () => {
+        sk === z ? srev = !srev : (sk = z, srev = !1), saveStored("unitSort", { k: sk, rev: srev }), Me()
+      }, sortRow.append(te)
+    }
+    sortRow.append(dirBtn), B.append(G, _, E, sortRow);
     let F = q("div", "b-count"),
       V = q("div", "b-list"),
       N = q("div", "b-detail"),
@@ -18948,7 +18963,7 @@ void main() {
     ee.title = "くわしい情報（3D・能力・装備）を出す／しまう（Tab）";
     let H = q("button", "b-btn", "おまかせ"),
       re = q("button", "b-btn go", "けってい");
-    re.title = "この6体で対戦する（Enter）", d.append(W, L, ee, H, re);
+    re.title = "この6体で CPU と対戦する（Enter）。相手の強さはホームの「対戦」で選ぶ", d.append(W, L, ee, H, re);
     let ce = X => X ? ct.find(te => te.id === X) : null;
 
     function Re(X) {
@@ -19021,7 +19036,9 @@ void main() {
         V.replaceChildren();
         let ne = ce(bt[t]);
         _.querySelectorAll(".b-chip").forEach(he => he.classList.toggle("on", he.dataset.v === I)), E.querySelectorAll(".b-chip").forEach(he => he.classList.toggle("on", he.dataset.v === x));
-        let ve = ct.filter(he => (I === "all" || he.tribe === I) && (x === "all" || he.rank === x) && (!C || he.name.includes(C)));
+        let ve = unitSorted(ct.filter(he => (I === "all" || he.tribe === I) && (x === "all" || he.rank === x) && (!C || he.name.includes(C) || he.kana?.includes(C))), sk, srev),
+          skDef = UNIT_SORTS.find(z => z[0] === sk);
+        sortRow.querySelectorAll(".b-chip").forEach(he => he.classList.toggle("on", he.dataset.v === sk)), dirBtn.textContent = unitSortDirLabel(sk, srev);
         F.textContent = `${ve.length} 体（全 ${ct.length} 体）`;
         for (let he of ve) {
           let S = bt.slice();
@@ -19035,7 +19052,7 @@ void main() {
             })))).length > 0,
             Ue = q("button", "b-item" + (je ? " ng" : "") + (ne?.id === he.id ? " cur" : "")),
             He = q("span", "b-pic");
-          He.innerHTML = da(he.id, he.name.slice(0, 1)), He.style.background = Pi[he.tribe], Ue.append(He, q("span", "b-nm", he.name), q("span", "b-r r" + he.rank, he.rank)), Ue.title = `${he.name}（${he.rank}・${Hl[he.tribe]}）特性：${traitOf(he).name}\n${traitOf(he).desc}`, Ue.onclick = () => Re(he.id), Ue.onpointerenter = X => { X.pointerType === "mouse" && i && DETAIL_FOR !== he.id && (DETAIL_FOR = he.id, renderDetail(N, detailSlot ?? t, Me)) }, V.append(Ue)
+          He.innerHTML = da(he.id, he.name.slice(0, 1)), He.style.background = Pi[he.tribe], Ue.append(He, q("span", "b-nm", he.name)), skDef[3] && (Ue.classList.add("sorted"), Ue.append(q("span", "b-sv", String(skDef[2](he))))), Ue.append(q("span", "b-r r" + he.rank, he.rank)), Ue.title = `${he.name}（${he.rank}・${Hl[he.tribe]}）特性：${traitOf(he).name}\n${traitOf(he).desc}`, Ue.onclick = () => Re(he.id), Ue.onpointerenter = X => { X.pointerType === "mouse" && i && DETAIL_FOR !== he.id && (DETAIL_FOR = he.id, renderDetail(N, detailSlot ?? t, Me)) }, V.append(Ue)
         }
       }
     }
@@ -19050,14 +19067,14 @@ void main() {
       bt = X.map(te => te.unit), loFromMembers(X.map(te => ({ ...te, diligence: "choumajime" }))), Me()
     }, re.onclick = () => {
       re.disabled || openConfirm(teamMembers(), BAG.slice(), () => {
-        document.removeEventListener("keydown", $), Fd(teamMembers(), BAG.slice())
+        Fd(teamMembers(), BAG.slice())
       })
     };
     let $ = X => {
       if (document.querySelector(".result") || /INPUT|SELECT|TEXTAREA/.test(X.target.tagName)) return;
       Ga || (X.key === "Enter" ? re.click() : X.key === "Tab" ? (X.preventDefault(), ee.click()) : X.key.toLowerCase() === "m" ? L.click() : X.key === "Backspace" ? W.click() : X.key === "ArrowLeft" || X.key.toLowerCase() === "q" ? y(-1) : (X.key === "ArrowRight" || X.key.toLowerCase() === "e") && y(1))
     };
-    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じ。左の「流行りの型」で本家の流行り編成をそのまま入れられる。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && !partyRestoreCurrent().ok && (() => {
+    document.addEventListener("keydown", $), SCREEN_LEAVE = () => document.removeEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じ。左の「流行りの型」で本家の流行り編成をそのまま入れられる。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && !partyRestoreCurrent().ok && (() => {
       let X = s0(ni(Xl(), 77));
       bt = X.map(te => te.unit), loFromMembers(X.map(te => ({ ...te, diligence: "choumajime" })))
     })(), Me()
@@ -19135,24 +19152,6 @@ void main() {
     }
   }
 
-  function B2() {
-    let e = q("div", "b-rules"),
-      t = () => {
-        e.replaceChildren(q("div", "b-rules-t", "相手の強さ"));
-        let a = q("div", "b-diff");
-        or.forEach((n, s) => {
-          let l = q("button", s === Ri ? "on" : "", n.name);
-          l.dataset.v = String(s), l.onclick = () => {
-            Ri = s, Td("diff", s), t()
-          }, a.append(l)
-        });
-        let r = Rd(Ri),
-          i = q("div", "b-rec");
-        i.innerHTML = `戦績 <b>${r.w}</b>勝 <b>${r.l}</b>敗${r.d?` ${r.d}分`:""}　連勝 <b>${r.streak}</b>（最高 ${r.best}）`, e.append(a, i, pvpEntryButton())
-      };
-    return t(), e
-  }
-
   function Dd(e, t) {
     let a = q("div", "art" + (t ? " sub " + t : ""));
     return a.innerHTML = da(Ze(e).id, Ze(e).name.slice(0, 1)), a
@@ -19215,10 +19214,11 @@ void main() {
         diligence: l.diligence,
         equipment: l.equipment
       })),
-      i = Rh(t, e, r, {
+      opts = {
         bags: [bag, randomBag(ni(t, 9))]
-      });
-    Kr.replaceChildren();
+      },
+      i = Rh(t, e, r, opts);
+    SCREEN_LEAVE?.(), SCREEN_LEAVE = null, Kr.replaceChildren();
     let n = q("canvas", "stage"),
       s = new e2(n);
     Ga = {
@@ -19247,7 +19247,8 @@ void main() {
       foeBars: new Map,
       logEl: q("div", "log"),
       called: "",
-      wheelKey: ""
+      wheelKey: "",
+      rep: replayNew(t, [e, r], opts, { mode: "cpu", diff: Ri, me: 0, at: Date.now() })
     }, O2(Ga, n), Rt(Ga, `相手：${r.map(l=>ct.find(u=>u.id===l.unit).name).join("・")}`, "f"), xd(), requestAnimationFrame(Ud)
   }
 
@@ -19264,6 +19265,7 @@ void main() {
   }
 
   function zt(e, t) {
+    if (e.replay) return;
     e.net?.role === "guest" ? netGuestSend(e, t) : e.pending.push(t)
   }
 
@@ -19278,7 +19280,7 @@ void main() {
 
   function O2(e, t) {
     let a = q("h1", "", "妖怪大戦");
-    a.append(q("small", "", e.net ? `vs ${e.net.peerName}（対人戦・${e.net.role === "host" ? "部屋を作った側" : "入った側"}）` : `vs CPU（${or[e.diff].name}）`)), Kr.append(a, Md());
+    a.append(q("small", "", e.replay ? replayTitle(e.replay.rep) : e.net ? `vs ${e.net.peerName}（対人戦・${e.net.role === "host" ? "部屋を作った側" : "入った側"}）` : `vs CPU（${or[e.diff].name}）`)), Kr.append(a, Md());
     let r = q("section", "game"),
       i = q("div", "top3d"),
       n = q("div", "hud3d"),
@@ -19615,7 +19617,7 @@ void main() {
   }
   document.addEventListener("keydown", e => {
     let t = Ga;
-    if (!t || !t.running) return;
+    if (!t || !t.running || t.replay) return;
     let a = e.key.toLowerCase(),
       r = t.state.players[0];
     if (a === "q") Un(t, -1);
@@ -19658,7 +19660,8 @@ void main() {
     let a = Math.min(e - t.lastFrame, 250);
     t.acc += a, t.lastFrame = e, e < t.introUntil && (t.acc = 0, W2(t, e));
     let r = 0;
-    if (t.net?.role === "guest") netGuestPump(t);
+    if (t.replay) replayPump(t);
+    else if (t.net?.role === "guest") netGuestPump(t);
     else
       for (; t.acc >= 50 && r < 5 && !t.state.outcome;) X2(t), t.acc -= 50, r++;
     if (t.net?.closed && !t.state.outcome) {
@@ -19667,7 +19670,8 @@ void main() {
     }
     if (q2(t, a / 1e3), t.state.outcome) {
       let i = t.state.outcome.winner;
-      Jr(t, i === 0 ? "勝利！" : i === 1 ? "敗北…" : "引き分け", i === 0 ? "win" : i === 1 ? "sudden" : "miss", "", 1500), t.running = !1, zl(), endPoses(t, i), setTimeout(() => K2(t), 1500);
+      t.rep && !t.rep.outcome && replayFinish(t.rep, t.canon ?? t.state);
+      Jr(t, i === 0 ? "勝利！" : i === 1 ? "敗北…" : "引き分け", i === 0 ? "win" : i === 1 ? "sudden" : "miss", "", 1500), t.running = !1, zl(), endPoses(t, i), setTimeout(() => t.replay ? Ga === t && t.replay.done(t) : K2(t), 1500);
       return
     }
     requestAnimationFrame(Ud)
@@ -19675,7 +19679,7 @@ void main() {
 
   function W2(e, t) {
     let a = t < e.introUntil - 1100 ? 0 : 1;
-    a !== e.introStep && (e.introStep = a, a === 0 ? (Jr(e, "妖怪大戦", "win", e.net ? `相手：${e.net.peerName}（対人戦）` : `相手：${or[e.diff].name}`, 1150), Ed(!1)) : (Jr(e, "いざ、勝負！", "win", "", 1150), yd()))
+    a !== e.introStep && (e.introStep = a, a === 0 ? (Jr(e, "妖怪大戦", "win", e.replay ? "リプレイ" : e.net ? `相手：${e.net.peerName}（対人戦）` : `相手：${or[e.diff].name}`, 1150), Ed(!1)) : (Jr(e, "いざ、勝負！", "win", "", 1150), yd()))
   }
 
   function X2(e) {
@@ -19694,18 +19698,19 @@ void main() {
         });
     }
     let r = [];
-    Uh(e.state, t, r), e.net && netHostSend(e, t), playEvents(e, r)
+    e.rep && replayPush(e.rep, e.state.tick, t), Uh(e.state, t, r), e.net && netHostSend(e, t), playEvents(e, r)
   }
 
   // エンジンから出た出来事を画面へ（攻撃のあとのダメージは少し遅らせて見せる）
   function playEvents(e, r) {
-    let i = 0;
+    let i = 0,
+      ep = e.epoch;
     for (let n of r) {
       n.t === "action" && (n.action === "attack" || n.action === "skill") && (i = 480), n.t === "ult" && (i = 1700);
       let s = i;
       // 遅らせて見せる出来事の相手は、見せるまで HP・生死を止めておく
       s > 0 && (n.t === "damage" || n.t === "heal" || n.t === "ko" || n.t === "curse" || n.t === "doll" || n.t === "endure") ? (viewHold(e, n), setTimeout(() => {
-        viewRelease(e, n), Od(e, n)
+        e.epoch === ep && (viewRelease(e, n), Od(e, n))
       }, s)) : Od(e, n)
     }
   }
@@ -19979,6 +19984,7 @@ void main() {
   /*@@include ext/battle_ui.js@@*/
   /*@@include ext/battle_view.js@@*/
   /*@@include ext/pvp.js@@*/
+  /*@@include ext/replay_ui.js@@*/
   function Q2(e) {
     let t = e.state.players[0],
       a = e.refs.overlay;
@@ -20058,11 +20064,11 @@ void main() {
     h.onclick = () => {
       a.remove(), Fd(teamMembers(), BAG.slice())
     };
-    let f = q("button", "btn", "編成に戻る");
+    let f = q("button", "btn", "ホームへ");
     f.onclick = () => {
-      a.remove(), Ga = null, Sd()
-    }, e.net && pvpResultButtons(e, a, h, f), c.append(h, f), c.style.justifyContent = "center", r.append(c), a.append(r), document.body.append(a)
+      a.remove(), Ga = null, showHome()
+    }, e.net && pvpResultButtons(e, a, h, f), c.append(h, f), c.style.justifyContent = "center", r.append(c), e.rep && r.append(replayResultRow(e.rep, a)), a.append(r), document.body.append(a)
   }
   /*@@include ext/gallery.js@@*/
-  debugHook(), location.hash.startsWith("#gallery") ? showGallery() : (Sd(), pvpFromHash())
+  debugHook(), location.hash.startsWith("#gallery") ? showGallery() : (showHome(HOME_TABS.some(x => x[0] === loadStored("home:tab", "")) ? loadStored("home:tab", "") : "battle"), pvpFromHash())
 })();

@@ -374,8 +374,9 @@ function netGuestPump(e) {
       continue;
     }
     if (m.n !== e.canon.tick + 1) { e.net.gaps++; continue; }
-    const ev = [];
-    Uh(e.canon, (m.i ?? []).map(([player, input]) => ({ player, input })), ev);
+    const ev = [], ins = (m.i ?? []).map(([player, input]) => ({ player, input }));
+    e.rep && replayPush(e.rep, e.canon.tick, ins);
+    Uh(e.canon, ins, ev);
     e.state = mirrorState(e.canon);
     playEvents(e, ev.map(mirrorEvent));
     n++;
@@ -393,7 +394,7 @@ function netLost(e) {
     const row = q("div", "row");
     row.style.justifyContent = "center";
     const back = q("button", "btn primary", "編成に戻る");
-    back.onclick = () => { a.remove(), Ga = null, PVP = null, Sd(); };
+    back.onclick = () => { a.remove(), Ga = null, PVP = null, showHome(); };
     row.append(back), box.append(row), a.append(box), document.body.append(a);
   }, 1200);
 }
@@ -404,6 +405,7 @@ function startPvpBattle(net, seed, teams) {
   document.querySelector(".pvp-lobby")?.remove();
   const canon = Rh(seed, teams[0], teams[1], { noItems: !0 });
   const guest = net.role === "guest";
+  SCREEN_LEAVE?.(), SCREEN_LEAVE = null;
   net.inbox = [], net.stream = [], net.resyncs = 0, net.gaps = 0, net.wantAgain = !1, net.peerAgain = !1;
   Kr.replaceChildren();
   const canvas = q("canvas", "stage"), scene = new e2(canvas);
@@ -433,6 +435,7 @@ function startPvpBattle(net, seed, teams) {
     logEl: q("div", "log"),
     called: "",
     wheelKey: "",
+    rep: replayNew(seed, teams, { noItems: !0 }, { mode: "pvp", me: guest ? 1 : 0, peer: net.peerName, at: Date.now() }),
   };
   O2(Ga, canvas);
   const foe = Ga.state.players[1].units.map(u => ct[u.defIndex].name).join("・");
@@ -538,7 +541,7 @@ function pvpResultButtons(e, wrap, again, back) {
     net.wantAgain = !0, net.link.send({ k: "again" }), sync();
     if (net.role === "host" && net.peerAgain) pvpHostStart(net);
   };
-  back.onclick = () => { wrap.remove(), net.link.close(), Ga = null, PVP = null, Sd(); };
+  back.onclick = () => { wrap.remove(), net.link.close(), Ga = null, PVP = null, showHome(); };
   sync();
   const rs = q("div", "muted small");
   rs.textContent = `通信：${net.link.kind === "rtc" ? "WebRTC" : "同じブラウザ"}${net.link.rtt ? `・往復 ${net.link.rtt}ms` : ""}${net.resyncs ? `・同期のずれを ${net.resyncs} 回なおした` : ""}`;

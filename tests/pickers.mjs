@@ -21,6 +21,7 @@ const chip = async (label) => page.locator(".picker .pk-chip", { hasText: new Re
 const names = () => page.$$eval(".picker .pk-body .pick-item .pk-main > b, .picker .pk-body .pick-item .pk-name > b", bs => bs.map(b => b.childNodes[0].textContent.trim()));
 
 await page.goto(pathToFileURL(resolve("dist/index.html")).href);
+await page.click('.nav-tab[data-tab="deck"]');
 await page.waitForTimeout(1200);
 if (!(await page.$(".dt-pick"))) fail("no picker buttons in the detail panel");
 

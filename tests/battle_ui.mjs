@@ -18,6 +18,7 @@ page.on("console", m => { if (m.type() === "error" && !m.text().includes("Failed
 const fail = msg => { console.log("FAIL:", msg); errors.push(msg); };
 
 await page.goto(pathToFileURL(resolve("dist/index.html")).href + "#debug");
+await page.click('.nav-tab[data-tab="deck"]');
 await page.waitForTimeout(800);
 await page.click(".b-btn.go");
 await page.click(".confirm .btn.primary");
