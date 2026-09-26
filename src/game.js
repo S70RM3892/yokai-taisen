@@ -18865,6 +18865,7 @@ void main() {
   }
 
   /*@@include ext/builder_ui.js@@*/
+  /*@@include ext/party_save.js@@*/
   /*@@include ext/presets.js@@*/
   function Sd() {
     Kr.replaceChildren();
@@ -18884,7 +18885,7 @@ void main() {
       d = q("div", "b-bar");
     n.append(s, l, u, o, d);
     let c = q("div", "b-rules"),
-      h = q("div", "b-sets"),
+      h = partyBox(() => Me()),
       bagBox = q("div", "b-rules b-bag");
     l.append(B2(), c, presetBox(p => { t = 0, DETAIL_FOR = null, Me(); }), bagBox, h);
     let f = Ke("svg", {
@@ -18956,6 +18957,7 @@ void main() {
     }
 
     function Me() {
+      partySaveCurrent(); // いまの編成はいつも保存（開きなおしても続きから）
       g.replaceChildren();
       for (let ne = 0; ne < 6; ne++) {
         let [ve, he] = cr(-150 + ne * 60, 104), S = Ke("g", {
@@ -19010,19 +19012,7 @@ void main() {
         te[ve.rank]++, ve.group && _e++
       }
       let oe = (ne, ve) => `<span class="b-rk r${ne} ${te[ne]>ve?"used":""} ${te[ne]>2&&ve===1?"over":""}">${ne}</span>`;
-      c.innerHTML = `<div class="b-rules-t">公式ルール</div><div class="b-rules-row">ランク ${oe("S",0)}${oe("S",1)}${oe("A",0)}${oe("A",1)}</div><div class="b-rules-note">まで OK（B は何体でも）</div><div class="b-rules-row">赤鬼・青鬼・黒鬼 <span class="b-rk ogre ${_e>=1?"used":""} ${_e>1?"over":""}">1</span> まで</div>`, h.replaceChildren(q("div", "b-rules-t", "マイセット"));
-      for (let ne = 0; ne < 3; ne++) {
-        let ve = R2(ne),
-          he = q("div", "b-set"),
-          S = q("button", "b-mini", ve ? ve.map(Ue => (ce(Ue)?.name ?? "?").slice(0, 2)).join("・") : `セット ${ne+1}（空き）`);
-        S.disabled = !ve, S.onclick = () => {
-          ve && (bt = ve.slice(), SLOT_LOADOUT = (setLoadout(ne) ?? bt.map(defaultLoadout)).map(x => ({ ...defaultLoadout(), ...x })), setBag(ne) && (BAG = validBag(setBag(ne))), saveLoadout(), Me())
-        };
-        let je = q("button", "b-mini save", "保存");
-        je.disabled = X.length !== 6, je.onclick = () => {
-          D2(ne, bt), saveStored(`setlo:${ne}`, { lo: SLOT_LOADOUT, bag: BAG }), Me()
-        }, he.append(S, je), h.append(he)
-      }
+      c.innerHTML = `<div class="b-rules-t">公式ルール</div><div class="b-rules-row">ランク ${oe("S",0)}${oe("S",1)}${oe("A",0)}${oe("A",1)}</div><div class="b-rules-note">まで OK（B は何体でも）</div><div class="b-rules-row">赤鬼・青鬼・黒鬼 <span class="b-rk ogre ${_e>=1?"used":""} ${_e>1?"over":""}">1</span> まで</div>`, h.refresh();
       let ye = X.length === 6 ? Yn(teamMembers()) : [];
       renderBag(bagBox, Me);
       if (A.textContent = r ? a === null ? "いどう：1つめの枠を選ぶ" : "いどう：入れ替える枠を選ぶ" : X.length < 6 ? `あと ${6-X.length} 体（${t<3?"前衛":"後衛"}の枠を選択中）` : ye.length ? ye.join(" / ") : "この6体で対戦できる", A.classList.toggle("bad", ye.length > 0), re.disabled = X.length !== 6 || ye.length > 0, L.classList.toggle("on", r), N.hidden = !i, i && renderDetail(N, detailSlot ?? t, Me), !0) {
@@ -19065,27 +19055,12 @@ void main() {
       if (document.querySelector(".result") || /INPUT|SELECT|TEXTAREA/.test(X.target.tagName)) return;
       Ga || (X.key === "Enter" ? re.click() : X.key === "Tab" ? (X.preventDefault(), ee.click()) : X.key.toLowerCase() === "m" ? L.click() : X.key === "Backspace" ? W.click() : X.key === "ArrowLeft" || X.key.toLowerCase() === "q" ? y(-1) : (X.key === "ArrowRight" || X.key.toLowerCase() === "e") && y(1))
     };
-    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じ。左の「流行りの型」で本家の流行り編成をそのまま入れられる。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && (() => {
+    document.addEventListener("keydown", $), Kr.append(n, q("footer", "", "配置は本家の編成画面と同じ。左の「流行りの型」で本家の流行り編成をそのまま入れられる。枠を選んで右のリストから入れる。ホイールを回すと最初の並び（前衛・後衛）が変わる。効果音はその場で合成。BGM は手元の曲ファイルをこのブラウザの中だけで流す。")), Ln().length === 0 && !partyRestoreCurrent().ok && (() => {
       let X = s0(ni(Xl(), 77));
       bt = X.map(te => te.unit), loFromMembers(X.map(te => ({ ...te, diligence: "choumajime" })))
     })(), Me()
   }
 
-  function R2(e) {
-    try {
-      let t = localStorage.getItem(`yokai-taisen:set:${e}`),
-        a = t ? JSON.parse(t) : null;
-      return Array.isArray(a) && a.length === 6 && a.every(r => typeof r == "string" && ct.some(i => i.id === r)) ? a : null
-    } catch {
-      return null
-    }
-  }
-
-  function D2(e, t) {
-    try {
-      localStorage.setItem(`yokai-taisen:set:${e}`, JSON.stringify(t))
-    } catch {}
-  }
   var Ga = null,
     Cd = 0,
     F2 = "http://www.w3.org/2000/svg",

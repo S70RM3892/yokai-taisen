@@ -12,7 +12,7 @@
 // 対人戦では回復などのアイテムはなし（エンジンの state.noItems。バッグも空）。持ち物（装備）はそのまま効く。
 // ============================================================================
 
-var NET_VER = 2;
+var NET_VER = 3; // 妖怪が本家の 398 体だけになった版（id が変わった）
 var NET_TICK_SNAP = 100; // 何 tick ごとに状態をまるごと送るか
 var NET_STUN = [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun.cloudflare.com:3478" }];
 var NET_INPUTS = new Set(["rotate", "target", "purify", "ultStart", "ultRelease", "ultCharge", "ultCancel", "purifyTap", "pokeStart", "pokeTap", "pokeStop"]);

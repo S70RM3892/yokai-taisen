@@ -490,5 +490,3 @@ function openConfirm(members, bag, onGo) {
 }
 
 // マイセットに保存した持ち物（古いセットには無いので null）
-function setLoadout(i) { const v = loadStored(`setlo:${i}`, null); return Array.isArray(v?.lo) && v.lo.length === 6 ? v.lo : null; }
-function setBag(i) { const v = loadStored(`setlo:${i}`, null); return Array.isArray(v?.bag) ? v.bag : null; }

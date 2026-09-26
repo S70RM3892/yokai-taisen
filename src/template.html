@@ -324,6 +324,20 @@ body { margin: 0; }
   .b-set { display: grid; grid-template-columns: 1fr auto; gap: 4px; }
   .b-mini { font-size: 11px; padding: 4px 6px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .b-mini.save { text-align: center; }
+  .ps-row { grid-template-columns: 1fr auto auto; align-items: stretch; }
+  .ps-load { display: grid; gap: 2px; min-height: 30px; min-width: 0; }
+  .ps-load b { font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+  .ps-faces { display: flex; gap: 1px; }
+  .ps-faces > * { width: 16px; height: 16px; border-radius: 50%; flex: none; overflow: hidden; }
+  .ps-row .save, .ps-row .ps-more { padding: 4px 5px; }
+  .ps-faces .ps-miss { display: inline-grid; place-items: center; background: #3a2030; color: var(--foe); font-size: 10px; }
+  .ps-warn { grid-column: 1 / -1; color: var(--foe); font-size: 10px; }
+  .ps-empty { color: var(--muted, #9a94b8); }
+  .ps-more { padding: 4px 7px; text-align: center; }
+  .ps-io { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .ps-io .b-mini { text-align: center; white-space: normal; }
+  .ps-note { font-size: 11px; color: var(--ally); min-height: 1em; }
+  .ps-note.bad { color: var(--foe); }
   .b-mini:disabled { opacity: .45; }
   .b-center { grid-area: center; display: grid; gap: 6px; justify-items: center; }
   .b-wheelwrap { position: relative; width: min(100%, 380px); aspect-ratio: 1; }

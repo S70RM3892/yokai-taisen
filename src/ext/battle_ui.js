@@ -390,6 +390,9 @@ function debugHook() {
   if (!location.hash.includes("debug")) return;
   window.__yokaiDebug = {
     ga: () => Ga, send: (i) => zt(Ga, i), lobby: () => openPvpLobby(),
+    // パーティ保存：いまの編成・書き出しの文字列・読みこみ
+    party: () => partyStore(), bt: () => bt.map(id => id && ct.find(x => x.id === id).name), loadout: () => SLOT_LOADOUT, bag: () => BAG,
+    partyCode: () => partyEncode(partyFromBuilder("test")), partyImport: code => partyApply(partyDecode(code)),
     team: () => teamMembers().map(m => `${ct.find(x => x.id === m.unit).name}${m.equipment ? "(" + equipById(m.equipment).name + ")" : ""}`).join("・"),
     // 流行りの型：ルール違反・持ち物の付けそこね
     presets: () => PRESETS.map(p => { const ms = presetMembers(p); return { name: p.name, errs: ms ? Yn(ms) : ["妖怪が見つからない"], dropped: ms ? p.team.filter((t, i) => t[2] && !ms[i].equipment).map(t => `${t[0]}:${t[2]}`) : [] }; }),
