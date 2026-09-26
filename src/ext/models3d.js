@@ -919,6 +919,7 @@ var HAND_MODEL = {
 var TRIBE_TINT = { takeru: 0xd9644a, ayashi: 0x8a6ee0, tsuwamono: 0x8f8a74, kage: 0x4f9fb8, nagomi: 0x6fbf73, miyabi: 0xd48ac0, tatari: 0x7d5a9e, shizume: 0x5f88c9, maga: 0xb0303a };
 
 function modelSpec(def) {
+  if (def.honkeModel) return def.honkeModel;
   if (HAND_MODEL[def.id]) return HAND_MODEL[def.id];
   const z = zi[def.id];
   return FAMILY_MODEL[z?.family] ?? ["blob", { skin: TRIBE_TINT[def.tribe] }];

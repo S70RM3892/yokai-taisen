@@ -131,7 +131,6 @@ function chargeOverlay(e, a) {
   const t = e.state.tick - s.startTick;
   const pw = Math.min(1, s.power / CHARGE_FULL), st = a.querySelector(".mg-stage"), gg = a.querySelector(".mg-gauge");
   gg.querySelector("i").style.width = jl(s.power, CHARGE_FULL);
-  gg.classList.toggle("fast", t <= g.perfect);
   st.style.setProperty("--pw", pw.toFixed(3));
   // ゲージが 1/4 たまるごとに光る。満タンでひときわ大きく
   const step = Math.floor(pw * 4);
@@ -141,8 +140,8 @@ function chargeOverlay(e, a) {
     else if (step < 4) { mgBurst(gg, pw * 100, 50, "good", 6); gg.classList.remove("pulse"), gg.offsetWidth, gg.classList.add("pulse"); }
   }
   const tm = a.querySelector(".mg-time");
-  tm.textContent = t <= g.perfect ? "今なら PERFECT" : t <= g.good ? "GOOD まで" : `残り ${Ti(Math.max(0, g.limit - t))} 秒`;
-  tm.className = "mg-time num " + (t <= g.perfect ? "perfect" : t <= g.good ? "good" : "late");
+  tm.textContent = s.game === "awasero" ? `あと ${Math.max(0, Math.ceil((CHARGE_FULL - s.power) / 340))} 回` : `のこり ${Math.max(0, Math.ceil((CHARGE_FULL - s.power) / 10))}%`;
+  tm.className = "mg-time num";
   tickCharge(e, st, s);
 }
 

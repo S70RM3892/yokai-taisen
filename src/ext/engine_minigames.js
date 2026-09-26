@@ -11,7 +11,7 @@ var CHARGE_GAMES = {
   mawase: { name: "まわせ！", help: "円の中をぐるぐる回す", perfect: 45, good: 75, limit: 110 },
   nazore: { name: "なぞれ！", help: "光る点を順になぞって 3 周", perfect: 70, good: 110, limit: 150 },
   ute: { name: "打て！", help: "飛んでくる黄色い玉をタップ", perfect: 60, good: 95, limit: 130 },
-  awasero: { name: "あわせろ！", help: "針が光る目もりに来たら押す（3 回）", perfect: 52, good: 84, limit: 120 },
+  awasero: { name: "あわせろ！", help: "針が光る目もりに来たら押す（ぴったり 3 回で発動）", perfect: 52, good: 84, limit: 120 },
 };
 var CHARGE_KEYS = ["mawase", "nazore", "ute", "awasero"];
 var PURIFY_GAMES = {
@@ -46,13 +46,10 @@ function awaseroPress(state, p, at) {
   return true;
 }
 
-// 満タン（または時間切れ）で発動するかどうか。発動するなら [quality, chargeMult, auto]
+// タッチアクションを最後まで終えたら（ゲージ満タン）発動する。本家と同じく、ためや出来の良し悪しで威力は変わらない。
+// 時間切れもない（やめるときは「キャンセル」）。発動するなら [quality, chargeMult, auto]
 function chargeResult(state, s) {
-  const g = CHARGE_GAMES[s.game] ?? CHARGE_GAMES.awasero;
-  const t = state.tick - s.startTick;
-  if (s.power >= CHARGE_FULL) return [t <= g.perfect ? "perfect" : t <= g.good ? "good" : "miss", 1100, false];
-  if (t > g.limit) return ["miss", 1000, true];
-  return null;
+  return s.power >= CHARGE_FULL ? ["done", 1000, false] : null;
 }
 
 function purifyInput(p, amount) {
