@@ -11806,7 +11806,10 @@
 
   function Qh(e) {
     let t = qn(e.nature).weights,
-      a = gt(e.rng, 100),
+      ab = Math.max(-900, Math.min(1e3, (FIELD ?? EMPTY_FIELD).atkBias));
+    // 肉食オーラ・草食オーラ：こうげきの選ばれやすさを変える
+    ab && (t = [Math.floor(t[0] * (1e3 + ab) / 1e3), ...t.slice(1)]);
+    let a = gt(e.rng, t.reduce((x, y) => x + y, 0)),
       r = 0;
     for (let i = 0; i < yu.length; i++)
       if (r += t[i], a < r) return yu[i];

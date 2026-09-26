@@ -216,3 +216,30 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (!checked) throw new Error("no forced rotate happened");
   console.log(`forced rotate waits for the KO effect (${checked} checked)`);
 }
+
+// 流行りの型に出てくる妖怪は、中身も本家（能力値 Lv60・ランク・スキル）。赤鬼・青鬼・黒鬼はあわせて 1 体まで
+{
+  const by = n => E.units.find(u => u.name === n);
+  const want = { ブシニャン: ["S", 272, 157, "超クリティカル"], 赤鬼: ["S", 438, 200, "ガードくずし"], 大ガマ: ["S", 270, 154, "ガマのまもり"],
+    ミツマタノヅチ: ["B", 232, 132, "トリプルヘッド"], びきゃく: ["E", 200, 87, "美脚"], 天狗: ["S", 237, 90, "風あそび"] };
+  for (const [n, [rank, hp, atk, skill]] of Object.entries(want)) {
+    const d = by(n);
+    if (d.rank !== rank || d.hp !== hp || d.atk !== atk || d.hskill !== skill || d.trait !== "honke") throw new Error(`${n} is not honke data: ${d.rank} ${d.hp} ${d.atk} ${d.hskill}`);
+  }
+  const oni = ["赤鬼", "黒鬼", "ブリー隊長", "肉くいおとこ", "さきがけの助", "びきゃく"].map(n => ({ unit: by(n).id }));
+  if (!E.validateTeam(oni).some(s => s.includes("大物"))) throw new Error("赤鬼と黒鬼を同じチームに入れられてしまう");
+  // 肉食オーラ（前衛）で こうげきがふえ、草食オーラでへる
+  const share = name => {
+    const team = [name, "ブリー隊長", "さきがけの助", "びきゃく", "びきゃく", "びきゃく"].map(n => ({ unit: by(n).id, nature: "tanki" }));
+    const foe = ["シロカベ", "むりだ城", "から傘お化け", "から傘お化け", "びきゃく", "ろくろ首"].map(n => ({ unit: by(n).id, nature: "tanki" }));
+    let atk = 0, all = 0;
+    for (let seed = 0; seed < 30; seed++) {
+      const s = E.newBattle(seed, team, foe, { noItems: true });
+      for (let i = 0; i < 600 && !s.outcome; i++) { const ev = []; E.step(s, [], ev); for (const e of ev) if (e.t === "action" && e.uid >= 6 && ["attack", "skill", "guard", "curse", "bless"].includes(e.action)) { all++; e.action === "attack" && atk++; } }
+    }
+    return atk / all;
+  };
+  const [meat, grass] = [share("肉くいおとこ"), share("草くいおとこ")];
+  if (!(meat > grass + 0.1)) throw new Error(`肉食オーラ ${meat} / 草食オーラ ${grass}`);
+  console.log(`honke replace ok; foe attack share: 肉食オーラ ${(meat * 100).toFixed(0)}% / 草食オーラ ${(grass * 100).toFixed(0)}%`);
+}

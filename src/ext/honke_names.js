@@ -1,7 +1,6 @@
 // ============================================================================
 // 本家の対戦で流行った編成に出てくる妖怪を、本家の名前・本家に寄せた見た目にする。
-// 中身（能力値・特性・奥義）は、本家での役割にいちばん近かった妖怪のものを使う（対応は docs/PRESETS.md）。
-// 赤鬼は本家の対戦での使われ方（ガードくずしで壁を貫通）に合わせて、特性をガード破りにする。
+// ここでは名前と見た目だけを変え、中身（能力値・ランク・種族・わざ・スキル・魂）は honke_roster.js で本家のデータに置きかえる。
 // [いまの名前, 本家の名前, 3D モデル（null ならいまのまま）]
 // ============================================================================
 
@@ -29,18 +28,9 @@ var HONKE_UNITS = [
   ["油坊", "あせっか鬼", ["hum", { build: "child", skin: 0xe05a4a, horns: 1, blush: !0, mouth: "open", eyeStyle: "round", hair: "wild", hairColor: 0x1c1820 }]],
   ["ぬりかべ", "シロカベ", ["stone", { shape: "wall", skin: 0xefece2, feet: !0, eyeStyle: "sleepy" }]],
 ];
-// ランクを本家に合わせる（出典の HRS の編成表に書かれたランク）。能力値はランクごとの平均の比で合わせる。
-// 大ガマは本家では S だが、S が 3 体になる編成（赤鬼・大ガマ・ブシニャン）が組めなくなるので B のまま。
-var HONKE_RANK = { ドケチング: "S", しどろもどろ: "B", びきゃく: "E", さきがけの助: "B", から傘お化け: "E" };
-var RANK_MEAN = { S: [288, 120, 124, 111, 124], A: [252, 110, 111, 102, 113], B: [243, 101, 102, 96, 105], C: [231, 94, 93, 84, 100], D: [215, 83, 86, 81, 91], E: [195, 77, 76, 70, 94] };
 for (const [from, to, model] of HONKE_UNITS) {
   const d = ct.find(x => x.name === from);
   if (!d) continue;
-  const r = HONKE_RANK[to];
-  if (r && r !== d.rank) {
-    ["hp", "atk", "spa", "def", "spd"].forEach((k, i) => d[k] = Math.round(d[k] * RANK_MEAN[r][i] / RANK_MEAN[d.rank][i]));
-    d.rank = r;
-  }
   const fam = zi[d.id]?.family;
   for (const w of [from, fam].filter(Boolean)) d.ultName = d.ultName.split(w).join(to);
   d.name = to;
