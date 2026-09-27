@@ -54,7 +54,7 @@ Object.assign(e2.prototype, {
     const T = tf ? tf.home.clone() : home.clone().add(new D(0, 0, f.ally ? -4.6 : 4.6));
     const dir = T.clone().sub(home).setY(0);
     dir.lengthSq() < 1e-6 ? dir.set(0, 0, f.ally ? -1 : 1) : dir.normalize();
-    const DUR = { enter: 0.7, ko: 1.1, hurt: 0.4, dodge: 0.55, guard: 0.7, possess: 1.25, cast: 1.05, loaf: 1.6, cheer: 1.2, slump: 1.4, shoot: 0.9, rocket: 0.95, blade: 1.05, bodyslam: 1.05, overhead: 1.05, combo: 1.05, tackle: 0.95 };
+    const DUR = { enter: 0.7, leave: 0.45, ko: 1.1, hurt: 0.4, dodge: 0.55, guard: 0.7, possess: 1.25, cast: 1.05, loaf: 1.6, cheer: 1.2, slump: 1.4, shoot: 0.9, rocket: 0.95, blade: 1.05, bodyslam: 1.05, overhead: 1.05, combo: 1.05, tackle: 0.95 };
     f.anim = { kind: "mv", style, t: 0, dur: (DUR[style] ?? 0.98) * (o.slow ?? 1), home, T, dir, fired: new Set(), trail: 0, color: o.color ?? 0xffffff, tf, o,
       side: hash32("side:" + f.uid) % 2 ? 1 : -1 };
     return f.anim;
@@ -292,14 +292,24 @@ Object.assign(e2.prototype, {
         break;
       }
       case "enter": {
-        const from = H.clone().add(new D(0, 0, a.o.ally ? 2.2 : -2.2));
-        const u = easeOutK(segK(t, 0, 0.55));
-        o.pos.lerpVectors(from, H, u), o.y = 1.1 * Math.sin(u * Math.PI);
-        o.rx = (1 - u) * Math.PI * 2 * (a.o.ally ? -1 : 1);
+        // メンバーサークルが回る向きに合わせて、横から回りこんで出てくる（side：-1 は左から・1 は右から）
+        const sd = a.o.side ?? -1, u = easeOutK(segK(t, 0, 0.55));
+        const from = new D(sd * 5.2, 0, H.z + (a.o.ally ? 1.6 : -1.6));
+        o.pos.lerpVectors(from, H, u), o.pos.z += Math.sin(u * Math.PI) * (a.o.ally ? 0.9 : -0.9); // 円をえがいて前へ
+        o.y = 0.6 * Math.sin(u * Math.PI);
+        o.spin = (1 - u) * Math.PI * 2 * -sd; // 回りながら
         const sq = Math.sin(segK(t, 0.55, 0.75) * Math.PI);
         o.sy = 1 - 0.2 * sq, o.sx = 1 + 0.12 * sq;
         o.armL = o.armR = -2.4 * Math.sin(segK(t, 0.6, 1) * Math.PI);
         once("land", 0.55, () => { this.shockwave(H, a.o.tribe ?? 0xf2d15c, 1.3, 0.45); this.sparkle(H.clone().setY(0.3), 0xfff2a0, 10, 1.8, 0.22, 1); });
+        break;
+      }
+      case "leave": {
+        // 後衛へ下がる：回る向きに横へ回りこんで消える（side：-1 は左へ・1 は右へ）
+        const sd = a.o.side ?? 1, u = easeOutK(segK(t, 0, a.dur));
+        const to = new D(sd * 5.2, 0, H.z + (a.o.ally ? 1.6 : -1.6));
+        o.pos.lerpVectors(H, to, u), o.pos.z += Math.sin(u * Math.PI) * (a.o.ally ? 0.9 : -0.9);
+        o.y = 0.4 * Math.sin(u * Math.PI), o.spin = u * Math.PI * 2 * sd, o.op = 1 - u;
         break;
       }
       case "cheer": {
@@ -533,14 +543,24 @@ var FX_HEX = null;
     const f = this.figs.get(uid);
     if (f && f.alive && !f.anim) this.startMove(uid, "hurt");
   };
-  // メンバーサークルで前に出てきた妖怪は、跳んで着地する
+  // メンバーサークルが回ったとき：前に出てくる妖怪は回る向きの横から回りこんで出てきて、下がる妖怪は反対の横へ回りこんで消える。
+  // rotSide[味方 1／相手 0] は回った向き（-1：時計回り＝左から入って右へ出る、1：反時計回り）。回転の出来事で入る
   P.setLine = function (ally, uids) {
-    const was = new Set([...this.figs.values()].filter(o => o.ally === ally && o.root.visible).map(o => o.uid));
+    const k = ally ? 1 : 0;
+    const was = new Set([...this.figs.values()].filter(o => o.ally === ally && o.root.visible && !o.leaving).map(o => o.uid));
     prevLine.call(this, ally, uids);
-    if (!this.lineInit?.[ally ? 1 : 0]) { (this.lineInit ??= [0, 0])[ally ? 1 : 0] = 1; return; }
+    if (!this.lineInit?.[k]) { (this.lineInit ??= [0, 0])[k] = 1; return; }
+    const sd = this.rotSide?.[k] ?? -1;
+    for (const f of this.figs.values()) {
+      if (f.ally !== ally) continue;
+      if (uids.includes(f.uid)) { f.leaving && (f.leaving = !1, f.anim = null); continue; }
+      // 下がった妖怪：消える動きが終わるまで見せておく
+      if (was.has(f.uid) && f.alive && !f.leaving) f.leaving = !0, f.anim = null, this.startMove(f.uid, "leave", { ally, side: -sd });
+      if (f.leaving) f.anim?.style === "leave" ? f.root.visible = !0 : f.leaving = !1;
+    }
     for (const u of uids) {
       const f = this.figs.get(u);
-      if (f && !was.has(u) && f.alive && (!f.anim || f.anim.kind === "mv")) this.startMove(u, "enter", { ally, tribe: typeof Pi !== "undefined" && f.def ? N2(Pi[f.def.tribe]) : 0xf2d15c });
+      if (f && !was.has(u) && f.alive && (!f.anim || f.anim.kind === "mv")) this.startMove(u, "enter", { ally, side: sd, tribe: typeof Pi !== "undefined" && f.def ? N2(Pi[f.def.tribe]) : 0xf2d15c });
     }
   };
   // 勝ち負けのポーズ（決着のあと、何度か）

@@ -284,7 +284,7 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
     const ev = [];
     E.step(s, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], ev);
     if (p.stance) throw new Error("ult started during sudden death");
-    for (const e of ev) if (e.t === "action") acts.add(e.action);
+    for (const e of ev) if (e.t === "action" && s.tick > 6000) acts.add(e.action); // 最初の 1 tick（5999）はまだサドンデス前
   }
   for (const a of acts) if (!["attack", "loaf", "stunned", "rest"].includes(a)) throw new Error(`sudden death action: ${a}`);
   console.log(`sudden death: attack only (${[...acts].join(",")}), no ult`);
@@ -410,6 +410,49 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   }
   if (checked < 10) throw new Error(`too few guard/curse/bless actions (${checked})`);
   console.log(`action sg: guard/curse/bless give the actor extra sg (${checked} checked)`);
+}
+
+// 性格の決まった行動（本家）：動じないは相手がパワーチャージ中なら必ずガード、けんしん的は よいとりつきのない前衛の味方がいれば必ず味方にとりつく、
+// 荒くれ・ずのう的は ピンをした相手を確実に倒せるなら必ずこうげき／ようじゅつ
+{
+  const id = n => ({ unit: E.units.find(u => u.name === n).id });
+  const run = (setup, check, n = 1500) => {
+    let seen = 0;
+    for (let g = 0; g < 6 && seen < 8; g++) {
+      const seed = (g * 9973 + 3) >>> 0;
+      const st = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+      const u = setup(st);
+      for (let i = 0; i < n && !st.outcome && seen < 8; i++) {
+        const pre = check.pre?.(st, u);
+        const ev = [];
+        E.step(st, check.inputs?.(st, u) ?? [], ev);
+        const a = ev.find(e => e.t === "action" && e.uid === u.uid);
+        if (!a || ["loaf", "stunned", "rest"].includes(a.action) || ev.some(e => e.t === "relay") || pre === false) continue;
+        check.test(a, st, u);
+        seen++;
+      }
+    }
+    return seen;
+  };
+  // 動じない：相手（player 1）の前衛がずっとパワーチャージしている
+  const g1 = run(st => { const p = st.players[0], u = p.units[p.wheel[0]]; u.nature = "doujinai"; u.fx = { ...u.fx, guardOnly: 0 }; return u; }, {
+    pre: st => { const f = st.players[1]; if (!f.stance) { const c = f.units[f.wheel[0]]; if (c.hp > 0) c.sg = 1000, c.curse = null, c.ultLockout = 0; } return !!f.stance; },
+    inputs: st => st.players[1].stance ? [] : [{ player: 1, input: { t: "ultStart", allySlot: 0, grand: false } }],
+    test: a => { if (a.action !== "guard") throw new Error(`動じない: 相手がチャージ中なのに ${a.action}`); },
+  });
+  // けんしん的：味方にとりつく妖怪（よいとりつき）で、前衛の味方によいとりつきがない
+  const blesser = E.units.find(d => d.inspKind === "bless" && d.name === "ばか頭巾") ?? E.units.find(d => d.inspKind === "bless");
+  const g2 = run(st => { const p = st.players[0], u = p.units[p.wheel[0]]; u.nature = "kenshinteki"; u.defIndex = E.units.indexOf(blesser); return u; }, {
+    pre: st => st.players[0].wheel.slice(0, 3).map(i => st.players[0].units[i]).filter(x => x.hp > 0).some(x => x.blessing === null),
+    test: a => { if (a.action !== "bless") throw new Error(`けんしん的: よいとりつきのない味方がいるのに ${a.action}`); },
+  });
+  // 荒くれ：ピンをした相手の HP が 1（確実に倒せる）
+  const g3 = run(st => { const p = st.players[0], u = p.units[p.wheel[0]]; u.nature = "arakure"; return u; }, {
+    pre: st => { const p = st.players[0], f = st.players[1], t = f.units[f.wheel[1]]; if (t.hp <= 0) return false; t.hp = 1; p.target = t.index; for (const x of f.units) x.blessing = null, x.fx = { ...x.fx, taunt: 0, hidden: 0 }; return true; },
+    test: a => { if (a.action !== "attack") throw new Error(`荒くれ: 倒せる相手にピンをしているのに ${a.action}`); },
+  });
+  if (g1 < 3 || g2 < 3 || g3 < 3) throw new Error(`nature rules: too few checks ${g1}/${g2}/${g3}`);
+  console.log(`nature rules: 動じない guard ${g1}, けんしん的 bless ${g2}, 荒くれ one-shot attack ${g3}`);
 }
 
 // ブロッカー（本家）：前に出るときガードする。ただし後衛へ下がってから だれも行動しないうちに戻ったときはガードしない

@@ -91,8 +91,8 @@ for (let seed = 1; seed <= 10; seed++) {
   check(loaf === 0, `スパルタ魂 seed ${seed}: ${loaf} loafs`);
 }
 
-// 6. 閃光魂：前衛にいれば最初に動く。1 度だけ。動いたとき、敵味方の前衛の行動ポイントから
-//    閃光の妖怪が発動したときに持っていた行動ポイントを引く（ほかの妖怪の番はとばさない。本家）
+// 6. 閃光魂：前衛にいれば最初に動く。1 度だけ。次に動くはずだった妖怪の番はとばされ（note マグロ）、
+//    敵味方の前衛の行動ポイントから 閃光の妖怪が発動したときに持っていた行動ポイントを引く（note たくトンボ）
 for (let seed = 1; seed <= 10; seed++) {
   const st = battle(seed, "rsoul_senkou");
   const u = st.players[0].units[0];
@@ -109,8 +109,9 @@ for (let seed = 1; seed <= 10; seed++) {
       if (e.t === "action" && first === null && (e.uid === 0 || !armed.has(e.uid))) first = e.uid;
       if (e.t === "flashSkip" && e.uid === 0) {
         skips++;
-        // ほかの妖怪の行動ポイントは 増えない（番をとばさない）
-        for (const x of front(st)) if (x.uid !== 0 && !ev.some(a => a.t === "action" && a.uid === x.uid) && before.has(x.uid) && x.ap > before.get(x.uid))
+        // とばされた妖怪のほかは、行動ポイントが増えない（引かれるだけ）
+        check(e.skipped !== null, `閃光魂 seed ${seed}: 番がとばされなかった`);
+        for (const x of front(st)) if (x.uid !== 0 && x.uid !== e.skipped && !ev.some(a => a.t === "action" && a.uid === x.uid) && before.has(x.uid) && x.ap > before.get(x.uid))
           check(false, `閃光魂 seed ${seed}: ${x.uid} の行動ポイントが増えた ${before.get(x.uid)} -> ${x.ap}`);
       }
     }
@@ -119,7 +120,7 @@ for (let seed = 1; seed <= 10; seed++) {
   check(skips === 1, `閃光魂 seed ${seed}: flashed ${skips} times`);
   check(u.firstStrikeUsed && !u.flashArmed, `閃光魂 seed ${seed}: not used up`);
 }
-// 後衛から前に出たとき：すぐ動く（ほかの妖怪の番はとばさない）
+// 後衛から前に出たとき：すぐ動き、ほかの妖怪の番がとばされる
 {
   const t1 = E.randomTeam(E.seedRng(5, 1)), t2 = E.randomTeam(E.seedRng(5, 2));
   t1[3] = { ...t1[3], equipment: "rsoul_senkou" };
@@ -133,11 +134,11 @@ for (let seed = 1; seed <= 10; seed++) {
     for (const e of ev) {
       if (e.t === "rotate" && e.player === 0 && rotated < 0) rotated = st.tick;
       if (e.t === "action" && e.uid === 3 && acted < 0) acted = st.tick;
-      if (e.t === "flashSkip" && e.uid === 3) skip = e.skipped ?? "none";
+      if (e.t === "flashSkip" && e.uid === 3) skip = e.skipped;
     }
   }
   check(rotated >= 0 && acted >= 0 && acted - rotated <= 2, `閃光魂（後衛から）: rotated ${rotated}, acted ${acted}`);
-  check(skip === "none", `閃光魂（後衛から）: flash ${skip}`);
+  check(skip !== null && skip !== 3, `閃光魂（後衛から）: no skip`);
 }
 
 console.log(fails.length ? "FAIL:\n" + fails.join("\n") : `rare souls ok (${rare.length})`);

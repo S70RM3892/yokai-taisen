@@ -1160,8 +1160,8 @@
     }
   }
 
-  // 閃光（本家のスキル・閃光魂）：1 度だけ先に行動する。前衛にいるとすぐ動き、そのとき敵味方の前衛の行動ポイントから
-  // 閃光の妖怪が発動したときに持っていた行動ポイントを引く（ほかの妖怪の番はとばさない）。
+  // 閃光（本家のスキル・閃光魂）：1 度だけ先に行動する。前衛にいると、次に動くはずだった妖怪のかわりにすぐ動き（その妖怪の番はとばされる）、
+  // 敵味方の前衛の行動ポイントから 閃光の妖怪が発動したときに持っていた行動ポイントを引く。
   // 使ったことになるのは実際に動いたとき（動く前に後衛へ下がれば、次に前へ出たときにまた効く）
   function armFlash(u) {
     if (!tt(u, "firstStrike") || u.firstStrikeUsed || u.flashArmed) return !1;
@@ -1427,16 +1427,52 @@
     let act = by ?? r.u;
     if (r.u.flashArmed) {
       r.u.flashArmed = !1, r.u.firstStrikeUsed = !0;
-      let fa = r.u.flashAp ?? 0;
+      // 本家：次に動くはずだった妖怪のかわりに動く（その妖怪の番はとばされる。note マグロ）。
+      // あわせて、敵味方の前衛の行動ポイントから閃光の妖怪が持っていた行動ポイントを引く（行動権の付与。note たくトンボ）
+      let fa = r.u.flashAp ?? 0,
+        sk = a.find(x => x !== r && !x.u.flashArmed && Se(x.u));
       for (let x of a) x !== r && x.u.ap > 0 && (x.u.ap = Math.max(0, x.u.ap - fa));
-      t.push({
+      sk && (sk.u.ap = bu(e.players[sk.pid], sk.u)), t.push({
         t: "flashSkip",
         uid: r.u.uid,
-        skipped: null
+        skipped: sk ? sk.u.uid : null
       })
     }
     for (let q of e.players) q.acts = (q.acts ?? 0) + 1;
     e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), statusOnAction(e, t), Yh(e), e.motionFrom = e.tick, e.busyUntil = e.tick + pc[s]
+  }
+
+  // 性格の決まった行動（本家。note たくトンボ「対戦の仕様」ほか）。当てはまらないときは null（ふだんの割合で選ぶ）
+  //   動じない：相手がパワーチャージ中なら 必ずガード（モーション中に始めたチャージは見えないので、ノーモーションには間に合わない）
+  //   けんしん的：前衛に よいとりつきがかかっていない味方がいれば 必ず味方にとりつく
+  //   荒くれ・ずのう的：ねらう指定（ピン）をした相手を こうげき／ようじゅつで確実に倒せるなら 必ずそれを撃つ
+  function natureSure(e, p, foe, u, df) {
+    let id = qn(u.nature).id;
+    if (id === "doujinai") return foe.stance && !(FIELD ?? EMPTY_FIELD).noGuardAll ? "guard" : null;
+    if (id === "kenshinteki") return df.inspKind !== "curse" && Ht(p).some(x => x.blessing === null) ? "bless" : null;
+    if (id !== "arakure" && id !== "zunouteki" || p.target === null) return null;
+    let src = id === "arakure" ? "attack" : "skill",
+      tg = ui(p, foe);
+    if (!tg || tg.index !== p.target || src === "skill" && df.skillMode === "heal") return null;
+    return minDamage(e, p, u, foe, tg, src) >= tg.hp ? src : null
+  }
+
+  // こうげき・ようじゅつの いちばん小さいダメージ（乱数は最小・クリティカルなし・よけられないとして）
+  function minDamage(e, p, u, foe, n, src) {
+    if (e.tick >= fr) return vh;
+    let df = ct[u.defIndex],
+      skill = src === "skill",
+      el = skill ? skillElementOf(u, df) : attackElement(u),
+      pw = Bt(skill ? skillPowerOf(u, df) : df.attackPower, 1e3 + (skill ? u.fx.skillUp ?? 0 : u.fx.atkUp ?? 0)),
+      at = Jt(p, u, skill ? "spa" : "atk");
+    !skill && tt(u, "guardBreak") && (at = Bt(at, 930));
+    let d = Oh(at, pw, Jt(foe, n, "def")),
+      f = ct[n.defIndex];
+    el !== null && (el === f.weak ? n.guarding && n.fx.guardNoWeak || (d = Bt(d, Ec)) : el === f.resist && !u.fx.pierce && (d = Bt(d, yc)), d = Bt(d, elemMult(u, n, el)));
+    d = Bt(d, dmgVsTarget(u, n));
+    !skill && (n.fx.halfAttack && (d = Bt(d, 500)), n.fx.resistAttack && (d = Bt(d, 1e3 - n.fx.resistAttack)));
+    n.guarding && !(!skill && tt(u, "guardBreak")) && (d = Bt(d, guardMult(u, n)));
+    return Math.max(1, Bt(d, dmgRandLo))
   }
 
   function Qh(e) {
@@ -1498,7 +1534,7 @@
         uid: a.uid,
         action: "loaf"
       }), onLoaf(e, i, a, r), "loaf";
-      l = a.fx.guardOnly ? "guard" : Qh(a);
+      l = a.fx.guardOnly ? "guard" : natureSure(e, i, n, a, s) ?? Qh(a);
       // 本家の妖怪は、とりつきが敵向き（悪い）か味方向き（よい）のどちらか一方
       s.inspKind === "bless" && l === "curse" && (l = "bless"), s.inspKind === "curse" && l === "bless" && (l = "curse");
       l === "guard" && !a.fx.guardOnly && (FIELD ?? EMPTY_FIELD).noGuardAll && (l = "attack"); // まもりわすれ
@@ -20001,6 +20037,7 @@ void main() {
         break;
       case "rotate":
       case "forcedRotate":
+        (e.scene.rotSide ??= [-1, -1])[t.player === 0 ? 1 : 0] = t.dir === "ccw" ? 1 : -1;
         _2(), jinAfterRotate(e, t), t.t === "forcedRotate" && Rt(e, `${t.player===0?"こちら":"相手"}の前衛が全滅して、メンバーサークルが回った`, t.player === 0 ? "a" : "f");
         break;
       case "doll":
@@ -20010,7 +20047,7 @@ void main() {
         viewOf(e, t.uid).hp = Math.max(1, viewOf(e, t.uid).hp), ma(e, t.uid, "踏ん張り", "info"), Rt(e, `${la(e,t.uid)} は踏ん張った`, a(t.uid));
         break;
       case "flashSkip": // 閃光で動いたとき（前に出たときの firstStrike では出さない。2 つ重なるので）
-        flashShown(e, t.uid) && (ma(e, t.uid, "閃光", "info"), Rt(e, `${la(e,t.uid)} が閃光で先に動いた`, a(t.uid)));
+        flashShown(e, t.uid) && (ma(e, t.uid, "閃光", "info"), Rt(e, t.skipped !== null ? `${la(e,t.uid)} が閃光で先に動いて、${la(e,t.skipped)} の番がとばされた` : `${la(e,t.uid)} が閃光で先に動いた`, a(t.uid)));
         break;
       case "suddenDeath":
         yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999・こうげきだけ", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になり、こうげきしかできない", "f");
