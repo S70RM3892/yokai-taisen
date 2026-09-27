@@ -33,7 +33,21 @@ WEAK_OF = {"fire": "water", "water": "thunder", "thunder": "earth", "earth": "wi
 FOOD = {"おにぎり": "onigiri", "パン": "pan", "駄菓子": "dagashi", "チョコボー": "chocobar", "牛乳": "milk", "ジュース": "juice",
         "ハンバーガー": "burger", "ラーメン": "ramen", "寿司": "sushi", "中華": "chuka", "野菜": "yasai", "肉": "niku",
         "魚介": "gyokai", "カレー": "curry", "スイーツ": "sweets", "おでん": "oden", "スナック": "snack", "そば": "soba"}
-SG_RANK = {"S": 2, "A": 3, "B": 4, "C": 5, "D": 5, "E": 6}
+# 妖気のたまる速さ（6 段階。6 が最速・1 が最遅）。たくトンボ「対戦でよく実戦に影響する仕様」（note, https://note.com/tombow_yw/n/n1e4cf179d2d9）：
+#   最速組のほか、B〜D ランクはそれより 1 段階遅く（中ランク速度型）、S・A ランクはもう 1 段階遅い（高ランク速度型）。
+#   記事で名前が挙がっている妖怪は SG_CLASS でその段にする（ジバニャンS は必殺が「ひゃくれつ肉球」なので最速組）
+SG_RANK = {"S": 3, "A": 3, "B": 5, "C": 5, "D": 5, "E": 6}
+SG_CLASS = {
+    6: ["トホホギス", "ジバニャンS", "一つ目小僧", "ばか頭巾", "かぜカモ", "みちび鬼"],
+    5: ["ボー坊", "のっぺら坊", "ハナホ人", "ブリー隊長", "りもこんかくし", "ベンケイ", "ドキ土器", "アペリカン", "あせっか鬼",
+        "ひとまか仙人", "やめたい師", "もうせん和尚"],
+    4: ["しどろもどろ", "ホリュウ", "泥ボックン", "大山砂夫", "ろくろ首・怪", "雨女"],
+    3: ["ブシニャン", "犬神", "キュウビ", "大ガマ", "ヒカリオロチ", "影オロチ", "天狗", "難怪", "やまタン", "ドケチング", "花さか爺",
+        "赤鬼", "青鬼", "黒鬼", "きらめ鬼", "百々目鬼", "シロカベ", "ふさふさん", "万尾獅子", "おでんじん"],
+    2: ["しわくちゃん"],
+    1: ["ふじみ御前", "心オバア", "破怪", "マスクドニャーン", "ゾロ目大明神"],
+}
+SG_OF = {n: k for k, ns in SG_CLASS.items() for n in ns}
 
 
 def tier(s):
@@ -250,7 +264,7 @@ for d in gp:
     sfx, smods = soul_fx(stext) if stext else ({}, {})
     e = {
         "id": f"y{no:03d}", "no": no, "name": d["name"], "kana": d["kana"], "rank": d["rank"], "tribe": tribe,
-        "hp": st[0], "atk": st[1], "spa": st[2], "def": st[3], "spd": st[4], "sgRank": SG_RANK[d["rank"]],
+        "hp": st[0], "atk": st[1], "spa": st[2], "def": st[3], "spd": st[4], "sgRank": SG_OF.get(d["name"], SG_RANK[d["rank"]]),
         "weak": weak, "resist": resist, "skillElement": selem, "attackPower": apow, "skillPower": spow,
         "curse": insp[0] if insp_kind == "curse" else "weaken", "blessing": insp[0] if insp_kind == "bless" else "rally",
         "inspKind": insp_kind, "inspTier": insp[1], "ult": ult, "ultName": d["ult"], "loafPermil": 25,

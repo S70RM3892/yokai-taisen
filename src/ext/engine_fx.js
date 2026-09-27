@@ -284,7 +284,7 @@ function cpuItemInput(cpu, state) {
 //   とりつかれている間は奥義を撃てない。構えている最中にとりつかれたら構えは解ける。
 // よいとりつき：とりつかれた妖怪が行動するたびに 1 ターン減り、0 で消える。
 var BLESS_TURNS = [3, 4, 5];   // 小・中・大
-var KO_WAIT = 32, KO_WAIT_ULT = 56; // 前衛が全滅したとき、倒れる演出が終わるまで回さない（tick）
+var KO_WAIT = 48, KO_WAIT_ULT = 84; // （対戦の速さ 1.5 倍に合わせた）前衛が全滅したとき、倒れる演出が終わるまで回さない（tick）
 
 function purifySpeed(u) {
   const hard = (FIELD ?? EMPTY_FIELD).purifyHard[u.owner]; // こじらせ：相手のおはらいが難しくなる

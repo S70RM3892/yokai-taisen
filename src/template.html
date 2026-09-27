@@ -388,17 +388,17 @@ body { margin: 0; }
 /* ===== 演出強化 ===== */
 /* 奥義カットイン */
 .cutin { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
-.cutin .dim { position: absolute; inset: 0; background: #05060cb0; animation: ci-dim 1.25s ease-out forwards; }
-.cutin .band { position: absolute; left: -10%; right: -10%; top: 50%; height: 46%; transform: translateY(-50%) skewY(-6deg) scaleY(0); background: linear-gradient(90deg, var(--ci1), var(--ci2)); box-shadow: 0 0 0 3px #fff8, 0 0 30px var(--ci1); animation: ci-band 1.25s cubic-bezier(.2,.9,.2,1) forwards; overflow: hidden; }
+.cutin .dim { position: absolute; inset: 0; background: #05060cb0; animation: ci-dim 1.875s ease-out forwards; }
+.cutin .band { position: absolute; left: -10%; right: -10%; top: 50%; height: 46%; transform: translateY(-50%) skewY(-6deg) scaleY(0); background: linear-gradient(90deg, var(--ci1), var(--ci2)); box-shadow: 0 0 0 3px #fff8, 0 0 30px var(--ci1); animation: ci-band 1.875s cubic-bezier(.2,.9,.2,1) forwards; overflow: hidden; }
 .cutin .band::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #fff0 0 38px, #ffffff22 38px 42px, #fff0 42px 90px); animation: ci-lines .35s linear infinite; }
 .cutin.foe .band::before { animation-direction: reverse; }
-.cutin .art { position: absolute; top: 50%; width: 44%; aspect-ratio: 1; transform: translate(-140%, -50%); animation: ci-art 1.25s cubic-bezier(.2,.9,.2,1) forwards; filter: drop-shadow(0 6px 0 #0008); }
+.cutin .art { position: absolute; top: 50%; width: 44%; aspect-ratio: 1; transform: translate(-140%, -50%); animation: ci-art 1.875s cubic-bezier(.2,.9,.2,1) forwards; filter: drop-shadow(0 6px 0 #0008); }
 .cutin.ally .art { left: 4%; }
 .cutin.foe .art { right: 4%; left: auto; transform: translate(140%, -50%) scaleX(-1); animation-name: ci-art-r; }
 .cutin .art.sub { width: 26%; opacity: .75; top: 36%; }
 .cutin.ally .art.sub.a { left: 24%; } .cutin.ally .art.sub.b { left: 34%; top: 66%; }
 .cutin.foe .art.sub.a { right: 24%; } .cutin.foe .art.sub.b { right: 34%; top: 66%; }
-.cutin .txt { position: absolute; top: 50%; transform: translateY(-50%); display: grid; gap: 2px; animation: ci-txt 1.25s cubic-bezier(.2,.9,.2,1) forwards; opacity: 0; }
+.cutin .txt { position: absolute; top: 50%; transform: translateY(-50%); display: grid; gap: 2px; animation: ci-txt 1.875s cubic-bezier(.2,.9,.2,1) forwards; opacity: 0; }
 .cutin.ally .txt { right: 6%; text-align: right; } .cutin.foe .txt { left: 6%; text-align: left; }
 .cutin .kind { font-family: var(--display); font-size: clamp(14px, 3.4vw, 22px); color: #fff; letter-spacing: .2em; text-shadow: 0 2px 0 #000; }
 .cutin .move { font-family: var(--display); font-size: clamp(24px, 7vw, 48px); color: #fff; line-height: 1.05; text-shadow: 0 3px 0 #000, 0 0 18px var(--ci1); -webkit-text-stroke: 1px #0006; }

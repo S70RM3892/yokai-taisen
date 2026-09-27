@@ -8,19 +8,23 @@
       value: a
     }) : e[t] = a,
     vt = (e, t, a) => hc(e, typeof t != "symbol" ? t + "" : t, a),
+    // 対戦の速さ：行動・ひっさつわざ・おはらいのモーションを本来の 1.5 倍の長さにする（画面の動きも同じ倍率でゆっくり）。
+    // モーションが長いほど、そのあいだにパワーチャージ（ノーモーション・カウンター）やメンバーサークルを回す読み合いができる
+    MOTION_SLOW = 1.5,
     pc = {
-      attack: 48,
-      skill: 48,
-      curse: 48,
-      bless: 48,
-      guard: 32,
-      loaf: 32
+      attack: 72,
+      skill: 72,
+      curse: 72,
+      bless: 72,
+      guard: 48,
+      loaf: 48
     },
-    fc = 64,
-    // こうげき・ようじゅつ／ひっさつわざの出来事から、画面にダメージの数字が出るまで（ミリ秒）。
-    // このあいだ（技の名前が出てからダメージが出るまで）は、だれもメンバーサークルを回せない
-    ATK_HIT_MS = 480,
-    ULT_HIT_MS = 1700;
+    fc = 96,
+    PURIFY_MOTION = 48, // おはらい完了のモーション（tick）
+    // こうげき・ようじゅつ／ひっさつわざの出来事から、画面にダメージの数字が出るまで（ミリ秒）
+    ATK_HIT_MS = 720,
+    ULT_HIT_MS = 2550,
+    ULT_MOTION_MS = 1650; // ひっさつわざのカットインのあと、動きはじめるまで
 
   function mc(e) {
     return e <= 171 ? 369 - Math.floor(e / 3) * 3 : e <= 201 ? 198 - Math.floor((e - 171) / 5) * 3 : e <= 501 ? 180 - Math.floor((e - 201) / 10) * 3 : 90
@@ -37,6 +41,7 @@
     Nt = 1e3,
     bc = 0,
     xc = [29, 33, 40, 50, 59, 83],
+    SMOKE_SG = 20, // えんら魂（350）1 つで たまり方 +20（最速 83・のっぺら坊 59・ブシニャン 40）
     Hn = [{
       maxTick: 9,
       mult: 1e3
@@ -456,7 +461,7 @@
       players: r,
       outcome: null,
       busyUntil: 0,
-      rotLockUntil: 0,
+      motionFrom: 0,
       lastActor: null,
       noItems: !!opts.noItems
     }
@@ -532,7 +537,7 @@
     let n = [0, 1, 2].map(c => a.units[a.wheel[c]]),
       s = [3, 4, 5].map(c => a.units[a.wheel[c]]),
       l = n.some(li) && s.some(Se);
-    if (!a.stance && a.rotateCooldown === 0 && !a.pendingRotate && !rotLocked(t) && l && !((FIELD ?? EMPTY_FIELD).wheelLock[e.player] && !a.units.some(x => Se(x) && x.fx.oilFree))) {
+    if (!a.stance && a.rotateCooldown === 0 && !a.pendingRotate && l && !((FIELD ?? EMPTY_FIELD).wheelLock[e.player] && !a.units.some(x => Se(x) && x.fx.oilFree))) {
       let c = a.units[a.wheel[5]],
         h = a.units[a.wheel[3]],
         f = n[2],
@@ -566,7 +571,7 @@
       enemyUnit: u.index
     });
     let d = !1;
-    if (!a.stance && Ht(r).length > 0 && t.tick < fr) // サドンデス中は ひっさつわざを使えない
+    if (!a.stance && Ht(r).length > 0) // サドンデス中も ひっさつわざは撃てる（本家）
       for (let c = 0; c < 3; c++) {
         let h = a.units[a.wheel[c]];
         if (!Se(h) || h.sg < Nt || h.ultLockout > 0 || h.curse) continue;
@@ -712,8 +717,10 @@
   function Ih(e, t, a) {
     let r = Ht(e);
     if (t === "gather" && (r = r.filter(s => s.sg < Nt)), r.length === 0) return null;
+    // 本家（note たくトンボ「対戦の仕様」）：まだ よいとりつきがかかっていない妖怪を優先する。
+    // ただし ちょうはつ・おんみつは優先しない（前衛に よいとりつきのない妖怪がいても、バフの入った妖怪にとりつきうる）
     let i = r.filter(s => s.blessing === null);
-    if (i.length > 0 && (r = i), t === "regen") return a ? r[gt(a.rng, r.length)] : r[0];
+    if (t !== "taunt" && t !== "hide" && i.length > 0 && (r = i), t === "regen") return a ? r[gt(a.rng, r.length)] : r[0];
     let n = s => {
       switch (t) {
         case "rally":
@@ -728,10 +735,12 @@
           return (s.curse ? 0 : 1e4) + mr(s);
         case "allUp":
           return -["atk", "spa", "def", "spd"].reduce((l, u) => l + Jt(e, s, u), 0);
+        // 能力アップ：上がる能力（の合計）がいちばん高い妖怪（となりの強化・入っているとりつきをふくめた値）
+        // ちょうはつ：いまの HP ＋ まもり がいちばん高い妖怪、おんみつ：いちばん低い妖怪
         case "taunt":
           return -(s.hp + Jt(e, s, "def"));
         case "hide":
-          return mr(s)
+          return s.hp + Jt(e, s, "def")
       }
     };
     return r.map(s => ({
@@ -809,9 +818,19 @@
   function oi(e, t) {
     if (t.curse?.kind === "seal") return 0;
     let a = xc[ct[t.defIndex].sgRank - 1],
-      r = 1e3;
-    for (let i of jn(e, t)) tt(i, "spiritSmoke") && (r = Math.max(r, 1e3 + i.fx.spiritSmoke));
+      r = 1e3,
+      sm = 0;
+    // えんら魂・妖気のけむり（本家）：となりの 2 体のぶん重なる。本家では 1 つにつき毎ターン「その妖怪の妖気の上限の 2%」が
+    // 足される（RC「妖怪ウォッチ2実験結果まとめ」）。上限を 1000 にそろえたこのゲームでは、どの妖怪にも同じ量（+20）を足すことになる。
+    // のっぺら坊は 1 つで最速並み、ブシニャンは 1 つでのっぺら坊並み・2 つで最速並み。最速組は少しだけ速くなる（15 → 13 → 10 ターン）
+    for (let i of jn(e, t)) tt(i, "spiritSmoke") && (sm += i.fx.spiritSmoke);
+    a += Math.floor(sm * SMOKE_SG / 350);
     return t.blessing?.kind === "gather" && (r += Vc[t.blessing.tier]), r += t.fx.sgRate ?? 0, Bt(a, r)
+  }
+
+  // 行動したときに少しだけたまる妖気（こうげき・ようじゅつを当てたときの半分）
+  function actSg(p, u) {
+    di(u, Math.floor(oi(p, u) / 2))
   }
 
   function di(e, t) {
@@ -989,7 +1008,7 @@
         if (s || i.rotateCooldown > 0 || a.dir !== "cw" && a.dir !== "ccw") return !1;
         if ((FIELD ?? EMPTY_FIELD).wheelLock[t] && !i.units.some(x => Se(x) && x.fx.oilFree)) return !1; // まわSEN：前衛にいる間 相手はメンバーサークルを回せない
         let l = a.steps ?? 1;
-        if (!gr(l, 1, 5) || i.pendingRotate || rotLocked(e)) return !1;
+        if (!gr(l, 1, 5) || i.pendingRotate) return !1;
         // 回転も妖怪の行動と同じ判定：だれかの行動（こうげき・術・奥義など）のモーション中は反映しない。
         // 入力は受けておき、モーションが終わって次の行動が選ばれる前に回す（rotateFlush）
         return e.tick < e.busyUntil ? (i.pendingRotate = {
@@ -1022,7 +1041,7 @@
         }), !0)
       }
       case "ultStart": {
-        if (s || i.stance || !gr(a.allySlot, 0, 2) || e.tick >= fr) return !1; // サドンデス中は ひっさつわざも使えない（本家：こうげきだけ）
+        if (s || i.stance || !gr(a.allySlot, 0, 2)) return !1; // サドンデス中も撃てる（本家：サドンデスに入るときにチャージ完了にしておくのが定石。note たくトンボ）
         let l = i.units[i.wheel[a.allySlot]];
         if (!Se(l) || l.sg < Nt || l.ultLockout > 0 || l.curse) return !1; // 悪いとりつき中は奥義を撃てない（本家）
         let u = [];
@@ -1093,13 +1112,9 @@
   }
 
   // モーション中に受けた回転を、モーションが終わったところで反映する（行動の順番を決める前）
-  // こうげき中（技の名前が出てからダメージの数字が出るまで）はメンバーサークルを回せない。1 tick = 50 ms
-  function lockRotate(e, ms) {
-    e.rotLockUntil = Math.max(e.rotLockUntil ?? 0, e.tick + Math.ceil(ms / 50))
-  }
-
-  function rotLocked(e) {
-    return e.tick < (e.rotLockUntil ?? 0)
+  // モーションを始める（行動・ひっさつわざ・おはらい完了）。モーション中の操作は、終わってから反映される（本家）
+  function startMotion(e, ticks) {
+    e.tick >= e.busyUntil && (e.motionFrom = e.tick), e.busyUntil = Math.max(e.busyUntil, e.tick) + ticks
   }
 
   function rotateFlush(e, t, a) {
@@ -1149,11 +1164,12 @@
     }
   }
 
-  // 閃光（本家のスキル・閃光魂）：1 度だけ先に行動する。前衛にいると、次に動くはずだった妖怪のかわりにすぐ動き、
-  // その妖怪の番はとばされる。使ったことになるのは実際に動いたとき（動く前に後衛へ下がれば、次に前へ出たときにまた効く）
+  // 閃光（本家のスキル・閃光魂）：1 度だけ先に行動する。前衛にいると、次に動くはずだった妖怪のかわりにすぐ動き（その妖怪の番はとばされる）、
+  // 敵味方の前衛の行動ポイントから 閃光の妖怪が発動したときに持っていた行動ポイントを引く。
+  // 使ったことになるのは実際に動いたとき（動く前に後衛へ下がれば、次に前へ出たときにまた効く）
   function armFlash(u) {
     if (!tt(u, "firstStrike") || u.firstStrikeUsed || u.flashArmed) return !1;
-    return u.flashArmed = !0, u.ap = 0, !0
+    return u.flashArmed = !0, u.flashAp = u.ap, u.ap = 0, !0
   }
 
   function Ii(e, t, a, r) {
@@ -1177,12 +1193,18 @@
     let n = e.tick - i.startTick,
       cr0 = chargeResult(e, i);
     if (!cr0) return;
+    // 本家：だれかのモーション中にチャージが終わったら、そのモーション（相手のひっさつわざのカットインも）が終わってから撃つ。
+    // 当たるのは、チャージが終わったときに相手が出していた面（カウンター）
+    let foe = e.players[1 - t];
+    i.face ??= foe.wheel.slice(0, 3);
+    if (e.tick < e.busyUntil) return;
     let [u, l, s] = cr0,
       o = 1e3, // 出来による威力の変化はなし（本家に合わせる）
       d = r.units[i.unit];
     d.sg = 0;
     for (let c of i.partners) r.units[c].sg = 0;
-    let tg = ["single", "break"].includes(ct[d.defIndex].ult.kind) ? ui(r, e.players[1 - t]) : null;
+    let tg = null;
+    ["single", "break"].includes(ct[d.defIndex].ult.kind) && atFace(foe, i.face, () => tg = ui(r, foe));
     r.stance = null, a.push({
       t: "ult",
       player: t,
@@ -1192,7 +1214,19 @@
       quality: u,
       charge: n,
       auto: s
-    }), e.busyUntil = Math.max(e.busyUntil, e.tick) + fc, lockRotate(e, ULT_HIT_MS), $h(e, t, d, i.grand, l, o, a)
+    }), startMotion(e, fc), atFace(foe, i.face, () => $h(e, t, d, i.grand, l, o, a))
+  }
+
+  // ひっさつわざを、チャージが終わったときの相手の面（前衛の 3 体）に当てる。撃ったあと、いまの並びに戻す
+  function atFace(p, face, fn) {
+    let w = p.wheel;
+    if (!face || face.every((x, k) => w[k] === x)) return fn();
+    p.wheel = [...face, ...w.filter(x => !face.includes(x))];
+    try {
+      fn()
+    } finally {
+      p.wheel = w
+    }
   }
 
   function $h(e, t, a, r, i, n, s) {
@@ -1377,7 +1411,8 @@
       }
     }
     if (a.length === 0) return;
-    a.sort((l, u) => l.u.ap - u.u.ap || u.spd - l.spd || l.pid - u.pid || l.pos - u.pos);
+    // 行動ポイントが同じなら、閃光を使う妖怪が先（閃光の引き算でほかの妖怪も 0 になることがあるため）
+    a.sort((l, u) => l.u.ap - u.u.ap || !!u.u.flashArmed - !!l.u.flashArmed || u.spd - l.spd || l.pid - u.pid || l.pos - u.pos);
     let r = a[0],
       i = r.u.ap;
     for (let l of a) l.u.ap = Math.max(0, l.u.ap - i);
@@ -1396,8 +1431,11 @@
     let act = by ?? r.u;
     if (r.u.flashArmed) {
       r.u.flashArmed = !1, r.u.firstStrikeUsed = !0;
-      // かわりに動いた相手（閃光で動く妖怪をのぞいて、いちばん先に動くはずだった妖怪）の番をとばす
-      let sk = a.find(x => x !== r && !x.u.flashArmed && Se(x.u));
+      // 本家：次に動くはずだった妖怪のかわりに動く（その妖怪の番はとばされる。note マグロ）。
+      // あわせて、敵味方の前衛の行動ポイントから閃光の妖怪が持っていた行動ポイントを引く（行動権の付与。note たくトンボ）
+      let fa = r.u.flashAp ?? 0,
+        sk = a.find(x => x !== r && !x.u.flashArmed && Se(x.u));
+      for (let x of a) x !== r && x.u.ap > 0 && (x.u.ap = Math.max(0, x.u.ap - fa));
       sk && (sk.u.ap = bu(e.players[sk.pid], sk.u)), t.push({
         t: "flashSkip",
         uid: r.u.uid,
@@ -1405,7 +1443,40 @@
       })
     }
     for (let q of e.players) q.acts = (q.acts ?? 0) + 1;
-    e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), statusOnAction(e, t), Yh(e), e.busyUntil = e.tick + pc[s], (s === "attack" || s === "skill") && lockRotate(e, ATK_HIT_MS)
+    e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), statusOnAction(e, t), Yh(e), e.motionFrom = e.tick, e.busyUntil = e.tick + pc[s]
+  }
+
+  // 性格の決まった行動（本家。note たくトンボ「対戦の仕様」ほか）。当てはまらないときは null（ふだんの割合で選ぶ）
+  //   動じない：相手がパワーチャージ中なら 必ずガード（モーション中に始めたチャージは見えないので、ノーモーションには間に合わない）
+  //   けんしん的：前衛に よいとりつきがかかっていない味方がいれば 必ず味方にとりつく
+  //   荒くれ・ずのう的：ねらう指定（ピン）をした相手を こうげき／ようじゅつで確実に倒せるなら 必ずそれを撃つ
+  function natureSure(e, p, foe, u, df) {
+    let id = qn(u.nature).id;
+    if (id === "doujinai") return foe.stance && !(FIELD ?? EMPTY_FIELD).noGuardAll ? "guard" : null;
+    if (id === "kenshinteki") return df.inspKind !== "curse" && Ht(p).some(x => x.blessing === null) ? "bless" : null;
+    if (id !== "arakure" && id !== "zunouteki" || p.target === null) return null;
+    let src = id === "arakure" ? "attack" : "skill",
+      tg = ui(p, foe);
+    if (!tg || tg.index !== p.target || src === "skill" && df.skillMode === "heal") return null;
+    return minDamage(e, p, u, foe, tg, src) >= tg.hp ? src : null
+  }
+
+  // こうげき・ようじゅつの いちばん小さいダメージ（乱数は最小・クリティカルなし・よけられないとして）
+  function minDamage(e, p, u, foe, n, src) {
+    if (e.tick >= fr) return vh;
+    let df = ct[u.defIndex],
+      skill = src === "skill",
+      el = skill ? skillElementOf(u, df) : attackElement(u),
+      pw = Bt(skill ? skillPowerOf(u, df) : df.attackPower, 1e3 + (skill ? u.fx.skillUp ?? 0 : u.fx.atkUp ?? 0)),
+      at = Jt(p, u, skill ? "spa" : "atk");
+    !skill && tt(u, "guardBreak") && (at = Bt(at, 930));
+    let d = Oh(at, pw, Jt(foe, n, "def")),
+      f = ct[n.defIndex];
+    el !== null && (el === f.weak ? n.guarding && n.fx.guardNoWeak || (d = Bt(d, Ec)) : el === f.resist && !u.fx.pierce && (d = Bt(d, yc)), d = Bt(d, elemMult(u, n, el)));
+    d = Bt(d, dmgVsTarget(u, n));
+    !skill && (n.fx.halfAttack && (d = Bt(d, 500)), n.fx.resistAttack && (d = Bt(d, 1e3 - n.fx.resistAttack)));
+    n.guarding && !(!skill && tt(u, "guardBreak")) && (d = Bt(d, guardMult(u, n)));
+    return Math.max(1, Bt(d, dmgRandLo))
   }
 
   function Qh(e) {
@@ -1467,13 +1538,13 @@
         uid: a.uid,
         action: "loaf"
       }), onLoaf(e, i, a, r), "loaf";
-      l = a.fx.guardOnly ? "guard" : Qh(a);
+      l = a.fx.guardOnly ? "guard" : natureSure(e, i, n, a, s) ?? Qh(a);
       // 本家の妖怪は、とりつきが敵向き（悪い）か味方向き（よい）のどちらか一方
       s.inspKind === "bless" && l === "curse" && (l = "bless"), s.inspKind === "curse" && l === "bless" && (l = "curse");
       l === "guard" && !a.fx.guardOnly && (FIELD ?? EMPTY_FIELD).noGuardAll && (l = "attack"); // まもりわすれ
       l === "skill" && s.skillMode === "heal" && !Ht(i).some(x => x.hp < x.maxHp) && (l = "attack");
     }
-    e.tick >= fr && (l = "attack"); // サドンデス中は こうげきだけ（本家）
+    e.tick >= fr && (l = "attack"); // サドンデス中、妖怪が自分でする行動は こうげきだけ（本家。ひっさつわざは撃てる）
     let u = ui(i, n),
       o = null,
       heal = l === "skill" && s.skillMode === "heal";
@@ -1533,12 +1604,13 @@
         else hit = Ui(e, r, i, a, d.side, d.unit, spec);
         return hit && di(a, oi(i, a)), "skill"
       }
+      // 本家：行動すると その妖怪の妖気が少したまる（こうげき・ようじゅつは当てたときに多めにたまる）
       case "guard":
-        return a.guarding = !0, a.fx.guardHeal && $a(r, a, healAmt(a, a.maxHp, a.fx.guardHeal), a.uid), "guard";
+        return a.guarding = !0, a.fx.guardHeal && $a(r, a, healAmt(a, a.maxHp, a.fx.guardHeal), a.uid), actSg(i, a), "guard";
       case "curse":
-        return Su(r, i, a, n, u, s.curse, s.inspTier ?? 0, !0, s.inspStat), "curse";
+        return Su(r, i, a, n, u, s.curse, s.inspTier ?? 0, !0, s.inspStat), actSg(i, a), "curse";
       case "bless":
-        return Cu(r, a, o, s.blessing, s.inspTier ?? 0, s.inspStat), "bless"
+        return Cu(r, a, o, s.blessing, s.inspTier ?? 0, s.inspStat), actSg(i, a), "bless"
     }
   }
 
@@ -1583,7 +1655,15 @@
       t: "curseCleared",
       uid: n.uid,
       by: "purify"
-    }))
+    }), purifyDone(e, a))
+  }
+
+  // おはらい完了（本家）：お互いの隣接回復魂（となりの妖怪の HP を回復）が 1 回はたらき、おはらい完了のモーションが出る
+  function purifyDone(e, a) {
+    for (let p of e.players)
+      for (let u of Ht(p))
+        for (let r of jn(p, u)) tt(r, "prayer") && $a(a, u, healAmt(r, u.maxHp, r.fx.prayer), r.uid);
+    startMotion(e, PURIFY_MOTION)
   }
 
   // ツボの場所（妖怪ごとに決まっている）。一撃の出る割合・HPダメージの量は本家では公表されていないので、このゲームで決めた
@@ -1656,10 +1736,10 @@
 
   function n0(e, t) {
     if (e.outcome) return;
-    // サドンデス（本家：与ダメージがぜんぶ 999・こうげきだけ）。パワーチャージ中のひっさつわざは取りやめ
-    e.tick === fr && (t.push({
+    // サドンデス（本家：与ダメージがぜんぶ 999・妖怪の行動はこうげきだけ。ひっさつわざは撃てる）
+    e.tick === fr && t.push({
       t: "suddenDeath"
-    }), [0, 1].forEach(p => e.players[p].stance && Ii(e, p, t, "sudden")));
+    });
     let a = e.players.map(r => r.units.every(i => !Se(i)));
     if (a[0] || a[1]) e.outcome = {
       winner: a[0] && a[1] ? null : a[0] ? 1 : 0,
@@ -19351,7 +19431,7 @@ void main() {
     for (let [d, c] of r.entries()) s.append(Dd(c, d ? "b" : "a"));
     s.append(Dd(t));
     let o = q("div", "txt");
-    o.append(q("span", "kind", a ? "Gわざ" : "ひっさつわざ"), q("span", "move", Ze(t).ultName), q("span", "who", (n ? "" : "敵の") + Ze(t).name)), s.append(o), i.append(s), setTimeout(() => s.remove(), 1300)
+    o.append(q("span", "kind", a ? "Gわざ" : "ひっさつわざ"), q("span", "move", Ze(t).ultName), q("span", "who", (n ? "" : "敵の") + Ze(t).name)), s.append(o), i.append(s), setTimeout(() => s.remove(), Math.round(1300 * MOTION_SLOW))
   }
 
   function Jr(e, t, a, r = "", i = 1e3) {
@@ -19736,7 +19816,7 @@ void main() {
   }
 
   function Un(e, t) {
-    e.state.players[0].rotateCooldown > 0 || e.state.players[0].poke || e.state.players[0].pendingRotate || rotLocked(e.state) || (e.preview = Math.max(-5, Math.min(5, e.preview + t)), e.previewTimer !== null && clearTimeout(e.previewTimer), e.previewTimer = window.setTimeout(() => wheelRelease(e, e.preview * Math.PI / 3), 220))
+    e.state.players[0].rotateCooldown > 0 || e.state.players[0].poke || e.state.players[0].pendingRotate || (e.preview = Math.max(-5, Math.min(5, e.preview + t)), e.previewTimer !== null && clearTimeout(e.previewTimer), e.previewTimer = window.setTimeout(() => wheelRelease(e, e.preview * Math.PI / 3), 220))
   }
 
   function Ld(e) {
@@ -19764,7 +19844,7 @@ void main() {
       };
     t.addEventListener("pointerdown", l => {
       let u = t.getBoundingClientRect();
-      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.mode !== "none", e.wheelResist = !noSpin && (e.state.players[0].rotateCooldown > 0 || !!e.state.players[0].poke || !!e.state.players[0].pendingRotate || rotLocked(e.state)), noSpin || (e.svg.rotor.setAttribute("data-drag", "1"), e.wheelHold = null), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
+      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.mode !== "none", e.wheelResist = !noSpin && (e.state.players[0].rotateCooldown > 0 || !!e.state.players[0].poke || !!e.state.players[0].pendingRotate), noSpin || (e.svg.rotor.setAttribute("data-drag", "1"), e.wheelHold = null), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
     }), t.addEventListener("pointermove", l => {
       if (!a || noSpin) return;
       let u = n(l),
@@ -19876,6 +19956,12 @@ void main() {
   function playEvents(e, r) {
     let i = 0;
     for (let n of r) {
+      // 相手がモーション中に始めたパワーチャージは、そのモーションが終わるまで見せない（本家：ノーモーション）
+      if (n.t === "stance" && n.player === 1 && !stanceShown(e, e.state.players[1])) {
+        let st = e.state, p = st.players[1], k = p.stance?.startTick;
+        setTimeout(() => { p.stance && p.stance.startTick === k && Od(e, n) }, (st.busyUntil - st.tick) * 50);
+        continue
+      }
       n.t === "action" && (n.action === "attack" || n.action === "skill") && (i = ATK_HIT_MS), n.t === "ult" && (i = ULT_HIT_MS);
       let s = i;
       // 遅らせて見せる出来事の相手は、見せるまで HP・生死を止めておく
@@ -19938,7 +20024,7 @@ void main() {
           u = t.dst !== void 0 ? t.dst : s ? s.uid : null;
         e.stats.ult[i.owner]++, L2(e, i, t.grand, t.grand ? e.partners[i.owner] : []), T2(t.grand), setTimeout(() => {
           r.action(t.uid, l ? null : u, t.grand ? "grand" : "ult", Id("element" in n ? n.element : null)), r.perfectFx(t.uid), v2(t.grand), ql(e)
-        }, 1100);
+        }, ULT_MOTION_MS);
         Rt(e, `${la(e,t.uid)} の${t.grand?"Gわざ":"ひっさつわざ"}「${Ze(i).ultName}」`, a(t.uid));
         break
       }
@@ -19955,6 +20041,7 @@ void main() {
         break;
       case "rotate":
       case "forcedRotate":
+        (e.scene.rotSide ??= [-1, -1])[t.player === 0 ? 1 : 0] = t.dir === "ccw" ? 1 : -1;
         _2(), jinAfterRotate(e, t), t.t === "forcedRotate" && Rt(e, `${t.player===0?"こちら":"相手"}の前衛が全滅して、メンバーサークルが回った`, t.player === 0 ? "a" : "f");
         break;
       case "doll":
@@ -19964,10 +20051,10 @@ void main() {
         viewOf(e, t.uid).hp = Math.max(1, viewOf(e, t.uid).hp), ma(e, t.uid, "踏ん張り", "info"), Rt(e, `${la(e,t.uid)} は踏ん張った`, a(t.uid));
         break;
       case "flashSkip": // 閃光で動いたとき（前に出たときの firstStrike では出さない。2 つ重なるので）
-        flashShown(e, t.uid) && ma(e, t.uid, "閃光", "info"), t.skipped !== null && Rt(e, `${la(e,t.uid)} が先に動いて、${la(e,t.skipped)} の番がとばされた`, a(t.uid));
+        flashShown(e, t.uid) && (ma(e, t.uid, "閃光", "info"), Rt(e, t.skipped !== null ? `${la(e,t.uid)} が閃光で先に動いて、${la(e,t.skipped)} の番がとばされた` : `${la(e,t.uid)} が閃光で先に動いた`, a(t.uid)));
         break;
       case "suddenDeath":
-        yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999・こうげきだけ", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になり、こうげきしかできない", "f");
+        yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999・妖怪はこうげきだけ（ひっさつわざは撃てる）", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になり、妖怪はこうげきしかしない（ひっさつわざは撃てる）", "f");
         break;
       case "pokeEnd":
         t.result === "success" ? (t.player === 0 && Jr(e, t.effect === "sg" ? "吸収！" : t.effect === "ko" ? "一撃！" : "ツボ！", "good", t.effect === "sg" ? `妖気を ${t.amount} 吸った` : `${t.amount} ダメージ`, 900), Rt(e, `${t.player === 0 ? "こちら" : "相手"}が ${la(e, t.target)} をつついて${t.effect === "sg" ? `妖気を ${t.amount} 吸った` : `${t.amount} ダメージ${t.effect === "ko" ? "（一撃）" : ""}`}`, t.player === 0 ? "a" : "f")) : t.player === 0 && Rt(e, "つつくのをやめた", "a");
@@ -20058,10 +20145,10 @@ void main() {
     for (let h of a.players)
       for (let f of h.units) {
         s.setAlive(f.uid, viewAlive(e, f));
-        let g = h.stance;
+        let g = stanceShown(e, h);
         s.setStance(f.uid, !!g && (g.unit === f.index || g.partners.includes(f.index)), !!g && g.grand)
       }
-    for (let h of a.players) h.stance && s.chargeAura(h.units[h.stance.unit].uid, h.stance.power / CHARGE_FULL, h.stance.grand);
+    for (let h of a.players) stanceShown(e, h) && s.chargeAura(h.units[h.stance.unit].uid, h.stance.power / CHARGE_FULL, h.stance.grand);
     s.update(t), $2(e);
     let l = a.tick < fr ? fr - a.tick : mu - a.tick,
       u = Math.max(0, Math.ceil(l / 20));
@@ -20110,7 +20197,7 @@ void main() {
         if (!Se(d)) continue;
         let c = e.scene.project(o, .2);
         if (!c.visible || !u.visible) continue;
-        let h = s.stance?.unit === d.index,
+        let h = stanceShown(e, s)?.unit === d.index,
           f = t?.uid === o,
           g = h ? "#f2a541" : n === 0 ? "#5fb3d9" : "#e0655a",
           k = h || f ? .95 : .18,
@@ -20151,7 +20238,7 @@ void main() {
 
   function Z2(e) {
     let t = e.state.players[0];
-    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をメンバーサークルで選ぶ` : e.mode === "item" ? "アイテムを選ぶ" : e.mode === "ult" ? e.zero ? "Gわざを使う前衛を選ぶ（自分と両どなりの妖気が満タン）" : "ひっさつわざを使う前衛を選ぶ（妖気が満タン・とりつかれていない）" : e.mode === "purify" ? "おはらいする後衛（とりつかれた妖怪）を選ぶ" : t.pendingRotate ? "行動のモーションが終わったら回る" : rotLocked(e.state) ? "こうげき中は回せない" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "零式：光っている敵をタップでつつく" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "メンバーサークルをなぞって回す・敵をタップでねらう"
+    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をメンバーサークルで選ぶ` : e.mode === "item" ? "アイテムを選ぶ" : e.mode === "ult" ? e.zero ? "Gわざを使う前衛を選ぶ（自分と両どなりの妖気が満タン）" : "ひっさつわざを使う前衛を選ぶ（妖気が満タン・とりつかれていない）" : e.mode === "purify" ? "おはらいする後衛（とりつかれた妖怪）を選ぶ" : t.pendingRotate ? "行動のモーションが終わったら回る" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "零式：光っている敵をタップでつつく" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "メンバーサークルをなぞって回す・敵をタップでねらう"
   }
 
   /*@@include ext/battle_ui.js@@*/
