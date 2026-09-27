@@ -446,7 +446,7 @@ function debugHook() {
     partyCode: () => partyEncode(partyFromBuilder("test")), partyImport: code => { const lost = partyApply(partyDecode(code)); partySaveCurrent(); return lost; },
     team: () => teamMembers().map(m => `${ct.find(x => x.id === m.unit).name}${m.equipment || m.equipment2 ? "(" + equipNames(m) + ")" : ""}`).join("・"),
     // 流行りの型：ルール違反・持ち物の付けそこね
-    presets: () => PRESETS.map(p => { const ms = presetMembers(p); return { name: p.name, errs: ms ? Yn(ms) : ["妖怪が見つからない"], dropped: ms ? p.team.filter((t, i) => t[2] && !ms[i].equipment).map(t => `${t[0]}:${t[2]}`) : [] }; }),
+    presets: () => [...PRESETS, ...META_PRESETS].map(p => { const ms = presetMembers(p); return { name: p.name, errs: ms ? Yn(ms) : ["妖怪が見つからない"], dropped: ms ? p.team.flatMap((t, i) => [t[2] && !ms[i].equipment ? `${t[0]}:${t[2]}` : null, t[3] && !ms[i].equipment2 ? `${t[0]}:${t[3]}` : null]).filter(Boolean) : [] }; }),
     // 奥義の振り付けの数（全員）
     defIndexOf: n => ct.findIndex(x => x.name === n),
     ultStats() { const c = {}; for (const d of ct) { const k = ultStyleOf(d); c[k] = (c[k] ?? 0) + 1; } return c; },
