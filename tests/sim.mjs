@@ -851,6 +851,21 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`ult scripts: ${E.units.length} yokai, all unique (${styles.size} styles in use)`);
 }
 
+// 妖怪ごとのくせ（効果音・モーション）：全員ちがう組み合わせ
+{
+  const mv = new Map(), vo = new Map(), idles = new Set(), waves = new Set();
+  for (const d of E.units) {
+    const p = E.personaOf(d), m = p.motion, v = p.sfx;
+    if (!m || !v || !m.windup || !m.finish || !m.idle || !v.wave || !v.motif || !(v.pitch > 50 && v.pitch < 2000)) throw new Error(`${d.name}: bad persona ${JSON.stringify(p)}`);
+    const mk = [m.attack, m.windup, m.finish, m.idle, m.speed].join("|"), vk = [v.semi, v.wave, v.motif.join(","), v.glide].join("|");
+    if (mv.has(mk)) throw new Error(`${d.name} and ${mv.get(mk)} share the same motion ${mk}`);
+    if (vo.has(vk)) throw new Error(`${d.name} and ${vo.get(vk)} share the same voice ${vk}`);
+    mv.set(mk, d.name), vo.set(vk, d.name), idles.add(m.idle), waves.add(v.wave);
+  }
+  if (idles.size < 8 || waves.size < 4) throw new Error(`too few idle styles / voice waves: ${[...idles]} ${[...waves]}`);
+  console.log(`persona: ${E.units.length} yokai, all unique motions and voices`);
+}
+
 // 装備枠 2 つ（本家）：決まった妖怪だけ 2 つ持てる。同じ装備を 2 つでもよい（伝説のおまもり×2 で まもり+100）
 {
   const byName = n => E.units.find(u => u.name === n);

@@ -89,6 +89,7 @@ function renderDetail(host, slot, onChange) {
       <div><span class="dt-k">とりつく</span> ${hk ? d.inspName + "・" : ""}${inspLine}</div>
       <div><span class="dt-k">ひっさつわざ</span> ${d.ultName}${ultDesc(d.ult)}</div>
       <div><span class="dt-k">弱点・耐性</span> ${d.weak ? Gl[d.weak] : "なし"}／${d.resist ? Gl[d.resist] : "なし"}</div>
+      <div class="dt-persona"><span class="dt-k">くせ</span> ${personaText(d)}${modelLooks().get(d.id)?.accent ? `・${ACCENT_JA[modelLooks().get(d.id).accent.kind]}` : ""}（3D を押すと声が聞ける）</div>
     </div>`);
   if (viewing) return;
 

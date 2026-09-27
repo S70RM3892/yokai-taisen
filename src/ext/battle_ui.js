@@ -447,6 +447,17 @@ function debugHook() {
     team: () => teamMembers().map(m => `${ct.find(x => x.id === m.unit).name}${m.equipment || m.equipment2 ? "(" + equipNames(m) + ")" : ""}`).join("・"),
     // 流行りの型：ルール違反・持ち物の付けそこね
     presets: () => [...PRESETS, ...META_PRESETS].map(p => { const ms = presetMembers(p); return { name: p.name, errs: ms ? Yn(ms) : ["妖怪が見つからない"], dropped: ms ? p.team.flatMap((t, i) => [t[2] && !ms[i].equipment ? `${t[0]}:${t[2]}` : null, t[3] && !ms[i].equipment2 ? `${t[0]}:${t[3]}` : null]).filter(Boolean) : [] }; }),
+    // 3D モデルの見分け：全員のモデルを作って、見た目の名札が全員ちがうか・飾りを付けた数
+    looks() {
+      const errs = [];
+      let meshes = 0;
+      for (const d of ct) try { buildYokaiModel(d).traverse(o => { if (o.isMesh) meshes++; }); } catch (err) { errs.push(`${d.name}: ${err}`); }
+      const dup = modelLookClashes();
+      return { n: ct.length, dup, errs, accents: modelAccents().size, varied: ct.filter(d => modelSpec(d) !== baseModelSpec(d)).length, meshes,
+        changed: ct.map((d, i) => modelSpec(d) !== baseModelSpec(d) || modelLooks().get(d.id).accent ? [i, d.name] : null).filter(Boolean) };
+    },
+    specs: ns => ns.map(n => { const d = ct.find(x => x.name === n), L = modelLooks().get(d.id); return n + " " + JSON.stringify(modelSpec(d), (k, v) => typeof v === "number" && v > 255 ? "#" + v.toString(16) : v) + " " + L.key.split(";").slice(0, 2).join(";") + (L.accent ? " +" + L.accent.kind : ""); }).join("\n"),
+    persona: n => { const d = ct.find(x => x.name === n); return d && { ...personaOf(d), text: personaText(d), accent: modelLooks().get(d.id)?.accent ?? null }; },
     // 奥義の振り付けの数（全員）
     defIndexOf: n => ct.findIndex(x => x.name === n),
     ultStats() { const c = {}; for (const d of ct) { const k = ultStyleOf(d); c[k] = (c[k] ?? 0) + 1; } return c; },

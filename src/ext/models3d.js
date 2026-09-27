@@ -729,8 +729,12 @@ function flameBit(k, par, p, r, c, big = false) {
 
 var TRIBE_TINT = { takeru: 0xd9644a, ayashi: 0x8a6ee0, tsuwamono: 0x8f8a74, kage: 0x4f9fb8, nagomi: 0x6fbf73, miyabi: 0xd48ac0, tatari: 0x7d5a9e, shizume: 0x5f88c9, maga: 0xb0303a };
 
-function modelSpec(def) {
+function baseModelSpec(def) {
   return def.honkeModel ??= honkeAutoModel(def);
+}
+// 見分けのための形の飾りを足したあとの形（modelLooks）
+function modelSpec(def) {
+  return modelLooks().get(def.id)?.spec ?? baseModelSpec(def);
 }
 
 // 段階（小・並・大）と 1 体ごとの色ずれ
@@ -753,12 +757,13 @@ function buildYokaiModel(def) {
   // 大きさ：形の高さをそろえてから段階で変える
   const root = k.root;
   root.updateMatrixWorld(true);
-  let minY = Infinity, maxY = -Infinity;
+  let minY = Infinity, maxY = -Infinity, wide = 0;
   root.traverse(obj => {
     if (!obj.isMesh || obj.material.side === Lt) return;
     obj.geometry.boundingBox || obj.geometry.computeBoundingBox();
     const bb = obj.geometry.boundingBox.clone().applyMatrix4(obj.matrixWorld);
     minY = Math.min(minY, bb.min.y), maxY = Math.max(maxY, bb.max.y);
+    wide = Math.max(wide, Math.abs(bb.min.x), Math.abs(bb.max.x));
   });
   const h = Math.max(0.3, maxY - Math.min(0, minY));
   const target = [1.35, 1.65, 1.95][form] * (base.size && plan !== "quad" ? Math.min(1.25, base.size) : 1) * (def.group ? 1.2 : 1);
@@ -779,8 +784,171 @@ function buildYokaiModel(def) {
     outer.add(aura);
     k.anim.push({ obj: aura, spin: true, speed: 0.8 });
   }
+  // ほかの妖怪と見分けがつかない形なら、その妖怪だけの飾り（modelLooks）
+  const acc = modelLooks().get(def.id)?.accent;
+  if (acc) addAccent(k, outer, acc, target, Math.max(0.3, wide * scale));
   outer.userData = { anim: k.anim, mats: [...k.mats.values()], height: target, headObj: res.head, arms: k.arms ?? [], plan, weapon: !!base.weapon };
   return outer;
+}
+
+// ---- 見分けのつく形にする ----
+// 体つき・形の飾り（帽子・角・髪・武器・翼・しっぽ…）・大きさ（大は足もとに光の輪）が同じで、おもな色（体・服・帽子・髪・甲羅・たてがみ・翼）も近い妖怪は、
+// 並べても見分けがつかない。
+// 目や口の形・ほんの少しの色ちがいは見分けに数えない。手で形を決めた妖怪を先に、図鑑 No の順に見て、前の妖怪と同じ見た目になる妖怪は
+//   ・名前から自動で決めた妖怪：体つきに合う形の飾り（帽子・角・髪・武器・翼・しっぽ・たてがみ…）を 1 つ足す
+//   ・手で形を決めた妖怪（と、形の飾りでも空きがないとき）：その妖怪だけの飾り（8 種 × 8 色）を付ける
+var ACCENT_KINDS = ["gem", "orb", "halo", "petals", "banner", "wisp", "leaf", "twin"];
+var ACCENT_JA = { gem: "頭の上の宝石", orb: "まわりを回る玉", halo: "光の輪", petals: "回る花びら", banner: "背中の旗", wisp: "そばの鬼火", leaf: "頭の葉っぱ", twin: "両わきの玉" };
+var ACCENT_COLORS = [0xf2d15c, 0x9ad0ff, 0xff7a9a, 0x7fe08a, 0xb07cff, 0xff9a3a, 0xffffff, 0x5ae0e0];
+// 見分けに数える形（値そのもの）と、あるかないかだけ数える部品
+var LOOK_SHAPE = ["build", "ears", "tail", "tailN", "tails", "hat", "weapon", "hair", "robe", "head", "dish", "nose", "kind", "thing", "shape", "legs", "trunk",
+  "womanTop", "longNeck", "longArms", "noLegs", "twoFaces", "eyeN", "whiskers", "arms", "feet", "frog", "long", "shortLegs", "horns", "orbs", "tri", "leaf",
+  "lantern", "foxFace", "face", "longBeak", "snakeTail", "drum", "sickles", "eyesMany", "rope", "tears", "mossTail", "bucket"];
+var LOOK_HAS = ["cap", "crest", "flames", "wings", "mane", "wisps", "shell", "mask", "pelt", "shroud", "spots", "belly", "aura", "pattern"];
+var LOOK_COLORS = ["skin", "cloth", "torsoColor", "hatColor", "hairColor", "shell", "mane", "wingColor"];
+// 形の名札（色は数えない。どの部品に色があるかだけ数える）
+function lookShape(plan, o, form) {
+  const x = [plan, form === 2 ? "big" : ""]; // 小と並は高さが少しちがうだけ。大は足もとに光の輪
+  for (const key of LOOK_SHAPE) if (o[key] !== void 0 && o[key] !== !1) x.push(key + "=" + String(o[key]));
+  for (const key of LOOK_HAS) if (o[key] !== void 0 && o[key] !== !1) x.push(key);
+  for (const key of LOOK_COLORS) if (typeof o[key] === "number") x.push(key + ":c");
+  if (o.segments) x.push("seg=" + Math.round(o.segments / 4));
+  return x.join(";");
+}
+function lookColors(o) { return [...LOOK_COLORS.filter(key => typeof o[key] === "number").map(key => o[key]), ...(typeof o.wings === "number" ? [o.wings] : [])]; }
+// 色の近さ（赤みの重みをつけた RGB の距離。110 より近いと並べても見分けにくい）
+function colorDist(a, b) {
+  const x = rgbHex(a), y = rgbHex(b), r1 = x >> 16 & 255, g1 = x >> 8 & 255, b1 = x & 255, r2 = y >> 16 & 255, g2 = y >> 8 & 255, b2 = y & 255;
+  const rm = (r1 + r2) / 2, dr = r1 - r2, dg = g1 - g2, db = b1 - b2;
+  return Math.sqrt((2 + rm / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rm) / 256) * db * db) / 3;
+}
+var LOOK_NEAR = 110;
+function colorsNear(a, b) { return a.length === b.length && a.every((c, i) => colorDist(c, b[i]) < LOOK_NEAR); }
+// 体つきごとに足せる形の飾り（c は体の色）。小さくて見分けにくいもの（頭巾・額の三角・目の数など）は使わない
+var LOOK_HATS = ["kasa", "eboshi", "crown", "hood", "candles"];
+function lookVariants(plan, c) {
+  const dark = shade(c, -0.45), light = shade(c, 0.45);
+  const hats = LOOK_HATS.map(h => ({ hat: h, hatColor: dark }));
+  switch (plan) {
+    case "hum": return [...hats, { horns: 1 }, { horns: 2 }, ...["long", "wild", "topknot", "bun"].map(h => ({ hair: h, hairColor: dark })),
+      ...["club", "staff", "fan", "lantern", "spear", "mallet", "drum"].map(w => ({ weapon: w })),
+      { wings: dark }, { tail: "bushy", tailColor: light }, { tail: "snake", tailColor: c }, { ears: "cat" }, { nose: "long" }];
+    case "ghost": return [...hats.map(h => ({ ...h, hatColor: light })), ...["long", "wild", "bun"].map(h => ({ hair: h, hairColor: dark })), { wisps: light }];
+    case "blob": return [...hats, { horns: !0 }, { cap: dark }, { spots: dark }, { arms: !0 }, { feet: !0 }];
+    case "quad": return [{ mane: dark }, { horns: "ox" }, { horns: "antler" }, { horns: "one" }, ...["fox", "floppy"].map(e => ({ ears: e })),
+      ...[3, 5].map(n => ({ tail: "bushy", tails: n })), { wings: dark }, { flames: 0xff9a3a }, ...hats, { long: !0 }, { trunk: !0 }];
+    case "bird": return [{ crest: dark }, { flames: 0xff9a3a }, { longBeak: !0 }, { snakeTail: !0 }];
+    case "serpent": return [{ horns: !0 }, { whiskers: !0 }, { mane: light }, { legs: "centipede" }];
+    case "stone": return [...["boulder", "wall", "tablet", "pagoda", "haniwa", "lantern"].map(x => ({ shape: x })), { arms: !0 }, { rope: !0 }, { aura: light }];
+    case "flame": return [{ orbs: 2 }, { orbs: 3 }, { lantern: !0 }, { foxFace: !0 }];
+  }
+  return [];
+}
+var MODEL_LOOKS = null;
+function modelLooks() {
+  if (MODEL_LOOKS) return MODEL_LOOKS;
+  MODEL_LOOKS = new Map();
+  const seen = new Map(), K = ACCENT_KINDS.length, C = ACCENT_COLORS.length; // 形の名札 → それまでの色の並び
+  const clash = (key, cols) => (seen.get(key) ?? []).some(c => colorsNear(c, cols));
+  const byNo = (a, b) => (a.no ?? 0) - (b.no ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const hand = d => !!HONKE_NAME_MODEL[d.name];
+  const defs = [...ct.filter(hand).sort(byNo), ...ct.filter(d => !hand(d)).sort(byNo)];
+  const accentFor = (key, cols, h) => {
+    let idx = h % (K * C);
+    for (let t = 0; t < K * C; t++, idx = (idx + 11) % (K * C)) {
+      const acc = { kind: ACCENT_KINDS[idx % K], color: ACCENT_COLORS[Math.floor(idx / K)] };
+      if (!clash(key + "|" + acc.kind + "|" + acc.color, cols)) return acc;
+    }
+    return null;
+  };
+  for (const def of defs) {
+    const base = baseModelSpec(def), [plan, o] = base, { form } = unitVariant(def), h = hash32("look:" + def.id);
+    let spec = base, acc = null, key = lookShape(plan, o, form), cols = lookColors(o);
+    if (clash(key, cols)) {
+      const vs = hand(def) ? [] : lookVariants(plan, o.skin ?? 0x888888);
+      let found = !1;
+      for (let t = 0; t < vs.length && !found; t++) {
+        const o2 = { ...o, ...vs[(h + t * 7) % vs.length] }, k2 = lookShape(plan, o2, form), c2 = lookColors(o2);
+        if (!clash(k2, c2)) spec = [plan, o2], key = k2, cols = c2, found = !0;
+      }
+      if (!found) {
+        // 形の飾りでも空きがなければ、飾り（8 種 × 8 色）。それでもなければ 形の飾り＋飾り
+        acc = accentFor(key, cols, h);
+        for (let t = 0; !acc && t < vs.length; t++) {
+          const o2 = { ...o, ...vs[t] }, k2 = lookShape(plan, o2, form), c2 = lookColors(o2), a2 = accentFor(k2, c2, h);
+          if (a2) spec = [plan, o2], key = k2, cols = c2, acc = a2;
+        }
+        if (acc) key += "|" + acc.kind + "|" + acc.color;
+      }
+    }
+    seen.has(key) ? seen.get(key).push(cols) : seen.set(key, [cols]);
+    MODEL_LOOKS.set(def.id, { spec, accent: acc, key, cols });
+  }
+  return MODEL_LOOKS;
+}
+function modelAccents() { return new Map([...modelLooks()].filter(([, v]) => v.accent).map(([id, v]) => [id, v.accent])); }
+// 見分けのつかない組（テスト用）：形の名札が同じで、色も近い妖怪どうし
+function modelLookClashes() {
+  const out = [], list = ct.map(d => [d, modelLooks().get(d.id)]);
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+    const [a, x] = list[i], [b, y] = list[j];
+    if (x.key === y.key && colorsNear(x.cols, y.cols)) out.push(`${a.name}=${b.name}`);
+  }
+  return out;
+}
+// 飾りを付ける（H：モデルの高さ、R：横はば。どちらも仕上がりの大きさ）
+function addAccent(k, par, acc, H, R) {
+  const c = acc.color, glow = { glow: shade(c, -0.45) };
+  switch (acc.kind) {
+    case "gem": {
+      const g = k.group(par, [0, H + 0.22, 0]);
+      k.cone(g, c, [0, 0.07, 0], [0.08, 0.14, 0.08], 0, glow), k.cone(g, c, [0, -0.07, 0], [0.08, 0.14, 0.08], [Math.PI, 0, 0], glow);
+      k.bob(g, 0.05, 2.2), k.anim.push({ obj: g, spinY: true, speed: 1.5 });
+      break;
+    }
+    case "orb": {
+      const g = k.group(par, [0, H * 0.55, 0]);
+      k.sph(g, c, [R + 0.18, 0, 0], [0.08, 0.08, 0.08], 0, glow);
+      k.anim.push({ obj: g, spinY: true, speed: 1.7 });
+      break;
+    }
+    case "halo": {
+      const m = k.part(par, "ring", c, [0, H + 0.12, 0], [0.26, 0.26, 0.26], [-Math.PI / 2, 0, 0], { basic: true, alpha: 0.85 });
+      m.material.side = 2, k.bob(m, 0.03, 1.6);
+      break;
+    }
+    case "petals": {
+      const g = k.group(par, [0, H + 0.08, 0]);
+      for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3; k.sph(g, c, [Math.cos(a) * 0.22, 0, Math.sin(a) * 0.22], [0.07, 0.03, 0.05], [0, -a, 0], glow); }
+      k.anim.push({ obj: g, spinY: true, speed: 1.2 });
+      break;
+    }
+    case "banner": {
+      const z = -Math.min(0.35, R * 0.6);
+      k.cyl(par, 0x6a4a2a, [0, H * 0.75 + 0.1, z], [0.018, H * 0.5 + 0.35, 0.018]);
+      const g = k.group(par, [0, H + 0.2, z]);
+      k.box(g, c, [0.13, 0, 0], [0.24, 0.3, 0.015], 0, glow);
+      k.swing(g, "y", 0.35, 2.4);
+      break;
+    }
+    case "wisp": {
+      const g = k.group(par, [R + 0.2, H * 0.8, 0]);
+      flameBit(k, g, [0, 0, 0], 0.07, c);
+      k.bob(g, 0.08, 1.8);
+      break;
+    }
+    case "leaf": {
+      const g = k.group(par, [0, H + 0.02, 0]);
+      k.sph(g, c, [0.06, 0.1, 0], [0.06, 0.14, 0.025], [0, 0, -0.6], glow);
+      k.cyl(g, 0x5a3a1a, [0, 0.02, 0], [0.012, 0.06, 0.012]);
+      k.swing(g, "z", 0.25, 2);
+      break;
+    }
+    case "twin": {
+      for (const x of [-1, 1]) { const g = k.group(par, [x * (R + 0.14), H * 0.62, 0]); k.sph(g, c, [0, 0, 0], [0.065, 0.065, 0.065], 0, glow); k.bob(g, 0.06, 2 + x * 0.4); }
+      break;
+    }
+  }
 }
 
 // 毎フレームの小さな動き（しっぽ・翼・炎）
@@ -788,6 +956,7 @@ function animateModel(model, t) {
   for (const a of model.userData.anim) {
     if (a.flicker) { const s = 1 + Math.sin(t * a.speed + a.phase) * 0.12; a.obj.scale.set(1 / s, s, 1 / s); continue; }
     if (a.spin) { a.obj.rotation.z = t * a.speed; continue; }
+    if (a.spinY) { a.obj.rotation.y = t * a.speed; continue; }
     const v = Math.sin(t * a.speed + a.phase) * a.amp;
     if (a.pos) a.obj.position.y = a.base + v; else a.obj.rotation[a.axis] = a.base + v;
   }
@@ -838,9 +1007,13 @@ function previewRenderer() {
   scene.add(floor);
   const camera = new qt(32, 1, 0.1, 50);
   PREVIEW = { canvas, renderer, scene, camera, model: null, id: null, raf: 0, t0: performance.now(), drag: null, yaw: 0.5 };
-  canvas.addEventListener("pointerdown", e => { PREVIEW.drag = e.clientX; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointerdown", e => { PREVIEW.drag = PREVIEW.down = e.clientX; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener("pointermove", e => { if (PREVIEW.drag !== null) { PREVIEW.yaw += (e.clientX - PREVIEW.drag) * 0.012; PREVIEW.drag = e.clientX; } });
-  canvas.addEventListener("pointerup", () => { PREVIEW.drag = null; });
+  // 回さずに押したら、その妖怪の声（こうげきのかけ声とひっさつわざのふし）
+  canvas.addEventListener("pointerup", e => {
+    if (PREVIEW.def && Math.abs(e.clientX - (PREVIEW.down ?? e.clientX)) < 6) { Il(); charVoice(PREVIEW.def, "attack"); charVoice(PREVIEW.def, "ult", 0.35); PREVIEW.hop = performance.now(); }
+    PREVIEW.drag = null;
+  });
   return PREVIEW;
 }
 
@@ -851,7 +1024,7 @@ function showPreview(host, def) {
     if (P.model) P.scene.remove(P.model);
     P.model = buildYokaiModel(def);
     P.scene.add(P.model);
-    P.id = def.id;
+    P.id = def.id, P.def = def;
     const h = P.model.userData.height;
     P.camera.position.set(0, h * 0.7, h * 3.1 + 0.3);
     P.camera.lookAt(0, h * 0.5, 0);
@@ -868,7 +1041,12 @@ function showPreview(host, def) {
       if (!P.canvas.isConnected) { P.raf = 0; return; }
       const t = (performance.now() - P.t0) / 1000;
       if (P.drag === null) P.yaw += 0.008;
-      if (P.model) { P.model.rotation.y = P.yaw; animateModel(P.model, t); }
+      if (P.model) {
+        // その妖怪の待機のゆれ。押した直後は ぴょんと跳ぶ
+        const o = personaIdle(P.def, t), hop = P.hop ? Math.max(0, 1 - (performance.now() - P.hop) / 450) : 0;
+        P.model.rotation.set(o.rx, P.yaw, o.rz), P.model.position.y = o.y + Math.sin(hop * Math.PI) * 0.35, P.model.scale.set(o.sx, o.sy, o.sx);
+        animateModel(P.model, t);
+      }
       if (P.canvas.clientWidth && P.canvas.width !== Math.round(P.canvas.clientWidth * P.renderer.getPixelRatio())) size();
       P.renderer.render(P.scene, P.camera);
       P.raf = requestAnimationFrame(loop);

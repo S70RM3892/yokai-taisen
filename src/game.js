@@ -1866,6 +1866,7 @@
   /*@@include ext/honke_roster_data.js@@*/
   /*@@include ext/honke_roster.js@@*/
   /*@@include ext/ult_style.js@@*/
+  /*@@include ext/persona.js@@*/
   buildTraits();
   /*@@include ext/engine_exports.js@@*/
   /*@@ENGINE_END@@*/
@@ -18760,6 +18761,7 @@ void main() {
   /*@@include ext/ult_motion.js@@*/
   /*@@include ext/motion3d.js@@*/
   /*@@include ext/fx_spells.js@@*/
+  /*@@include ext/char_sfx.js@@*/
   function t2(e) {
     return 1 - (1 - e) * (1 - e)
   }
@@ -18871,10 +18873,6 @@ void main() {
     d.gain.setValueAtTime(1e-4, l), d.gain.exponentialRampToValueAtTime(t, l + .005), d.gain.exponentialRampToValueAtTime(1e-4, l + e), u.connect(o).connect(d).connect(Ha), u.start(l, Math.random() * .5), u.stop(l + e + .02)
   }
 
-  function o2(e) {
-    Tt(.09, .5, "bandpass", 2400 - e * 1200, 0, 1.2, 600), qe(160 - e * 70, .16 + e * .08, "sine", .6, .01, 50)
-  }
-
   function d2() {
     Tt(.16, .6, "highpass", 1800, 0, .8), qe(220, .25, "square", .25, 0, 60), qe(1320, .18, "triangle", .2, .03, 1760)
   }
@@ -18957,15 +18955,6 @@ void main() {
     (e ? [523, 659, 784, 1047] : [392, 330, 262]).forEach((t, a) => qe(t, .3, "triangle", .2, a * .14))
   }
 
-  function b2(e, t, a) {
-    if (!$e || !Ha) return;
-    let r = Math.max(2, Math.min(6, t));
-    for (let i = 0; i < r; i++) {
-      let n = [1, 1.18, .92, 1.26, 1.05, .88][i % 6],
-        s = e * n * (a ? .94 : 1);
-      qe(s, .07, "square", .07, i * .075, s * 1.08), qe(s * 2, .06, "triangle", .04, i * .075)
-    }
-  }
   var We = {
     on: x2(),
     gain: null,
@@ -20016,7 +20005,7 @@ void main() {
       case "action": {
         let i = Ot(e, t.uid),
           n = t.dst !== void 0 && t.dst !== null ? Ot(e, t.dst) : t.dst === null ? null : ui(e.state.players[i.owner], e.state.players[1 - i.owner]);
-        t.action === "attack" ? (r.action(t.uid, n ? n.uid : null, "attack", 16777215), o2(Math.min(1, Ze(i).attackPower / 150))) : t.action === "skill" ? (r.action(t.uid, n ? n.uid : null, "skill", Id(Ze(i).skillElement)), c2(Ze(i).skillElement)) : t.action === "guard" ? (r.guard(t.uid), h2(), ma(e, t.uid, "ガード", "info")) : t.action === "loaf" ? (r.loaf(t.uid), k2(), ma(e, t.uid, "サボり", "info"), Rt(e, `${la(e,t.uid)} はサボっている`, a(t.uid))) : t.action === "rest" && (r.loaf(t.uid), ma(e, t.uid, "力をためている", "info"));
+        t.action === "attack" ? (r.action(t.uid, n ? n.uid : null, "attack", 16777215), charAttackSfx(Ze(i), Math.min(1, Ze(i).attackPower / 150))) : t.action === "skill" ? (r.action(t.uid, n ? n.uid : null, "skill", Id(Ze(i).skillElement)), c2(Ze(i).skillElement), charVoice(Ze(i), "skill")) : t.action === "guard" ? (r.guard(t.uid), h2(), charVoice(Ze(i), "guard"), ma(e, t.uid, "ガード", "info")) : t.action === "loaf" ? (r.loaf(t.uid), k2(), charVoice(Ze(i), "loaf"), ma(e, t.uid, "サボり", "info"), Rt(e, `${la(e,t.uid)} はサボっている`, a(t.uid))) : t.action === "rest" && (r.loaf(t.uid), ma(e, t.uid, "力をためている", "info"));
         break
       }
       case "damage": {
@@ -20028,19 +20017,19 @@ void main() {
         }
         i && (ma(e, t.dst, i > 0 ? "弱点！" : "いまひとつ", "eff " + (i > 0 ? "weak" : "resist")), i > 0 && r.hit(t.dst, !0, 16765562)), (t.crit || t.amount >= 160) && ql(e)
       }
-      showDamage(e, t, U2(e, t)), t.crit ? (d2(), Rt(e, `${la(e,t.src??t.dst)} のクリティカル！ ${t.amount}`, a(t.src ?? t.dst))) : Ot(e, t.dst).guarding && (t.source === "attack" || t.source === "skill") && p2(), t.source === "trait" && Rt(e, `${la(e,t.dst)} にスキルのダメージ ${t.amount}`, a(t.dst));
+      showDamage(e, t, U2(e, t)), damageSfx(e, t), t.crit ? (d2(), Rt(e, `${la(e,t.src??t.dst)} のクリティカル！ ${t.amount}`, a(t.src ?? t.dst))) : Ot(e, t.dst).guarding && (t.source === "attack" || t.source === "skill") && p2(), t.source === "trait" && Rt(e, `${la(e,t.dst)} にスキルのダメージ ${t.amount}`, a(t.dst));
       break;
       case "heal":
         viewOf(e, t.dst).hp = Math.min(Ot(e, t.dst).maxHp, viewOf(e, t.dst).hp + t.amount), ma(e, t.dst, "+" + t.amount, "heal"), t.amount >= 20 && (f2(), r.healFx(t.dst));
         break;
       case "curse":
-        t.result === "hit" ? (r.cast(t.src, 11566304), r.curseFx(t.dst), ma(e, t.dst, inspLabel(Wl, t.kind, t.stat) + Bn[t.tier], "info"), m2(), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${inspLabel(Wl, t.kind, t.stat)}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "とりつき 失敗" : t.result === "resisted" ? "ふせいだ" : "とりつき 無効", "info");
+        t.result === "hit" ? (r.cast(t.src, 11566304), r.curseFx(t.dst), ma(e, t.dst, inspLabel(Wl, t.kind, t.stat) + Bn[t.tier], "info"), m2(), charVoice(Ze(Ot(e, t.src)), "curse"), Rt(e, `${la(e,t.src)} → ${la(e,t.dst)} に ${inspLabel(Wl, t.kind, t.stat)}${Bn[t.tier]}`, a(t.src))) : ma(e, t.dst, t.result === "miss" ? "とりつき 失敗" : t.result === "resisted" ? "ふせいだ" : "とりつき 無効", "info");
         break;
       case "bless":
-        r.cast(t.src, 5030564), r.blessFx(t.dst), ma(e, t.dst, inspLabel(Ad, t.kind, t.stat) + Bn[t.tier], "info"), g2();
+        r.cast(t.src, 5030564), r.blessFx(t.dst), ma(e, t.dst, inspLabel(Ad, t.kind, t.stat) + Bn[t.tier], "info"), g2(), charVoice(Ze(Ot(e, t.src)), "bless");
         break;
       case "ko":
-        viewOf(e, t.uid).hp = 0, viewOf(e, t.uid).alive = !1, e.stats.ko[t.uid < 6 ? 1 : 0]++, ql(e), r.ko(t.uid), w2(), Rt(e, `${la(e,t.uid)} は気絶した`, a(t.uid));
+        viewOf(e, t.uid).hp = 0, viewOf(e, t.uid).alive = !1, e.stats.ko[t.uid < 6 ? 1 : 0]++, ql(e), r.ko(t.uid), w2(), charVoice(Ze(Ot(e, t.uid)), "ko"), Rt(e, `${la(e,t.uid)} は気絶した`, a(t.uid));
         break;
       case "ult": {
         let i = Ot(e, t.uid),
@@ -20049,7 +20038,7 @@ void main() {
           l = ["heal", "blessAll", "selfBless", "purifyAll", "revive"].includes(n.kind),
           u = t.dst !== void 0 ? t.dst : s ? s.uid : null;
         e.stats.ult[i.owner]++, L2(e, i, t.grand, t.grand ? e.partners[i.owner] : []), T2(t.grand), setTimeout(() => {
-          r.action(t.uid, l ? null : u, t.grand ? "grand" : "ult", Id("element" in n ? n.element : null)), r.perfectFx(t.uid), v2(t.grand), ql(e)
+          r.action(t.uid, l ? null : u, t.grand ? "grand" : "ult", Id("element" in n ? n.element : null)), r.perfectFx(t.uid), v2(t.grand), charVoice(Ze(i), "ult"), ql(e)
         }, ULT_MOTION_MS);
         Rt(e, `${la(e,t.uid)} の${t.grand?"Gわざ":"ひっさつわざ"}「${Ze(i).ultName}」`, a(t.uid));
         break
@@ -20131,7 +20120,7 @@ void main() {
     let n = q("div", "bubble3d" + (r ? " big" : ""), a);
     n.style.left = `${i.x}px`, n.style.top = `${i.y}px`, e.refs.fx.append(n), setTimeout(() => n.remove(), r ? 1600 : 1150);
     let s = Ot(e, t);
-    b2(m0(Ze(s).id), Math.ceil(a.length / 2), s.owner === 1)
+    charTalk(Ze(s), Math.ceil(a.length / 2), s.owner === 1)
   }
 
   function Vd(e) {

@@ -11,28 +11,7 @@
 // 姿勢は { pos, y, rx, rz, face, spin, sx, sy, op, armL, armR, armZ, head } で返し、updateFigure で当てる。
 // ============================================================================
 
-// わざの名前 → こうげきの動き（本家のこうげき 47 種）
-var ATK_MOTION = [
-  [/ロケットパンチ/, "rocket"], [/しゅりけん|スプレー|しゃげき|大砲|弓矢/, "shoot"],
-  [/つばめがえし|閃光ぎり|きりつける/, "blade"], [/するどいつめ/, "claw"],
-  [/くらいつく|かみちぎる|かみつく/, "bite"], [/舌でなめる/, "lick"], [/しっぽうち/, "tail"],
-  [/あびせげり|地獄げり|けり/, "kick"], [/ずつき|ヘッドバット/, "headbutt"], [/タックル/, "tackle"],
-  [/のしかかる|おしつぶす/, "bodyslam"], [/ドクロ割り|脳天かちわり|骨くだき|こなごなつぶし|地球わり/, "overhead"],
-  [/フルスイング/, "swing"], [/めったうち|うちまくり|みだれづき|つっぱり|ワンツーパンチ/, "combo"],
-  [/きゅうしょづき|疾風づき|風穴あけ/, "thrust"], [/はたく|はりたおす|たたく|ぶったたく/, "slap"],
-  [/パンチ|正拳突き|あてみ|ぶんなぐる|こづく/, "punch"],
-];
-var ATK_MOTION_JA = { rocket: "ロケットパンチ", shoot: "飛び道具", blade: "斬る", claw: "ひっかく", bite: "かみつく", lick: "なめる", tail: "しっぽ",
-  kick: "けり", headbutt: "ずつき", tackle: "体当たり", bodyslam: "のしかかり", overhead: "ふりおろし", swing: "ふりまわし", combo: "連打",
-  thrust: "突き", slap: "はたく", punch: "パンチ" };
-function attackMotionOf(def) {
-  const n = def?.attackName ?? "";
-  for (const [re, m] of ATK_MOTION) if (re.test(n)) return m;
-  return "punch";
-}
-// サボりかた（本家の「なまけている」：寝る・あくび・よそ見・おどる）
-var LOAF_STYLES = ["sleep", "yawn", "away", "dance"];
-function loafStyleOf(def) { return LOAF_STYLES[hash32("loaf:" + (def?.name ?? "")) % LOAF_STYLES.length]; }
+// わざの名前 → こうげきの動き（attackMotionOf）・サボりかた（loafStyleOf）は persona.js
 // 術の名前 → 強さ（小・中・大）。本家の術は 3 段階（火花→火炎→れんごく など）
 function spellTier(def) {
   const n = def?.skillName ?? "";
@@ -560,7 +539,10 @@ var FX_HEX = null;
     }
     for (const u of uids) {
       const f = this.figs.get(u);
-      if (f && !was.has(u) && f.alive && (!f.anim || f.anim.kind === "mv")) this.startMove(u, "enter", { ally, side: sd, tribe: typeof Pi !== "undefined" && f.def ? N2(Pi[f.def.tribe]) : 0xf2d15c });
+      if (f && !was.has(u) && f.alive && (!f.anim || f.anim.kind === "mv")) {
+        this.startMove(u, "enter", { ally, side: sd, tribe: typeof Pi !== "undefined" && f.def ? N2(Pi[f.def.tribe]) : 0xf2d15c });
+        charVoice(f.def, "enter", 0.3 + 0.12 * uids.indexOf(u));
+      }
     }
   };
   // 勝ち負けのポーズ（決着のあと、何度か）
@@ -580,7 +562,7 @@ var FX_HEX = null;
     }
     if (!f.root.visible) { f.anim = null; return; }
     a.t += dt / MOTION_SLOW; // 対戦の速さ（エンジンのモーションの長さと同じ倍率でゆっくり）
-    const k = Math.min(1, a.t / a.dur), o = this.mvPose(f, a, k, dt), m = f.model;
+    const k = Math.min(1, a.t / a.dur), o = personaPose(f, a, this.mvPose(f, a, k, dt)), m = f.model;
     f.root.position.copy(o.pos);
     m.position.y = o.y;
     m.rotation.set(o.rx, (o.face ?? f.baseYaw) + o.spin, f.ally ? -o.rz : o.rz);
@@ -606,13 +588,79 @@ function poseLimbs(m, o) {
   if (arms[1]) arms[1].rotation.x += o ? o.armR : 0, arms[1].rotation.y = o ? o.armZ : 0;
   if (ud.headObj) ud.headObj.rotation.x = o ? o.head : 0;
 }
-// 待機中：ときどき首をかしげて、まわりを見る
+// 待機中：その妖怪のゆれかた（persona の idle）で体をゆらし、ときどき首をかしげて、まわりを見る
 function idlePose(scene, f) {
-  const h = f.model.userData.headObj;
+  const m = f.model, t = scene.clock + f.phase * 3;
+  if (f.def) {
+    const o = personaIdle(f.def, scene.clock + f.phase);
+    m.position.y = o.y, m.rotation.x = o.rx, m.rotation.z = f.ally ? -o.rz : o.rz, m.scale.set(o.sx, o.sy, o.sx);
+  }
+  const h = m.userData.headObj;
   if (!h) return;
-  const t = scene.clock + f.phase * 3;
   h.rotation.y = Math.sin(t * 0.7) * 0.25 * Math.max(0, Math.sin(t * 0.23));
   h.rotation.x = 0;
+}
+// 待機のゆれ（編成画面のプレビューでも使う）。t は秒
+function personaIdle(def, t) {
+  const p = personaOf(def).motion, w = t * p.speed, A = p.amp, o = { y: 0, rx: 0, rz: 0, sx: 1, sy: 1 };
+  switch (p.idle) {
+    case "bob": o.y = Math.abs(Math.sin(w * 3.2)) * 0.08 * A; break;
+    case "sway": o.rz = Math.sin(w * 1.8) * 0.09 * A; break;
+    case "bounce": o.y = Math.max(0, Math.sin(w * 4)) * 0.2 * A, o.sy = 1 - Math.max(0, -Math.sin(w * 4)) * 0.08; break;
+    case "hover": o.y = 0.2 + Math.sin(w * 2) * 0.13 * A, o.rz = Math.sin(w * 1.1) * 0.04; break;
+    case "breathe": o.sy = 1 + Math.sin(w * 2) * 0.045 * A, o.sx = 1 - Math.sin(w * 2) * 0.025 * A; break;
+    case "rock": o.rx = Math.sin(w * 1.7) * 0.08 * A; break;
+    case "twitch": { const s = Math.sin(w * 1.3); o.rz = Math.sign(s) * Math.pow(Math.abs(s), 14) * 0.16 * A, o.y = Math.pow(Math.abs(s), 20) * 0.1; break; }
+    case "circle": o.rx = Math.cos(w * 1.9) * 0.06 * A, o.rz = Math.sin(w * 1.9) * 0.06 * A; break;
+  }
+  return o;
+}
+
+// 行動のモーションに、その妖怪のくせ（こうげきの ため・しめ、ガードの構え、登場・勝ったときの しめ）を重ねる
+var PS_ATTACKS = new Set(Object.keys(ATK_MOTION_JA));
+function personaPose(f, a, o) {
+  if (!f.def) return o;
+  const p = personaOf(f.def).motion, t = a.t, hit = MV_HIT_AT, side = p.side * a.side, A = p.amp;
+  const windup = (t0, t1, k = 1) => {
+    const w = segK(t, t0, t1), s = Math.sin(w * Math.PI) * k * A;
+    if (s <= 0 && p.windup !== "spin") return;
+    switch (p.windup) {
+      case "lean": o.rx += 0.3 * s; break;
+      case "spin": if (w > 0 && w < 1) o.spin += (w * w * (3 - 2 * w)) * Math.PI * 2 * side; break;
+      case "wobble": o.rz += 0.28 * Math.sin(w * Math.PI * 4) * s; break;
+      case "crouch": o.sy *= 1 - 0.2 * s, o.sx *= 1 + 0.1 * s; break;
+      case "rise": o.y += 0.45 * s; break;
+      case "zigzag": { const d = a.dir, q = 0.5 * Math.sin(w * Math.PI * 3) * s; o.pos.x += -d.z * q, o.pos.z += d.x * q; break; }
+      case "stretch": o.sy *= 1 + 0.22 * s, o.sx *= 1 - 0.08 * s; break;
+      case "shiver": o.pos.x += Math.sin(t * 90) * 0.05 * s, o.rz += Math.sin(t * 70) * 0.06 * s; break;
+    }
+  };
+  const finish = (t0, t1, k = 1) => {
+    const u = segK(t, t0, t1), s = Math.sin(u * Math.PI) * k * A;
+    if (u <= 0 || u >= 1) return;
+    switch (p.finish) {
+      case "hop": o.y += 0.35 * s; break;
+      case "twirl": o.spin += u * Math.PI * 2 * -side; break;
+      case "bow": o.rx += 0.45 * s, o.head += 0.3 * s; break;
+      case "backflip": o.rx -= u * Math.PI * 2, o.y += 0.55 * s; break;
+      case "sway": o.rz += 0.3 * Math.sin(u * Math.PI * 2) * s; break;
+      case "pose": o.armL -= 2.5 * s, o.armR -= 2.5 * s, o.sy *= 1 + 0.06 * s; break;
+      case "skip": o.y += 0.28 * Math.abs(Math.sin(u * Math.PI * 2)) * k; break;
+      case "shake": o.rz += 0.14 * Math.sin(t * 40) * s; break;
+    }
+  };
+  if (PS_ATTACKS.has(a.style)) { windup(0.04, hit - 0.04); finish(hit + 0.12, a.dur * 0.95); }
+  else if (a.style === "cast") windup(0.02, 0.3, 0.6);
+  else if (a.style === "enter") finish(0.55, a.dur, 0.8);
+  else if (a.style === "cheer") finish(0, a.dur, 0.7);
+  else if (a.style === "guard") {
+    const u = Math.min(1, t / 0.15);
+    if (p.guard === "crouch") o.sy *= 1 - 0.1 * u, o.y -= 0.05 * u;
+    else if (p.guard === "brace") o.rx -= 0.2 * u, o.armZ -= 0.4 * u;
+    else if (p.guard === "turn") o.spin += 0.6 * side * u;
+    else o.sx *= 1 + 0.1 * u, o.sy *= 1 + 0.04 * u;
+  }
+  return o;
 }
 
 // 決着のあと 1.5 秒：勝った側はよろこび、負けた側はうなだれる（対戦の進みは止まっているので、絵だけ動かす）
