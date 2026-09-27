@@ -55,7 +55,7 @@ function wheelDenied(e) {
 }
 
 function wheelRelease(e, rad) {
-  if (e.wheelResist) { wheelDenied(e); return; }
+  if (e.wheelResist || rotLocked(e.state)) { wheelDenied(e); return; } // こうげき中（ダメージが出るまで）は回せない
   const steps = Math.max(-5, Math.min(5, Math.round(rad / (Math.PI / 3))));
   if (!steps) { e.preview = 0; wheelSet(e, 0); return; }
   e.preview = steps;
