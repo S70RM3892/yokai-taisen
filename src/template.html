@@ -386,30 +386,91 @@ body { margin: 0; }
   .b-rank.rC, .b-rank.rD, .b-rank.rE { fill: #9aa0b8; }
 
 /* ===== 演出強化 ===== */
-/* 奥義カットイン */
-.cutin { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+/* 奥義カットイン：妖怪ごとに 入り方（e-）・帯（b-）・文字（t-）・模様（p-）・色・傾き・大きな一文字 がちがう（ult_style.js） */
+.cutin { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; --dir: 1; --flip: 1; --tilt: 0deg; --zoom: 1; --hue: 0deg; --la: 0deg; --skew: -6deg; --team: #2e6fb0; }
+.cutin.foe { --dir: -1; --flip: -1; --team: #b0303a; }
+.cutin.grand { --team: #f2a541; }
 .cutin .dim { position: absolute; inset: 0; background: #05060cb0; animation: ci-dim 1.875s ease-out forwards; }
-.cutin .band { position: absolute; left: -10%; right: -10%; top: 50%; height: 46%; transform: translateY(-50%) skewY(-6deg) scaleY(0); background: linear-gradient(90deg, var(--ci1), var(--ci2)); box-shadow: 0 0 0 3px #fff8, 0 0 30px var(--ci1); animation: ci-band 1.875s cubic-bezier(.2,.9,.2,1) forwards; overflow: hidden; }
-.cutin .band::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #fff0 0 38px, #ffffff22 38px 42px, #fff0 42px 90px); animation: ci-lines .35s linear infinite; }
-.cutin.foe .band::before { animation-direction: reverse; }
-.cutin .art { position: absolute; top: 50%; width: 44%; aspect-ratio: 1; transform: translate(-140%, -50%); animation: ci-art 1.875s cubic-bezier(.2,.9,.2,1) forwards; filter: drop-shadow(0 6px 0 #0008); }
+.cutin::after { content: ""; position: absolute; inset: 0; background: #fff; opacity: 0; animation: ci-flash 1.875s linear forwards; }
+.cutin .band { position: absolute; left: -10%; right: -10%; top: 50%; height: 46%; transform: translateY(-50%) skewY(var(--skew)) scaleY(0); background: linear-gradient(90deg, var(--ci1), var(--ci2)); box-shadow: 0 0 0 3px var(--team), 0 0 0 6px #fff8, 0 0 30px var(--ci1); animation: ci-band 1.875s cubic-bezier(.2,.9,.2,1) forwards; overflow: hidden; filter: hue-rotate(var(--hue)); }
+.cutin .band::before, .cutin .band::after { content: ""; position: absolute; inset: -50%; }
+.cutin .band::after { background: repeating-linear-gradient(calc(90deg + var(--la)), #fff0 0 38px, #ffffff22 38px 42px, #fff0 42px 90px); animation: ci-lines .35s linear infinite; }
+.cutin.foe .band::after { animation-direction: reverse; }
+.cutin .band.b2 { display: none; }
+/* 帯の形 */
+.cutin.b-rdiag { --skew: 6deg; }
+.cutin.b-flat { --skew: 0deg; }
+.cutin.b-twin .band { height: 22%; top: 38%; } .cutin.b-twin .band.b2 { display: block; top: 64%; --skew: 6deg; animation-delay: .08s; }
+.cutin.b-iris .band { left: 0; right: 0; top: 0; height: 100%; transform: none; clip-path: circle(0% at calc(50% - 22% * var(--dir)) 50%); animation-name: ci-iris; box-shadow: none; }
+.cutin.b-shard .band { clip-path: polygon(0 18%, 14% 0, 31% 22%, 48% 4%, 66% 20%, 83% 2%, 100% 16%, 100% 84%, 86% 100%, 69% 80%, 51% 97%, 34% 78%, 17% 98%, 0 82%); }
+.cutin.b-wave .band { animation-name: ci-band-wave; }
+/* 模様（属性） */
+.cutin.p-flame .band::before { background: radial-gradient(ellipse at 20% 110%, #ffd27a88, #0000 45%), radial-gradient(ellipse at 60% 120%, #ff6a2a88, #0000 50%), repeating-linear-gradient(0deg, #fff0 0 14px, #ffb34733 14px 18px); animation: ci-up .5s linear infinite; }
+.cutin.p-ripple .band::before { background: repeating-radial-gradient(circle at 30% 50%, #fff0 0 16px, #ffffff30 16px 19px); animation: ci-pulse .8s ease-out infinite; }
+.cutin.p-zigzag .band::before { background: linear-gradient(135deg, #fff0 45%, #fff9 47%, #fff0 49%) 0 0 / 60px 60px, linear-gradient(45deg, #fff0 45%, #fff6 47%, #fff0 49%) 30px 0 / 60px 60px; animation: ci-jitter .12s steps(2) infinite; }
+.cutin.p-crack .band::before { background: linear-gradient(115deg, #0000 48%, #2a150866 49%, #0000 50%) 0 0 / 180px 120px, linear-gradient(62deg, #0000 48%, #2a150855 49%, #0000 50%) 40px 20px / 140px 100px; animation: ci-jitter .2s steps(2) infinite; }
+.cutin.p-crystal .band::before { background: repeating-conic-gradient(from 0deg at 70% 50%, #fff0 0 10deg, #ffffff44 10deg 12deg); animation: ci-rot 6s linear infinite; }
+.cutin.p-swirl .band::before { background: repeating-conic-gradient(from 0deg at 50% 50%, #fff0 0 18deg, #ffffff26 18deg 30deg); animation: ci-rot 1.2s linear infinite; }
+.cutin.p-smoke .band::before { background: radial-gradient(circle at 20% 40%, #0008, #0000 30%), radial-gradient(circle at 70% 70%, #1a0a2a99, #0000 35%), radial-gradient(circle at 45% 20%, #0006, #0000 25%); animation: ci-drift 1.2s ease-in-out infinite alternate; }
+.cutin.p-rays .band::before { background: repeating-conic-gradient(from 0deg at 50% 50%, #fff0 0 8deg, #fff5 8deg 12deg); animation: ci-rot 4s linear infinite; }
+.cutin.p-dots .band::before { background: radial-gradient(circle, #ffffff55 3px, #0000 4px) 0 0 / 18px 18px; animation: ci-drift .9s linear infinite; }
+.cutin.p-stars .band::before { background: radial-gradient(circle, #fff 1.5px, #0000 2.5px) 0 0 / 34px 30px, radial-gradient(circle, #ffe27a 2px, #0000 3px) 17px 15px / 50px 44px; animation: ci-twinkle .3s steps(2) infinite; }
+/* 大きな一文字 */
+.cutin .glyph { position: absolute; top: 50%; font-family: var(--display); font-size: min(46vw, 52vh); line-height: 1; color: #fff; opacity: 0; mix-blend-mode: overlay; transform: translate(-50%, -50%) rotate(var(--tilt)); left: calc(50% + 14% * var(--dir)); animation: ci-glyph 1.875s ease-out forwards; }
+/* 絵 */
+.cutin .art { position: absolute; top: 50%; width: 44%; aspect-ratio: 1; animation: ci-e-slide 1.875s cubic-bezier(.2,.9,.2,1) forwards; filter: drop-shadow(0 6px 0 #0008); opacity: 0; }
 .cutin.ally .art { left: 4%; }
-.cutin.foe .art { right: 4%; left: auto; transform: translate(140%, -50%) scaleX(-1); animation-name: ci-art-r; }
-.cutin .art.sub { width: 26%; opacity: .75; top: 36%; }
+.cutin.foe .art { right: 4%; left: auto; }
+.cutin .art.sub { width: 26%; top: 36%; --zoom: .9; }
+.cutin .art.sub { filter: drop-shadow(0 6px 0 #0008) opacity(.75); }
 .cutin.ally .art.sub.a { left: 24%; } .cutin.ally .art.sub.b { left: 34%; top: 66%; }
 .cutin.foe .art.sub.a { right: 24%; } .cutin.foe .art.sub.b { right: 34%; top: 66%; }
+.cutin.e-drop .art { animation-name: ci-e-drop; } .cutin.e-rise .art { animation-name: ci-e-rise; } .cutin.e-zoom .art { animation-name: ci-e-zoom; }
+.cutin.e-spin .art { animation-name: ci-e-spin; } .cutin.e-flash .art { animation-name: ci-e-flash; } .cutin.e-zigzag .art { animation-name: ci-e-zigzag; }
+.cutin.e-shutter .art { animation-name: ci-e-shutter; }
+/* 文字 */
 .cutin .txt { position: absolute; top: 50%; transform: translateY(-50%); display: grid; gap: 2px; animation: ci-txt 1.875s cubic-bezier(.2,.9,.2,1) forwards; opacity: 0; }
 .cutin.ally .txt { right: 6%; text-align: right; } .cutin.foe .txt { left: 6%; text-align: left; }
 .cutin .kind { font-family: var(--display); font-size: clamp(14px, 3.4vw, 22px); color: #fff; letter-spacing: .2em; text-shadow: 0 2px 0 #000; }
 .cutin .move { font-family: var(--display); font-size: clamp(24px, 7vw, 48px); color: #fff; line-height: 1.05; text-shadow: 0 3px 0 #000, 0 0 18px var(--ci1); -webkit-text-stroke: 1px #0006; }
+.cutin .move .ch { display: inline-block; }
 .cutin .who { font-weight: 700; font-size: 13px; color: #fffc; text-shadow: 0 1px 0 #000; }
 .cutin.grand .move { background: linear-gradient(180deg, #fff6c8, #f2a541); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cutin:not(.t-spread) .txt { animation-name: ci-txt2; }
+.cutin.t-slam .move { animation: ci-t-slam 1.875s cubic-bezier(.2,.9,.2,1) forwards; }
+.cutin.t-type .move .ch { opacity: 0; animation: ci-t-type .01s linear forwards; animation-delay: calc(.3s + var(--i) * 45ms); }
+.cutin.t-drop .move .ch { opacity: 0; animation: ci-t-drop .3s cubic-bezier(.3,1.6,.5,1) forwards; animation-delay: calc(.28s + var(--i) * 50ms); }
+.cutin.t-glitch .move { animation: ci-t-glitch .16s steps(2) 4 .3s; }
+.cutin.t-slide .move { animation: ci-t-slide 1.875s cubic-bezier(.2,.9,.2,1) forwards; }
 @keyframes ci-dim { 0% { opacity: 0; } 12%, 80% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes ci-band { 0% { transform: translateY(-50%) skewY(-6deg) scaleY(0); opacity: 1; } 12%, 82% { transform: translateY(-50%) skewY(-6deg) scaleY(1); opacity: 1; } 100% { transform: translateY(-50%) skewY(-6deg) scaleY(0); opacity: 0; } }
+@keyframes ci-flash { 0%, 15% { opacity: 0; } 17% { opacity: .55; } 24%, 100% { opacity: 0; } }
+@keyframes ci-band { 0% { transform: translateY(-50%) skewY(var(--skew)) scaleY(0); opacity: 1; } 12%, 82% { transform: translateY(-50%) skewY(var(--skew)) scaleY(1); opacity: 1; } 100% { transform: translateY(-50%) skewY(var(--skew)) scaleY(0); opacity: 0; } }
+@keyframes ci-band-wave { 0% { transform: translateY(-50%) skewY(-6deg) scaleY(0); } 12% { transform: translateY(-50%) skewY(-6deg) scaleY(1); } 30% { transform: translateY(-50%) skewY(5deg) scaleY(1); } 50% { transform: translateY(-50%) skewY(-4deg) scaleY(1); } 70% { transform: translateY(-50%) skewY(3deg) scaleY(1); } 82% { transform: translateY(-50%) skewY(0) scaleY(1); opacity: 1; } 100% { transform: translateY(-50%) skewY(0) scaleY(0); opacity: 0; } }
+@keyframes ci-iris { 0% { clip-path: circle(0% at calc(50% - 22% * var(--dir)) 50%); } 16%, 80% { clip-path: circle(38% at calc(50% - 22% * var(--dir)) 50%); opacity: 1; } 100% { clip-path: circle(80% at calc(50% - 22% * var(--dir)) 50%); opacity: 0; } }
 @keyframes ci-lines { to { background-position: 90px 0; } }
-@keyframes ci-art { 0% { transform: translate(-140%, -50%); } 18% { transform: translate(0, -50%); } 80% { transform: translate(12%, -50%); opacity: 1; } 100% { transform: translate(40%, -50%); opacity: 0; } }
-@keyframes ci-art-r { 0% { transform: translate(140%, -50%) scaleX(-1); } 18% { transform: translate(0, -50%) scaleX(-1); } 80% { transform: translate(-12%, -50%) scaleX(-1); opacity: 1; } 100% { transform: translate(-40%, -50%) scaleX(-1); opacity: 0; } }
+@keyframes ci-up { to { background-position: 0 -36px, 0 -36px, 0 -36px; } }
+@keyframes ci-pulse { from { transform: scale(.9); } to { transform: scale(1.15); } }
+@keyframes ci-jitter { to { transform: translate(3px, -2px); } }
+@keyframes ci-rot { to { transform: rotate(360deg); } }
+@keyframes ci-drift { to { transform: translateX(-30px); } }
+@keyframes ci-twinkle { to { opacity: .6; } }
+@keyframes ci-glyph { 0%, 10% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.6); } 22%, 80% { opacity: .35; transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.1); } }
+/* 絵の入り方（--dir で左右、--flip で向き、--tilt・--zoom は妖怪ごと） */
+@keyframes ci-e-slide { 0% { opacity: 1; transform: translate(calc(-140% * var(--dir)), -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 18% { opacity: 1; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 80% { opacity: 1; transform: translate(calc(12% * var(--dir)), -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 100% { opacity: 0; transform: translate(calc(40% * var(--dir)), -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } }
+@keyframes ci-e-drop { 0% { opacity: 1; transform: translate(0, -190%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 14% { opacity: 1; transform: translate(0, -42%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 20%, 80% { opacity: 1; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 100% { opacity: 0; transform: translate(0, 40%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } }
+@keyframes ci-e-rise { 0% { opacity: 1; transform: translate(0, 110%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 18%, 80% { opacity: 1; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 100% { opacity: 0; transform: translate(0, -160%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } }
+@keyframes ci-e-zoom { 0% { opacity: 0; transform: translate(0, -50%) rotate(var(--tilt)) scale(0) scaleX(var(--flip)); } 12% { opacity: 1; transform: translate(0, -50%) rotate(var(--tilt)) scale(calc(var(--zoom) * 1.35)) scaleX(var(--flip)); } 20%, 80% { opacity: 1; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 100% { opacity: 0; transform: translate(0, -50%) rotate(var(--tilt)) scale(calc(var(--zoom) * 1.8)) scaleX(var(--flip)); } }
+@keyframes ci-e-spin { 0% { opacity: 0; transform: translate(calc(-60% * var(--dir)), -50%) rotate(calc(var(--tilt) - 360deg * var(--dir))) scale(.2) scaleX(var(--flip)); } 18%, 80% { opacity: 1; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 100% { opacity: 0; transform: translate(calc(30% * var(--dir)), -50%) rotate(calc(var(--tilt) + 90deg * var(--dir))) scale(.6) scaleX(var(--flip)); } }
+@keyframes ci-e-flash { 0%, 6% { opacity: 0; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); filter: brightness(3); } 8%, 12% { opacity: 1; } 10% { opacity: 0; } 20%, 80% { opacity: 1; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); filter: brightness(1) drop-shadow(0 6px 0 #0008); } 100% { opacity: 0; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } }
+@keyframes ci-e-zigzag { 0% { opacity: 1; transform: translate(calc(-140% * var(--dir)), -80%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 7% { transform: translate(calc(-60% * var(--dir)), -20%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 13% { transform: translate(calc(-25% * var(--dir)), -75%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 18%, 80% { opacity: 1; transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 100% { opacity: 0; transform: translate(calc(40% * var(--dir)), -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } }
+@keyframes ci-e-shutter { 0% { opacity: 1; clip-path: inset(0 50% 0 50%); transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 18%, 80% { opacity: 1; clip-path: inset(0 0 0 0); transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } 100% { opacity: 0; clip-path: inset(50% 0 50% 0); transform: translate(0, -50%) rotate(var(--tilt)) scale(var(--zoom)) scaleX(var(--flip)); } }
 @keyframes ci-txt { 0%, 14% { opacity: 0; letter-spacing: .6em; } 28%, 82% { opacity: 1; letter-spacing: 0; } 100% { opacity: 0; } }
+@keyframes ci-txt2 { 0%, 14% { opacity: 0; } 18%, 82% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes ci-t-slam { 0%, 14% { transform: scale(3); opacity: 0; filter: blur(6px); } 24% { transform: scale(.92); opacity: 1; filter: blur(0); } 30%, 100% { transform: scale(1); } }
+@keyframes ci-t-type { to { opacity: 1; } }
+@keyframes ci-t-drop { from { opacity: 0; transform: translateY(-90%); } to { opacity: 1; transform: none; } }
+@keyframes ci-t-glitch { 0% { transform: translate(-3px, 1px) skewX(-8deg); text-shadow: 3px 0 #f0f, -3px 0 #0ff, 0 3px 0 #000; } 100% { transform: translate(3px, -1px) skewX(6deg); text-shadow: -3px 0 #f0f, 3px 0 #0ff, 0 3px 0 #000; } }
+@keyframes ci-t-slide { 0%, 14% { transform: translateX(calc(60% * var(--dir))); } 26%, 100% { transform: none; } }
 
 /* 陣のカットイン（メンバーサークルを回して陣ができたとき） */
 .jincut { position: absolute; left: 0; right: 0; top: 18%; height: 30%; pointer-events: none; z-index: 5; overflow: hidden; }
@@ -476,7 +537,7 @@ body { margin: 0; }
 .b-diff button[data-v="3"].on { background: linear-gradient(135deg, #b07ce0, #e0655a); }
 .b-rec { font-size: 11px; color: var(--muted); }
 .b-rec b { color: var(--text); }
-@media (prefers-reduced-motion: reduce) { .cutin *, .banner { animation-duration: .01s !important; } .top3d.danger::after { animation: none; box-shadow: inset 0 0 40px 4px #e0655a66; } .top3d.shake { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .cutin *, .banner { animation-duration: .01s !important; } .cutin::after, .cutin .band::before, .cutin .band::after { animation: none !important; opacity: 0; } .top3d.danger::after { animation: none; box-shadow: inset 0 0 40px 4px #e0655a66; } .top3d.shake { animation: none; } }
 
 /* ===== 編成：くわしい情報・持ち物・出陣前の確認 ===== */
 .builder { grid-template-areas: "head head head" "left center right" "detail detail detail" "bar bar bar"; }

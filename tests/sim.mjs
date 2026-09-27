@@ -775,3 +775,22 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (E.hitSg(so.players[0], uo) !== E.hitSg(sb.players[0], ub)) throw new Error("影オロチの魂 should not change the sg gained on hits");
   console.log(`souls: aura +20%/soul (x2 -> atk ${a0}->${a1}), center +30%, crit ${Math.round(ce * 100 / 64)}% (いっせん+くさなぎ), 影オロチ +10/turn`);
 }
+
+// ひっさつわざの台本：振り付け（種類・ため・きめ・揺らぎ）とカットイン（入り方・帯・文字・模様）は全員ちがう組み合わせ
+{
+  const mv = new Map(), cu = new Map(), styles = new Set();
+  for (const d of E.units) {
+    const s = E.ultScript(d);
+    if (!E.ultStyles.includes(s.style)) throw new Error(`${d.name}: unknown ult style ${s.style}`);
+    styles.add(s.style);
+    const m = [s.style, s.fx, s.windup, s.finish, s.v.hits, s.v.height, s.v.spins, s.v.side].join("|");
+    const c = [s.cut.entry, s.cut.band, s.cut.text, s.cut.pattern].join("|");
+    if (mv.has(m)) throw new Error(`${d.name} and ${mv.get(m)} share the same ult motion ${m}`);
+    if (cu.has(c)) throw new Error(`${d.name} and ${cu.get(c)} share the same cut-in ${c}`);
+    mv.set(m, d.name), cu.set(c, d.name);
+    const sup = ["heal", "blessAll", "selfBless", "purifyAll", "revive", "dispel"].includes(d.ult?.kind);
+    if (sup !== (s.style === "bloom")) throw new Error(`${d.name}: support ult should use bloom (${d.ult?.kind} -> ${s.style})`);
+  }
+  if (styles.size < 16) throw new Error(`too few ult styles in use: ${[...styles]}`);
+  console.log(`ult scripts: ${E.units.length} yokai, all unique (${styles.size} styles in use)`);
+}
