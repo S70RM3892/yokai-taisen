@@ -52,6 +52,7 @@ function fxLine(k, v) {
     case "regen": return `行動するたび HP を ${pct(v)} 回復`;
     case "startSg": return `妖気 ${v} から始める`;
     case "sgRate": return `妖気のたまり方+${pct(v)}`;
+    case "selfSg": return `自分の妖気が 毎ターン だんだん回復する（+${v}）`;
     case "sgSteal": return `こうげきが当たると 相手の妖気を ${v} うばう`;
     case "critDmg": return `クリティカルのダメージ+${pct(v)}`;
     case "vsCursed": return `とりつかれ・サボり中の相手へのダメージ+${pct(v)}`;

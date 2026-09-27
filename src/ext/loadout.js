@@ -74,7 +74,8 @@ function mergeFx(...list) {
       if (k.startsWith("adept_")) out[k] = Math.max(out[k] ?? 1000, 1000) + (v - 1000);
       else if (k === "ironGuard") out[k] = Math.min(out[k] ?? 500, v);
       else if (k === "rageAt") out[k] = Math.max(out[k] ?? 0, v);
-      else if (k === "critEye") out[k] = Math.max(out[k] ?? 0, v);
+      // クリティカル率は ふつう（kc）からの上がり分を足す（RC：くさなぎの魂 1 つで約 33%・2 つで約 60%）
+      else if (k === "critEye") out[k] = (out[k] ?? kc) + (v - kc);
       else if (k === "ultEvade") out[k] = Math.min(1000, (out[k] ?? 0) + v);
       else out[k] = (out[k] ?? 0) + v;
     }
