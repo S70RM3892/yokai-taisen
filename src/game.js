@@ -825,7 +825,7 @@
 
   // えんら魂・妖気のけむり（本家）：となりの妖怪の妖気を「だんだん回復する」。たまり方の倍率ではなく、毎ターンの自然回復に足される量。
   // RC「妖怪ウォッチ2実験結果まとめ」：本家の毎ターンの回復は 5、えんら魂 1 つにつき その妖怪の妖気の上限の 2%（1/50）が足され、
-  // となりの 2 体ぶん重なる。こうげきを当てたとき・行動したときの妖気は増えず、ようりょくアップや自分の妖気回復魂の倍率もかからない。
+  // となりの 2 体ぶん重なり、後衛の妖怪にも効く。こうげきを当てたとき・行動したときの妖気は増えず、ようりょくアップや自分の妖気回復魂の倍率もかからない。
   // 上限を 1000 にそろえたこのゲームでは、どの妖怪にも同じ量（+20）。のっぺら坊は 1 つで最速並み、ブシニャンは 1 つでのっぺら坊並み・2 つで最速並み
   function smokeSg(e, t) {
     if (t.curse?.kind === "seal") return 0;
@@ -834,9 +834,10 @@
     return Math.floor(sm * SMOKE_SG / 350)
   }
 
-  // 毎ターンたまる妖気（前衛）
+  // 毎ターンたまる妖気（前衛。後衛はえんら魂のぶんだけ）
+  // 自分の妖気回復魂（オロチ・影オロチなど）も えんら魂と同じく毎ターン足す量（RC：影オロチ魂で遅い妖怪は 1.5 倍ほど・速い妖怪はあまり変わらない）
   function turnSg(e, t) {
-    return oi(e, t) + smokeSg(e, t)
+    return oi(e, t) + smokeSg(e, t) + (t.curse?.kind === "seal" ? 0 : t.fx.selfSg ?? 0)
   }
 
   // 行動したときに少しだけたまる妖気（こうげき・ようじゅつを当てたときの半分）
@@ -1397,11 +1398,12 @@
     }
   }
 
+  // 毎ターンの妖気：前衛は自然回復＋えんら魂。えんら魂は後衛の妖怪にも効く（となりにいれば後衛でも妖気がたまる）
   function Yh(e) {
     for (let t of e.players)
-      for (let a = 0; a < 3; a++) {
+      for (let a = 0; a < 6; a++) {
         let r = t.units[t.wheel[a]];
-        di(r, turnSg(t, r))
+        di(r, a < 3 ? turnSg(t, r) : smokeSg(t, r))
       }
   }
 
@@ -1860,6 +1862,7 @@
   /*@@include ext/roster_plus.js@@*/
   /*@@include ext/honke_roster_data.js@@*/
   /*@@include ext/honke_roster.js@@*/
+  /*@@include ext/ult_style.js@@*/
   buildTraits();
   /*@@include ext/engine_exports.js@@*/
   /*@@ENGINE_END@@*/
@@ -19433,16 +19436,21 @@ void main() {
     let i = e.refs.top;
     if (!i) return;
     i.querySelector(".cutin")?.remove();
+    // 妖怪ごとのカットイン（ult_style.js）：入り方・帯の形・文字の出し方・模様・色・傾き・大きな一文字
     let n = t.owner === 0,
-      s = q("div", "cutin " + (n ? "ally" : "foe") + (a ? " grand" : "")),
-      l = a ? ["#f2a541", "#b0303a"] : n ? ["#2e6fb0", "#5fb3d9"] : ["#b0303a", "#e0655a"];
-    s.style.setProperty("--ci1", l[0]), s.style.setProperty("--ci2", l[1]);
-    let u = q("div", "band");
-    s.append(q("div", "dim"), u);
+      sc = ultScript(Ze(t)).cut,
+      s = q("div", `cutin ${n ? "ally" : "foe"}${a ? " grand" : ""} e-${sc.entry} b-${sc.band} t-${sc.text} p-${sc.pattern}`),
+      l = a ? ["#f2a541", "#b0303a"] : sc.colors;
+    s.style.setProperty("--ci1", l[0]), s.style.setProperty("--ci2", l[1]), s.style.setProperty("--hue", (a ? 0 : sc.hue) + "deg"),
+      s.style.setProperty("--tilt", sc.tilt + "deg"), s.style.setProperty("--zoom", sc.zoom), s.style.setProperty("--la", sc.lineAngle + "deg");
+    s.append(q("div", "dim"), q("div", "band"), q("div", "band b2"), q("div", "glyph", sc.glyph));
     for (let [d, c] of r.entries()) s.append(Dd(c, d ? "b" : "a"));
     s.append(Dd(t));
-    let o = q("div", "txt");
-    o.append(q("span", "kind", a ? "Gわざ" : "ひっさつわざ"), q("span", "move", Ze(t).ultName), q("span", "who", (n ? "" : "敵の") + Ze(t).name)), s.append(o), i.append(s), setTimeout(() => s.remove(), Math.round(1300 * MOTION_SLOW))
+    let o = q("div", "txt"),
+      mv = q("span", "move");
+    [...Ze(t).ultName].forEach((ch, k) => { let x = q("span", "ch", ch); x.style.setProperty("--i", k), mv.append(x) });
+    s.dataset.ult = `${sc.entry}/${sc.band}/${sc.text}/${sc.pattern}`;
+    o.append(q("span", "kind", a ? "Gわざ" : "ひっさつわざ"), mv, q("span", "who", (n ? "" : "敵の") + Ze(t).name)), s.append(o), i.append(s), setTimeout(() => s.remove(), Math.round(1300 * MOTION_SLOW))
   }
 
   function Jr(e, t, a, r = "", i = 1e3) {

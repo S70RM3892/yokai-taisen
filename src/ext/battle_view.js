@@ -46,14 +46,7 @@ function viewRelease(e, ev) {
   if (uid !== null && uid !== void 0) { const v = viewOf(e, uid); v.hold = Math.max(0, v.hold - 1); }
 }
 
-// 奥義の振り付けで何発当てるか（エンジンに段数がない妖怪のとき）
-function ultMotionHits(def) {
-  const st = ultStyleOf(def);
-  if (st === "rush") return ultVariant(def).hits;
-  if (st === "stretch") return 2;
-  if (st === "phantom" && !["all", "curseAll"].includes(def.ult?.kind)) return 3;
-  return 1;
-}
+// 奥義の振り付けで何発当てるかは ult_style.js（ultMotionHits）
 
 // ダメージを見せる（多段なら分けて 1 発ずつ）。eff は弱点(1)／いまひとつ(-1)
 function showDamage(e, ev, eff) {

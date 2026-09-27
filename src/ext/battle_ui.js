@@ -449,6 +449,7 @@ function debugHook() {
     // 流行りの型：ルール違反・持ち物の付けそこね
     presets: () => PRESETS.map(p => { const ms = presetMembers(p); return { name: p.name, errs: ms ? Yn(ms) : ["妖怪が見つからない"], dropped: ms ? p.team.filter((t, i) => t[2] && !ms[i].equipment).map(t => `${t[0]}:${t[2]}`) : [] }; }),
     // 奥義の振り付けの数（全員）
+    defIndexOf: n => ct.findIndex(x => x.name === n),
     ultStats() { const c = {}; for (const d of ct) { const k = ultStyleOf(d); c[k] = (c[k] ?? 0) + 1; } return c; },
     // 奥義の振り付けを 1 つ試す（手前のまん中の妖怪を、その振り付けの妖怪に見立てる）
     ultTry(style) {

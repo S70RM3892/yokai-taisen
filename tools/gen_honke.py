@@ -163,20 +163,28 @@ def soul_fx(text):
         return {}, {k: int(m.group(2))}
     if "HP1で耐える" in t or "HPで1で耐える" in t: return {"endureChance": 350}, {}
     if "さぼったとき" in t: return {"loafHeal": three(50, 100, 150)}, {}
-    if "ようきゲージ" in t and ("自分" in t or "じぶん" in t): return {"sgRate": three(120, 250, 400)}, {}
+    # 自分の妖気回復魂：えんら魂と同じく「だんだん回復する」。たまり方の倍率ではなく、毎ターン 上限の ‰ を足す。
+    #   RC「妖怪ウォッチ2実験結果まとめ」：影オロチ魂（どんどん）で遅い妖怪は 1.5 倍ほど速く、速い妖怪はあまり変わらない
+    #   → 本家の毎ターン 5 に 上限の 1%（上限 250 の妖怪で +2.5）。このゲーム（上限 1000）では +10
+    if "ようきゲージ" in t and ("自分" in t or "じぶん" in t): return {"selfSg": three(3, 6, 10)}, {}
     if "となり" in t and "ようきゲージ" in t: return {"spiritSmoke": three(200, 350, 500)}, {}
     if "両どなり" in t and "吸収" in t: return {"leech": three(10, 20, 30)}, {}
     if "どなり" in t and "HP" in t and "回復" in t: return {"prayer": three(10, 15, 25)}, {}
     if "となり" in t and "HP" in t: return {"prayer": three(10, 15, 25)}, {}
+    # となりの能力アップ魂：RC「同じ効果の魂を2つ以上つけた時に効果が重複する魂まとめ」の実測で 1 つにつき
+    #   ちから・ようりょく・まもり・すばやさ +20%、全ステータス +10%（「少し」はその半分）
     m = re.search(r"となりにいる妖怪の(ちから|ようりょく|まもり|すばやさ|全ステータス)", t)
     if m:
         k = {"ちから": "atk", "ようりょく": "spa", "まもり": "def", "すばやさ": "spd", "全ステータス": "all"}[m.group(1)]
-        return {"aura_" + k: 50 if "少し" in t else 100}, {}
+        full = 100 if k == "all" else 200
+        return {"aura_" + k: full // 2 if "少し" in t else full}, {}
     if "とりつかれにくく" in t: return {"curseResist": three(120, 220, 350)}, {}
     if "とりつくが" in t and "成功" in t: return {"curseHit": 50 if "少し" in t else 100}, {}
     if "ガード中に攻撃" in t: return {"guardThorns": 300}, {}
     if "クリティカルの威力" in t: return {"critDmg": 300}, {}
-    if "クリティカル" in t: return {"critEye": three(4, 8, 14)}, {}
+    # クリティカル率（64 分の いくつ。ふつうは 3）：RC の実測で くさなぎの魂 1 つで約 33%・2 つで約 60%
+    #   → 「出やすく」は 21/64。「少し」「とても」は その前後（推定）
+    if "クリティカル" in t: return {"critEye": three(12, 21, 27)}, {}
     if "ドレイン" in t: return {"drainUp": 250 if "少し" in t else 500}, {}
     if "お金" in t or "経験値" in t or "アイテムを" in t: return {"noBattle": 1}, {}
     if "ピンチ" in t: return {"pinchHeal": 300}, {}
@@ -203,7 +211,9 @@ def soul_fx(text):
     m = re.search(r"真ん中に立.*?(ちから|ちかた|ようりょく|妖力|まもり|すばやさ|全ステータス)", t)
     if m:
         k = {"ちから": "atk", "ちかた": "atk", "ようりょく": "spa", "妖力": "spa", "まもり": "def", "すばやさ": "spd", "全ステータス": "all"}[m.group(1)]
-        return {"center_" + k: 60 if "少し" in t else 120}, {}
+        # まん中の能力アップ魂：RC の実測で 1 つにつき +30%（「少し」はその半分、全ステータスは となりの魂と同じく 1 つの能力の半分）
+        full = 150 if k == "all" else 300
+        return {"center_" + k: full // 2 if "少し" in t else full}, {}
     if "良いとりつく" in t: return {"blessLong": 500}, {}
     if "自分のHP" in t: return {"regen": three(15, 25, 40)}, {}
     raise SystemExit(f"unknown soul text: {t}")

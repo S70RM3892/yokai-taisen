@@ -384,6 +384,21 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (g1.turn - g0.turn !== 20) throw new Error(`enra should not be multiplied by the gather blessing: ${g0.turn} -> ${g1.turn}`);
   const seal = u => { u.curse = { kind: "seal", tier: 0, elapsed: 0, remaining: 1e9 }; };
   if (withEnra("ブシニャン", 1, seal).turn !== 0) throw new Error("a sealed yokai should not recover sg from enra");
+  // 後衛にも効く：前衛 3 番目にえんら魂 → となりの後衛（wheel 3）は毎ターン +20、となりでない後衛（wheel 4）は 0
+  {
+    const t = [id("ブシニャン"), id("ヨロイさん"), { ...id("ムリカベ"), equipment: "soul:" + E.units.find(u => u.name === "えんらえんら").id }, id("トオセンボン"), id("ふじのやま"), id("すもうどん")];
+    const st = E.newBattle(3, t, t, { noItems: true });
+    const p = st.players[0], near = p.units[p.wheel[3]], far = p.units[p.wheel[4]];
+    if (E.smokeSg(p, near) !== 20 || E.smokeSg(p, far) !== 0) throw new Error(`back-row enra amount: near ${E.smokeSg(p, near)}, far ${E.smokeSg(p, far)}`);
+    let turns = 0;
+    for (let i = 0; i < 3000 && turns < 3; i++) {
+      const ev = [];
+      E.step(st, [], ev);
+      if (ev.some(e => e.t === "action")) turns++;
+    }
+    if (turns < 3) throw new Error("no actions happened");
+    if (near.sg !== 60 || far.sg !== 0) throw new Error(`enra should charge the adjacent back-row yokai: near ${near.sg} (want 60), far ${far.sg} (want 0)`);
+  }
   console.log(`enra soul: ${JSON.stringify(res)}`);
 }
 
@@ -728,4 +743,54 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (bushi.fx.critDmg !== 750) throw new Error(`ブシニャン critDmg ${bushi.fx.critDmg}`);
   if (bushi.fx.critEye !== 19 || !E.equipById(soul).desc.includes("30%")) throw new Error(`いのちとりの魂 ${bushi.fx.critEye}`);
   console.log(`tune: 超クリティカル crit +${yama.fx.critDmg / 10}% (山吹鬼・ブシニャン), いのちとりの魂 crit ${Math.round(bushi.fx.critEye * 100 / 64)}%`);
+}
+
+// 魂の効果（本家）：RC「同じ効果の魂を2つ以上つけた時に効果が重複する魂まとめ」の実測
+//   となりの能力アップ 1 つにつき +20%（全ステータスは +10%）・まん中の能力アップ +30%・くさなぎの魂でクリティカル率 約 33%。
+//   自分の妖気回復魂は たまり方の倍率ではなく 毎ターン足す量（えんら魂と同じ）
+{
+  const byName = n => E.units.find(u => u.name === n);
+  const soulOf = n => E.equipById("soul:" + byName(n).id);
+  if (soulOf("ルビーニャン").fx.aura_atk !== 200) throw new Error(`ルビーニャンの魂 aura_atk ${soulOf("ルビーニャン").fx.aura_atk}`);
+  if (soulOf("イザナミ").fx.aura_all !== 100) throw new Error(`イザナミの魂 aura_all ${soulOf("イザナミ").fx.aura_all}`);
+  if (soulOf("フユニャン").fx.center_atk !== 300) throw new Error(`フユニャンの魂 center_atk ${soulOf("フユニャン").fx.center_atk}`);
+  if (soulOf("くさなぎ").fx.critEye !== 21) throw new Error(`くさなぎの魂 critEye ${soulOf("くさなぎ").fx.critEye}`);
+  // となりに 2 つ → +40%
+  const id = n => ({ unit: byName(n).id });
+  const t = [{ ...id("ヨロイさん"), equipment: "soul:" + byName("ルビーニャン").id }, id("ブシニャン"), { ...id("ムリカベ"), equipment: "soul:" + byName("ルビーニャン").id }, id("トオセンボン"), id("ふじのやま"), id("すもうどん")];
+  const plain = [id("ヨロイさん"), id("ブシニャン"), id("ムリカベ"), id("トオセンボン"), id("ふじのやま"), id("すもうどん")];
+  const s1 = E.newBattle(1, t, t, { noItems: true }), s0 = E.newBattle(1, plain, plain, { noItems: true });
+  const a1 = E.statOf(s1.players[0], s1.players[0].units[1], "atk"), a0 = E.statOf(s0.players[0], s0.players[0].units[1], "atk");
+  if (Math.abs(a1 / a0 - 1.4) > 0.02) throw new Error(`two adjacent ルビーニャン souls: atk ${a0} -> ${a1} (want +40%)`);
+  // クリティカル率は ふつうからの上がり分を足す（いっせん＋くさなぎの魂）
+  const k = [{ ...id("くさなぎ"), equipment: "soul:" + byName("くさなぎ").id }, ...plain.slice(1)];
+  const sk = E.newBattle(1, k, k, { noItems: true });
+  const ce = sk.players[0].units[0].fx.critEye;
+  if (ce !== 3 + (16 - 3) + (21 - 3)) throw new Error(`crit should stack: critEye ${ce}`);
+  // 影オロチの魂：毎ターン +10。当てたときの妖気は変わらない
+  const o = [{ ...id("ブシニャン"), equipment: "soul:" + byName("影オロチ").id }, ...plain.slice(1)];
+  const so = E.newBattle(1, o, o, { noItems: true }), sb = E.newBattle(1, [id("ブシニャン"), ...plain.slice(1)], [id("ブシニャン"), ...plain.slice(1)], { noItems: true });
+  const uo = so.players[0].units[0], ub = sb.players[0].units[0];
+  if (E.sgRate(so.players[0], uo) - E.sgRate(sb.players[0], ub) !== 10) throw new Error(`影オロチの魂 should add +10 per turn: ${E.sgRate(sb.players[0], ub)} -> ${E.sgRate(so.players[0], uo)}`);
+  if (E.hitSg(so.players[0], uo) !== E.hitSg(sb.players[0], ub)) throw new Error("影オロチの魂 should not change the sg gained on hits");
+  console.log(`souls: aura +20%/soul (x2 -> atk ${a0}->${a1}), center +30%, crit ${Math.round(ce * 100 / 64)}% (いっせん+くさなぎ), 影オロチ +10/turn`);
+}
+
+// ひっさつわざの台本：振り付け（種類・ため・きめ・揺らぎ）とカットイン（入り方・帯・文字・模様）は全員ちがう組み合わせ
+{
+  const mv = new Map(), cu = new Map(), styles = new Set();
+  for (const d of E.units) {
+    const s = E.ultScript(d);
+    if (!E.ultStyles.includes(s.style)) throw new Error(`${d.name}: unknown ult style ${s.style}`);
+    styles.add(s.style);
+    const m = [s.style, s.fx, s.windup, s.finish, s.v.hits, s.v.height, s.v.spins, s.v.side].join("|");
+    const c = [s.cut.entry, s.cut.band, s.cut.text, s.cut.pattern].join("|");
+    if (mv.has(m)) throw new Error(`${d.name} and ${mv.get(m)} share the same ult motion ${m}`);
+    if (cu.has(c)) throw new Error(`${d.name} and ${cu.get(c)} share the same cut-in ${c}`);
+    mv.set(m, d.name), cu.set(c, d.name);
+    const sup = ["heal", "blessAll", "selfBless", "purifyAll", "revive", "dispel"].includes(d.ult?.kind);
+    if (sup !== (s.style === "bloom")) throw new Error(`${d.name}: support ult should use bloom (${d.ult?.kind} -> ${s.style})`);
+  }
+  if (styles.size < 16) throw new Error(`too few ult styles in use: ${[...styles]}`);
+  console.log(`ult scripts: ${E.units.length} yokai, all unique (${styles.size} styles in use)`);
 }
