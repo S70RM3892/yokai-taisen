@@ -472,6 +472,49 @@ body { margin: 0; }
 @keyframes ci-t-glitch { 0% { transform: translate(-3px, 1px) skewX(-8deg); text-shadow: 3px 0 #f0f, -3px 0 #0ff, 0 3px 0 #000; } 100% { transform: translate(3px, -1px) skewX(6deg); text-shadow: -3px 0 #f0f, 3px 0 #0ff, 0 3px 0 #000; } }
 @keyframes ci-t-slide { 0%, 14% { transform: translateX(calc(60% * var(--dir))); } 26%, 100% { transform: none; } }
 
+/* はじめての人へ：あそびかた・練習試合のヒント */
+.b-tutorial.new { border-color: var(--lantern); box-shadow: 0 0 0 2px #f2a54133, 0 0 18px #f2a54133; }
+.tut-entry { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tut-entry .btn { padding: 8px 6px; }
+.tut-box { max-width: 460px !important; text-align: left !important; gap: 10px !important; }
+.tut-head { display: flex; justify-content: space-between; align-items: center; }
+.tut-step { color: var(--muted); font-size: 12px; }
+.tut-skip { text-align: center; }
+.tut-title { font-size: clamp(22px, 6vw, 30px) !important; text-align: center; line-height: 1.2; }
+.tut-art { display: grid; place-items: center; min-height: 120px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; gap: 8px; }
+.tut-svg { width: 150px; height: 150px; }
+.tut-big { font-size: 64px; line-height: 1; }
+.tut-body { line-height: 1.75; font-size: 14px; }
+.tut-body small { display: block; margin-top: 6px; color: var(--muted); line-height: 1.6; }
+.tut-body b { color: var(--lantern); }
+.tut-row { display: flex; gap: 8px; align-items: center; justify-content: center; }
+.tut-row.wrap { flex-wrap: wrap; }
+.tut-chip { padding: 6px 10px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-weight: 700; font-size: 13px; }
+.tut-chip.a { color: var(--ally); border-color: var(--ally); } .tut-chip.f { color: var(--foe); border-color: var(--foe); }
+.tut-chip.curse { color: var(--curse); border-color: var(--curse); } .tut-chip.bless { color: var(--sg); border-color: var(--sg); }
+.tut-chip.dim { color: var(--muted); } .tut-chip.pin { animation: tut-pulse 1.2s ease-in-out infinite; }
+.tut-vs { font-family: var(--display); color: var(--lantern); }
+.tut-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 320px; }
+.tut-btn { text-align: center; padding: 8px 0; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-weight: 700; font-size: 12px; }
+.tut-btn.on { color: #1a1206; background: var(--lantern); border-color: var(--lantern); animation: tut-pulse 1.2s ease-in-out infinite; }
+.tut-gauge { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; width: 100%; max-width: 320px; font-size: 12px; color: var(--muted); }
+.tut-gauge i { height: 10px; border-radius: 5px; background: #0c0f19; overflow: hidden; } .tut-gauge b { display: block; height: 100%; background: var(--sg); box-shadow: 0 0 10px var(--sg); }
+.tut-dots { display: flex; gap: 6px; justify-content: center; }
+.tut-dot { width: 10px; height: 10px; border-radius: 50%; padding: 0; border: 0; background: var(--line); }
+.tut-dot.on { background: var(--lantern); }
+.tut-nav { display: flex; gap: 8px; justify-content: space-between; }
+.tut-nav .btn { flex: 1; }
+.tut-hint { position: absolute; left: 8px; right: 8px; bottom: 48px; z-index: 6; display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 10px;
+  background: #10131ff2; border: 2px solid var(--lantern); box-shadow: 0 6px 20px #0008; font-size: 13px; line-height: 1.6; animation: tut-in .3s ease-out; }
+.tut-hint > b { color: #1a1206; background: var(--lantern); border-radius: 6px; padding: 2px 6px; font-size: 11px; }
+.tut-hint span b { color: var(--lantern); }
+.tut-hint .b-mini { text-align: center; }
+.tut-glow { animation: tut-glow 1s ease-in-out infinite; border-radius: 12px; }
+@keyframes tut-pulse { 50% { transform: scale(1.06); } }
+@keyframes tut-glow { 0%, 100% { box-shadow: 0 0 0 0 #f2a54100; filter: none; } 50% { box-shadow: 0 0 0 4px #f2a541cc, 0 0 22px #f2a541; filter: brightness(1.25); } }
+@keyframes tut-in { from { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .tut-glow, .tut-btn.on, .tut-chip.pin, .tut-hint { animation: none; } .tut-glow { box-shadow: 0 0 0 4px #f2a541cc; } }
+
 /* 陣のカットイン（メンバーサークルを回して陣ができたとき） */
 .jincut { position: absolute; left: 0; right: 0; top: 18%; height: 30%; pointer-events: none; z-index: 5; overflow: hidden; }
 .jincut .jc-band { position: absolute; inset: 0; display: flex; align-items: center; gap: 10px; padding: 0 5%; background: linear-gradient(90deg, #05060cdd, color-mix(in srgb, var(--jc) 70%, #05060c) 40%, #05060cdd); border-top: 2px solid var(--jc); border-bottom: 2px solid var(--jc); box-shadow: 0 0 24px var(--jc); animation: jc-in 1.4s cubic-bezier(.2,.9,.2,1) forwards; transform-origin: left center; }

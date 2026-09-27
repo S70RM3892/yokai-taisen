@@ -19166,7 +19166,7 @@ void main() {
     let c = q("div", "b-rules"),
       h = partyBox(() => Me()),
       bagBox = q("div", "b-rules b-bag");
-    l.append(B2(), c, presetBox(p => { t = 0, DETAIL_FOR = null, Me(); }), bagBox, h);
+    l.append(tutorialBox(), B2(), c, presetBox(p => { t = 0, DETAIL_FOR = null, Me(); }), presetBox(p => { t = 0, DETAIL_FOR = null, Me(); }, !0), bagBox, h);
     let f = Ke("svg", {
       class: "b-wheel",
       viewBox: "-160 -160 320 320"
@@ -19488,7 +19488,8 @@ void main() {
     }
   }
 
-  function Fd(e, bag = []) {
+  // opts.diff：相手の強さ（なければ編成画面で選んだもの）、opts.practice：練習試合（ヒントを出す・戦績に入れない）
+  function Fd(e, bag = [], opts = {}) {
     let t = Xl(),
       a = ni(t, 5),
       r = s0(ni(Wn(a), 77)).map(l => ({
@@ -19506,8 +19507,9 @@ void main() {
       s = new e2(n);
     Ga = {
       state: i,
-      cpu: Nh(1, Wn(a), or[Ri].params),
-      diff: Ri,
+      cpu: Nh(1, Wn(a), or[opts.diff ?? Ri].params),
+      diff: opts.diff ?? Ri,
+      practice: !!opts.practice,
       stats: I2(),
       partners: [
         [],
@@ -19942,7 +19944,7 @@ void main() {
       netLost(t);
       return
     }
-    if (q2(t, a / 1e3), t.state.outcome) {
+    if (t.practice && tutorTick(t), q2(t, a / 1e3), t.state.outcome) {
       let i = t.state.outcome.winner;
       Jr(t, i === 0 ? "勝利！" : i === 1 ? "敗北…" : "引き分け", i === 0 ? "win" : i === 1 ? "sudden" : "miss", "", 1500), t.running = !1, zl(), endPoses(t, i), setTimeout(() => K2(t), 1500);
       return
@@ -20009,6 +20011,7 @@ void main() {
     let a = i => i < 6 ? "a" : "f",
       r = e.scene;
     if (viewDefer(e, t)) return;
+    e.practice && tutorEvent(e, t);
     switch (t.t) {
       case "action": {
         let i = Ot(e, t.uid),
@@ -20266,6 +20269,7 @@ void main() {
 
   /*@@include ext/battle_ui.js@@*/
   /*@@include ext/battle_view.js@@*/
+  /*@@include ext/tutorial.js@@*/
   /*@@include ext/pvp.js@@*/
   /*@@include ext/pvp_fb.js@@*/
   function Q2(e) {
@@ -20318,9 +20322,10 @@ void main() {
       i = t.winner === 0 ? "勝ち" : t.winner === 1 ? "負け" : "引き分け";
     y2(t.winner === 0);
     let recKey = e.net ? "pvp" : e.diff,
-      recName = e.net ? `対人戦（vs ${e.net.peerName}）` : or[e.diff].name,
+      recName = e.practice ? "練習試合" : e.net ? `対人戦（vs ${e.net.peerName}）` : or[e.diff].name,
       n = Rd(recKey);
-    t.winner === 0 ? (n.w++, n.streak++, n.best = Math.max(n.best, n.streak)) : (t.winner === 1 ? n.l++ : n.d++, n.streak = 0), Td("rec:" + recKey, n), r.append(q("div", "big" + (t.winner === 1 ? " lose" : t.winner === 0 ? "" : " draw"), i)), r.append(q("div", "muted", `${recName}・${t.reason==="ko"?"全滅":t.reason==="flee"?(t.by===0?"逃げた":"相手が逃げた"):"時間切れ（残り HP の割合）"}・${Math.floor(e.state.tick/20)} 秒`));
+    // 練習試合は戦績に入れない
+    e.practice || (t.winner === 0 ? (n.w++, n.streak++, n.best = Math.max(n.best, n.streak)) : (t.winner === 1 ? n.l++ : n.d++, n.streak = 0), Td("rec:" + recKey, n)), r.append(q("div", "big" + (t.winner === 1 ? " lose" : t.winner === 0 ? "" : " draw"), i)), r.append(q("div", "muted", `${recName}・${t.reason==="ko"?"全滅":t.reason==="flee"?(t.by===0?"逃げた":"相手が逃げた"):"時間切れ（残り HP の割合）"}・${Math.floor(e.state.tick/20)} 秒`));
     let s = null,
       l = 0;
     for (let [g, k] of e.stats.dealt) g < 6 && k > l && (s = g, l = k);
@@ -20342,16 +20347,21 @@ void main() {
       ["ひっさつわざ", u.ult]
     ].map(([g, k]) => `<span>${g}</span><span class="a">${k[0]}</span><span class="f">${k[1]}</span>`).join(""), r.append(o);
     let d = q("div", "rs-rec");
-    d.innerHTML = `${e.net ? "対人戦" : or[e.diff].name}：<b>${n.w}</b>勝 ${n.l}敗${n.d?` ${n.d}分`:""}　連勝 <b>${n.streak}</b>（最高 ${n.best}）`, r.append(d);
+    d.innerHTML = e.practice ? "練習試合は戦績に入らない。慣れたら編成画面で自分のチームを組んで、相手の強さを上げてみよう。" : `${e.net ? "対人戦" : or[e.diff].name}：<b>${n.w}</b>勝 ${n.l}敗${n.d?` ${n.d}分`:""}　連勝 <b>${n.streak}</b>（最高 ${n.best}）`, r.append(d);
     let c = q("div", "row"),
-      h = q("button", "btn primary", "同じチームでもう一度");
+      h = q("button", "btn primary", e.practice ? "もう一度練習" : "同じチームでもう一度");
     h.onclick = () => {
-      a.remove(), Fd(teamMembers(), BAG.slice())
+      a.remove(), e.practice ? startPractice() : Fd(teamMembers(), BAG.slice())
     };
     let f = q("button", "btn", "編成に戻る");
     f.onclick = () => {
       a.remove(), Ga = null, Sd()
-    }, e.net && pvpResultButtons(e, a, h, f), c.append(h, f), c.style.justifyContent = "center", r.append(c), a.append(r), document.body.append(a)
+    }, e.net && pvpResultButtons(e, a, h, f), c.append(h, f);
+    if (e.practice) {
+      let tb = q("button", "btn", "あそびかたを見る");
+      tb.onclick = () => { a.remove(), Ga = null, Sd(), openTutorial(0) }, c.append(tb)
+    }
+    c.style.justifyContent = "center", r.append(c), a.append(r), document.body.append(a)
   }
   /*@@include ext/gallery.js@@*/
   debugHook(), location.hash.startsWith("#gallery") ? showGallery() : (Sd(), pvpFromHash())
