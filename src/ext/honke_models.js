@@ -94,7 +94,7 @@ var HONKE_NAME_MODEL = {
   ガマンモス: ["quad", { skin: 0x8a5a3a, trunk: !0, ears: "floppy", horns: "ox", mane: 0x5a3a2a, eyeStyle: "angry", size: 1.5, snout: 0.3 }],
   大ガマ: ["critter", { kind: "frog", skin: 0x7a6a3a, size: 1.3 }],
   から傘お化け: ["object", { thing: "umbrella", skin: 0x7a5bc4 }],
-  黒鬼: ["hum", { build: "bulky", skin: 0x2a2a34, horns: 2, hair: "wild", hairColor: 0xd8d8d8, weapon: "club", pelt: 0xd9483b, eyeStyle: "glow", mouth: "fang" }],
+  黒鬼: ["kuroki", { build: "bulky", skin: 0x2a2a34, horns: 2, hair: "wild", hairColor: 0xd8d8d8, weapon: "club", pelt: 0xd9483b, eyeStyle: "glow", mouth: "fang" }], // 黒鬼だけ専用の超高精細モデル（model_kuroki.js）
   ドケチング: ["hum", { build: "fat", skin: 0xe8c04a, hat: "crown", robe: !0, cloth: 0x6a3a8a, sash: 0xd9b24a, eyeStyle: "angry", mouth: "smile" }],
   しどろもどろ: ["blob", { skin: 0x7ab8e0, eyeStyle: "sleepy", mouth: "open", tall: 1.1 }],
   びきゃく: ["blob", { skin: 0xf2e6d0, eyeStyle: "round", mouth: "smile", size: 0.8, wide: 1.1 }],

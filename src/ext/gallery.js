@@ -35,3 +35,42 @@ function showGallery() {
   window.__ids = ct.map(d => d.id);
   window.__dbgModel = id => { const m = buildYokaiModel(ct.find(x => x.id === id)); const inner = m.children[0]; let n = 0, bad = 0; m.traverse(o => { if (o.isMesh) { n++; const e = o.matrixWorld.elements; if (e.some(v => !Number.isFinite(v))) bad++; } }); return { scale: inner.scale.x, y: inner.position.y, h: m.userData.height, meshes: n, bad }; };
 }
+
+// 確認用：#model=黒鬼 で 1 体だけを大きく、正面・ななめ・横・うしろの 4 方向から表示する（#model=黒鬼,3 で顔に 3 倍寄る）
+function showModelCloseup(arg) {
+  const [name, zs] = arg.split(","), zoom = Number(zs) || 1;
+  const d = ct.find(x => x.name === name || x.id === name);
+  if (!d) return;
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:block";
+  Kr.replaceChildren(canvas);
+  const renderer = new v1({ canvas, antialias: true });
+  renderer.setSize(1200, 760, false);
+  const scene = new E1();
+  scene.background = new Ge(0x2a2447);
+  scene.add(new V1(0xb8b0d8, 1.9));
+  const sun = new z1(0xfff0d0, 1.6);
+  sun.position.set(2, 4, 5);
+  scene.add(sun);
+  const rim = new z1(0x9ad0ff, 0.9);
+  rim.position.set(-3, 2, -3);
+  scene.add(rim);
+  let h = 2, meshes = 0, tris = 0;
+  [0, 0.7, Math.PI / 2, Math.PI].forEach((yaw, i) => {
+    const m = buildYokaiModel(d);
+    h = m.userData.height;
+    m.position.set((i - 1.5) * h * 0.95, 0, 0);
+    m.rotation.y = yaw;
+    scene.add(m);
+    if (!i) m.traverse(o => { if (o.isMesh) meshes++, tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
+  });
+  const cam = new qt(30 / zoom, 1200 / 760, 0.1, 200);
+  const fx = zoom > 1 ? -1.5 * h * 0.95 : 0, fy = zoom > 1 ? h * 0.85 : h * 0.5;
+  cam.position.set(fx, fy + h * 0.1, h * 3.4);
+  cam.lookAt(fx, fy, 0);
+  renderer.render(scene, cam);
+  const m0 = scene.children.find(c => c.userData?.height);
+  let nan = 0;
+  m0.traverse(o => { if (o.isMesh && [...o.geometry.attributes.position.array].some(v => !Number.isFinite(v))) nan++; });
+  window.__galleryDone = { meshes, tris: Math.round(tris), scale: m0.children[0].scale.x, y: m0.children[0].position.y, h, nan };
+}
