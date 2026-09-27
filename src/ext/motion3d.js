@@ -559,7 +559,7 @@ var FX_HEX = null;
       return;
     }
     if (!f.root.visible) { f.anim = null; return; }
-    a.t += dt;
+    a.t += dt / MOTION_SLOW; // 対戦の速さ（エンジンのモーションの長さと同じ倍率でゆっくり）
     const k = Math.min(1, a.t / a.dur), o = this.mvPose(f, a, k, dt), m = f.model;
     f.root.position.copy(o.pos);
     m.position.y = o.y;

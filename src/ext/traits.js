@@ -32,7 +32,7 @@ function fxLine(k, v) {
     case "waterEater": return "水の技を受けると HP が回復する";
     case "hidden": return "相手からねらわれにくい（ねらう指定がないと選ばれない）";
     case "firstStrike": return "1 度だけ先に行動する（前衛にいると 次に動くはずだった妖怪のかわりにすぐ動き、その妖怪の番はとばされる）";
-    case "spiritSmoke": return `となりの味方の妖気のたまり方+${pct(v)}`;
+    case "spiritSmoke": return `となりの味方の妖気のたまり方を上げる（+${Math.floor(v * SMOKE_SG / 350)}・2 体ぶん重なる）`;
     case "prayer": return `となりの味方が行動すると その味方の HP を ${pct(v)} 回復`;
     case "benchHeal": return `後衛にいると 行動した前衛の味方の HP を ${pct(v)} 回復`;
     case "conqueror": return `相手をたおすたび ちから+${pct(v)}（3 回まで）`;

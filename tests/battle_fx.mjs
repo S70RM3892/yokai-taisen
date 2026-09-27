@@ -78,7 +78,7 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(150);
 const w1 = await page.evaluate(() => __yokaiDebug.ga().foeBars.get(window.__foe).querySelector(".hp i").style.width);
-await page.waitForTimeout(470);
+await page.waitForTimeout(700); // ダメージの数字は攻撃の出来事から 720 ms（対戦の速さ 1.5 倍）
 const nums = await page.evaluate(() => [...document.querySelectorAll(".dnum .dval")].length);
 const w2 = await page.evaluate(() => __yokaiDebug.ga().foeBars.get(window.__foe).querySelector(".hp i").style.width);
 await page.screenshot({ path: `${out}/fx-3-multihit.png` });

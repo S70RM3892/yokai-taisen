@@ -307,7 +307,7 @@ Object.assign(e2.prototype, {
     const a = f.anim;
     if (!a || a.kind !== "ultx") return upd.call(this, f, dt);
     if (!f.root.visible) return;
-    a.t += dt;
+    a.t += dt / MOTION_SLOW; // 対戦の速さ（エンジンのモーションの長さと同じ倍率でゆっくり）
     const k = Math.min(1, a.t / a.dur), o = this.ultPose(f, a, k, dt), m = f.model;
     f.root.position.copy(o.pos);
     m.position.y = o.y;

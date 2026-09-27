@@ -81,12 +81,14 @@ for (const game of ["mawase", "nazore", "ute", "awasero"]) {
     for (let i = 0; i < 40; i++) { await page.mouse.click(cx, cy); await page.waitForTimeout(90); }
   }
   await page.screenshot({ path: `${out}/5-charge-${game}.png` });
-  await page.waitForTimeout(600);
+  // チャージが終わっても、だれかのモーション中はそのモーションが終わってから撃つ（本家）ので、撃つまで待つ
+  await page.waitForFunction(() => !__yokaiDebug.ga().state.players[0].stance, null, { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(300);
   const log = await page.evaluate(() => [...document.querySelectorAll(".log p")].slice(0, 6).map(p => p.textContent).join(" | "));
   const fired = await page.evaluate(() => { const g = __yokaiDebug.ga(); return !g.state.players[0].stance; });
   const q = log.match(/(文車妖妃|[^|]+) の奥義「[^」]+」 (\w+)/);
   console.log(`charge ${game}: ${fired ? "fired" : "not fired"} — ${q ? q[0] : log.slice(0, 80)}`);
-  if (!fired) fail(`charge ${game} did not fire`);
+  if (!fired) { console.log("  state:", JSON.stringify(await page.evaluate(() => { const s = __yokaiDebug.ga().state, p = s.players[0]; return { tick: s.tick, busy: s.busyUntil, stance: p.stance && { power: p.stance.power, face: p.stance.face, unit: p.stance.unit } }; }))); fail(`charge ${game} did not fire`); }
   await page.waitForTimeout(1800);
 }
 

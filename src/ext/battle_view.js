@@ -93,6 +93,15 @@ function viewDefer(e, ev) {
   return !0;
 }
 
+// ---- 相手のパワーチャージの見え方 ----
+// 本家：モーション中にした操作は、相手の画面ではそのモーションが終わってから見える。
+// 相手がモーション中に始めたパワーチャージは、そのモーションが終わるまで見せない（ノーモーション）
+function stanceShown(e, p) {
+  const s = p.stance, st = e.state;
+  if (!s || p !== st.players[1]) return s;
+  return st.tick < st.busyUntil && s.startTick >= (st.motionFrom ?? 0) ? null : s;
+}
+
 // ---- 陣（同じ族が前衛でとなり合う）----
 var JIN_FX = {
   takeru: "ちから", ayashi: "ようりょく", tsuwamono: "まもり", kage: "すばやさ",
