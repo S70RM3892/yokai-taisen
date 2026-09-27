@@ -187,7 +187,7 @@ async function main() {
   }
 
   // ---- 100 組にしぼる：2 体以上ちがう編成だけ、同じ相手と戦わせる ----
-  const cands = [...archive.values()].filter(a => a.n >= 32).sort((x, y) => score(y) - score(x));
+  const cands = [...archive.values()].filter(a => a.n >= 16).sort((x, y) => score(y) - score(x));
   const chosen = [];
   const overlap = (a, b) => { const s = [...b]; let n = 0; for (const u of a) { const i = s.indexOf(u); if (i >= 0) n++, s.splice(i, 1); } return n; };
   for (const a of cands) {
@@ -195,6 +195,13 @@ async function main() {
     const u = unitSet(a.t);
     if (chosen.some(c => overlap(u, unitSet(c.t)) > 4)) continue;
     chosen.push(a);
+  }
+  // 探索が 1 つの型に集まって 2 体以上ちがう編成が足りないときは、1 体だけちがう編成（同じ妖怪 6 体は除く）で埋める
+  for (const a of cands) {
+    if (chosen.length >= FINAL * 1.5) break;
+    const u = unitSet(a.t);
+    if (chosen.includes(a) || chosen.some(c => overlap(u, unitSet(c.t)) > 5)) continue;
+    a.near = true, chosen.push(a);
   }
   const gauntlet = [...presets.map(p => p.t), ...chosen.slice(0, 24).map(a => a.t)];
   {
@@ -254,7 +261,7 @@ async function main() {
     `- 本家の妖怪 ${E.units.length} 体から 6 体を選ぶ組み合わせは C(${E.units.length},6) ≒ 5×10^12 通りあり、全部は戦わせられない。そこで **遺伝的アルゴリズム** で探した。`,
     `  流行りの型 6 つ・メタ候補 10 個とランダムな編成から始め、1 世代 ${POP} 編成を ${GENS} 世代。妖怪の入れかえ・持ち物（装備・魂）・性格・並び（前衛／後衛）を変え、2 つの編成をまぜ、`,
     `  流行りの型・メタ候補・その時点の上位 24 編成と 1 編成 ${OPP * 2} 戦（左右入れかえ）させた勝率で上位 ${ELITE} を残した。調べた編成は ${archive.size} 通り。`,
-    `- 見つかった編成から **妖怪が 2 体以上ちがうもの** だけを ${chosen.length} 組選び、同じ相手（流行りの型・メタ候補・上位 24）と ${gauntlet.length * 2} 戦ずつさせて上位 ${FINAL} 組にしぼった。`,
+    `- 見つかった編成から **妖怪が 2 体以上ちがうもの** を ${chosen.filter(a => !a.near).length} 組${chosen.some(a => a.near) ? `（足りないぶんは 1 体だけちがうもの ${chosen.filter(a => a.near).length} 組で埋めた）` : ""}選び、同じ相手（流行りの型・メタ候補・上位 24）と ${gauntlet.length * 2} 戦ずつさせて上位 ${FINAL} 組にしぼった。`,
     `- ${FINAL} 組を **総当たり**（1 組 ${PER * 2} 戦・左右入れかえ、合計 ${jobs.length} 戦）させた勝率で並べた。`,
     ...(HUMAN ? [
       "- 戦うのは **人どうしの対戦をまねた CPU**（`tools/human_cpu.mjs`。アイテムなし＝対人戦と同じ・まじめさは超まじめ）。いちばん強い CPU の判断に、人がすることと できないことを足した：",
