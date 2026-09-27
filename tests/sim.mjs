@@ -745,6 +745,30 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`tune: 超クリティカル crit +${yama.fx.critDmg / 10}% (山吹鬼・ブシニャン), いのちとりの魂 crit ${Math.round(bushi.fx.critEye * 100 / 64)}%`);
 }
 
+// 敵をたおすと ちからが上がる魂もスキル（まえのめり など）も上限なし
+{
+  const id = n => E.units.find(u => u.name === n).id;
+  const soul = "soul:" + id("しゅらコマ");
+  const team = ["ジバニャン", "ブシニャン", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"].map((n, i) => ({ unit: id(n), equipment: i === 0 ? soul : null }));
+  const plain = team.map(m => ({ unit: m.unit }));
+  const s = E.newBattle(1, team, plain, { noItems: true }), s0 = E.newBattle(1, plain, plain, { noItems: true });
+  const [me, foes] = [s.players[0].units[0], s.players[1]];
+  if (me.fx.conqueror !== 150 || me.fx.soulConqueror !== 120) throw new Error(`conqueror fx ${JSON.stringify(me.fx)}`);
+  if (!E.equipById(soul).desc.includes("敵を倒したとき") || !E.fxDesc(E.equipById(soul).fx).includes("上限なし") || !E.fxDesc(me.fx).includes("上限なし")) throw new Error("しゅらコマの魂 desc");
+  const kills = 6;
+  for (let k = 0; k < kills; k++) {
+    const foe = foes.units[k % 3]; // うしろの 3 体は どひょうぎわ（こらえる）もち
+    foe.hp = foe.maxHp;
+    E.damage(s, [], foes, foe, foe.maxHp * 10, me.uid, "attack", false);
+    if (foe.hp !== 0) throw new Error(`foe ${k} should be down`);
+  }
+  if (me.conquests !== kills || me.soulConquests !== kills) throw new Error(`conquests ${me.conquests} / soul ${me.soulConquests}`);
+  const a1 = E.statOf(s.players[0], me, "atk"), a0 = E.statOf(s0.players[0], s0.players[0].units[0], "atk");
+  const want = 1 + (150 + 120) * kills / 1000;
+  if (Math.abs(a1 / a0 - want) > 0.02) throw new Error(`atk ${a0} -> ${a1} (want x${want})`);
+  console.log(`soul conqueror: ${kills} kills -> skill ${me.conquests} + soul ${me.soulConquests} (no cap), atk ${a0} -> ${a1}`);
+}
+
 // 魂の効果（本家）：RC「同じ効果の魂を2つ以上つけた時に効果が重複する魂まとめ」の実測
 //   となりの能力アップ 1 つにつき +20%（全ステータスは +10%）・まん中の能力アップ +30%・くさなぎの魂でクリティカル率 約 33%。
 //   自分の妖気回復魂は たまり方の倍率ではなく 毎ターン足す量（えんら魂と同じ）
