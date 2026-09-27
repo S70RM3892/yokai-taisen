@@ -35,18 +35,23 @@ const drag = async () => {
   for (let i = 1; i <= 12; i++) { const a = i * (Math.PI / 3) / 12 * 1.05; await page.mouse.move(cx + Math.cos(a) * R, cy + Math.sin(a) * R); }
   await page.mouse.up();
 };
-// こうげき中（技の名前が出てからダメージの数字が出るまで）は回せない：はじかれて、予約もされない
+// こうげき中（技の名前が出てからダメージの数字が出るまで）は回せない：はじかれて、予約もされない。
+// ソフトウェア描画だと なぞるのに 1 秒近くかかることがあるので、こうげき中の時間をテストのあいだだけ延ばす
 let sl;
-for (let i = 0; i < 400; i++) { sl = await st(); if (sl.lock - sl.tick >= 7 && sl.cd === 0 && !sl.pending && !sl.poke && !sl.stance) break; await page.waitForTimeout(10); }
-if (!(sl.lock - sl.tick >= 7)) fail("no attack to test the rotate lock");
+for (let i = 0; i < 400; i++) { sl = await st(); if (sl.lock - sl.tick >= 1 && sl.cd === 0 && !sl.pending && !sl.poke && !sl.stance) break; await page.waitForTimeout(10); }
+if (!(sl.lock - sl.tick >= 1)) fail("no attack to test the rotate lock");
+await page.evaluate(() => { const s = __yokaiDebug.ga().state; s.rotLockUntil = s.tick + 200; });
 await drag();
 await page.waitForTimeout(120);
 const sl2 = await st();
 console.log("during attack:", JSON.stringify(sl2));
 if (sl2.pending || sl2.wheel !== sl.wheel) fail("rotated (or queued) during an attack");
-// 行動のモーション中（ダメージが出たあと）になるまで待つ（回転の待ち時間も明ける）
+if (!(sl2.tick < sl2.lock)) fail("rotate lock ended before the drag finished");
+await page.evaluate(() => { __yokaiDebug.ga().state.rotLockUntil = 0; });
+// 行動のモーション中（ダメージが出たあと）になるまで待つ（回転の待ち時間も明ける）。なぞり終わるまでモーションが続くよう、モーションの残りを延ばす
 let s0;
-for (let i = 0; i < 300; i++) { s0 = await st(); if (s0.tick >= s0.lock && s0.busy - s0.tick > 20 && s0.cd === 0 && !s0.pending && !s0.poke && !s0.stance) break; await page.waitForTimeout(20); }
+for (let i = 0; i < 300; i++) { s0 = await st(); if (s0.tick >= s0.lock && s0.busy - s0.tick > 10 && s0.cd === 0 && !s0.pending && !s0.poke && !s0.stance) break; await page.waitForTimeout(20); }
+await page.evaluate(() => { const s = __yokaiDebug.ga().state; s.busyUntil = s.tick + 120; });
 await drag();
 let s1;
 for (let i = 0; i < 40; i++) { s1 = await st(); if (s1.pending || s1.wheel !== s0.wheel) break; await page.waitForTimeout(15); }
