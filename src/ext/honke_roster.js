@@ -168,7 +168,7 @@ function honkeTrait(def) {
   const fx = { ...(HONKE_SKILL_FX[def.hskill] ?? { noBattle: 1 }), ...tune.fx };
   const text = HONKE_SKILL_TEXT[def.hskill] ?? "";
   const soulFx = { ...(def.soulFx ?? {}), ...tune.soulFx };
-  // 敵をたおすと ちからが上がる魂は、スキル（3 回まで）とは別に数えて 上限なし
+  // 敵をたおすと ちからが上がる魂は、スキルとは別に数える（どちらも上限なし）
   if (soulFx.conqueror) { soulFx.soulConqueror = soulFx.conqueror; delete soulFx.conqueror; }
   if (soulFx.conqSpa) { soulFx.soulConqSpa = soulFx.conqSpa; delete soulFx.conqSpa; }
   const soulText = tune.soulText ?? def.soulText;

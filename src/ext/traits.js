@@ -35,7 +35,7 @@ function fxLine(k, v) {
     case "spiritSmoke": return `となりの味方の妖気を 毎ターン だんだん回復する（+${Math.floor(v * SMOKE_SG / 350)}・2 体ぶん重なる・後衛にも効く）`;
     case "prayer": return `となりの味方が行動すると その味方の HP を ${pct(v)} 回復`;
     case "benchHeal": return `後衛にいると 行動した前衛の味方の HP を ${pct(v)} 回復`;
-    case "conqueror": return `相手をたおすたび ちから+${pct(v)}（3 回まで）`;
+    case "conqueror": return `相手をたおすたび ちから+${pct(v)}（上限なし）`;
     case "soulConqueror": return `相手をたおすたび ちから+${pct(v)}（上限なし）`;
     case "critEye": return `クリティカル率アップ（${Math.round(v * 100 / 64)}%）`;
     case "ultEvade": return v >= 1000 ? "相手のひっさつわざを必ずかわす" : `相手のひっさつわざを ${pct(v)} でかわす`;
