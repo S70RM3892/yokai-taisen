@@ -16,7 +16,11 @@
       guard: 32,
       loaf: 32
     },
-    fc = 64;
+    fc = 64,
+    // こうげき・ようじゅつ／ひっさつわざの出来事から、画面にダメージの数字が出るまで（ミリ秒）。
+    // このあいだ（技の名前が出てからダメージが出るまで）は、だれもメンバーサークルを回せない
+    ATK_HIT_MS = 480,
+    ULT_HIT_MS = 1700;
 
   function mc(e) {
     return e <= 171 ? 369 - Math.floor(e / 3) * 3 : e <= 201 ? 198 - Math.floor((e - 171) / 5) * 3 : e <= 501 ? 180 - Math.floor((e - 201) / 10) * 3 : 90
@@ -452,6 +456,7 @@
       players: r,
       outcome: null,
       busyUntil: 0,
+      rotLockUntil: 0,
       lastActor: null,
       noItems: !!opts.noItems
     }
@@ -527,7 +532,7 @@
     let n = [0, 1, 2].map(c => a.units[a.wheel[c]]),
       s = [3, 4, 5].map(c => a.units[a.wheel[c]]),
       l = n.some(li) && s.some(Se);
-    if (!a.stance && a.rotateCooldown === 0 && !a.pendingRotate && l && !((FIELD ?? EMPTY_FIELD).wheelLock[e.player] && !a.units.some(x => Se(x) && x.fx.oilFree))) {
+    if (!a.stance && a.rotateCooldown === 0 && !a.pendingRotate && !rotLocked(t) && l && !((FIELD ?? EMPTY_FIELD).wheelLock[e.player] && !a.units.some(x => Se(x) && x.fx.oilFree))) {
       let c = a.units[a.wheel[5]],
         h = a.units[a.wheel[3]],
         f = n[2],
@@ -984,7 +989,7 @@
         if (s || i.rotateCooldown > 0 || a.dir !== "cw" && a.dir !== "ccw") return !1;
         if ((FIELD ?? EMPTY_FIELD).wheelLock[t] && !i.units.some(x => Se(x) && x.fx.oilFree)) return !1; // まわSEN：前衛にいる間 相手はメンバーサークルを回せない
         let l = a.steps ?? 1;
-        if (!gr(l, 1, 5) || i.pendingRotate) return !1;
+        if (!gr(l, 1, 5) || i.pendingRotate || rotLocked(e)) return !1;
         // 回転も妖怪の行動と同じ判定：だれかの行動（こうげき・術・奥義など）のモーション中は反映しない。
         // 入力は受けておき、モーションが終わって次の行動が選ばれる前に回す（rotateFlush）
         return e.tick < e.busyUntil ? (i.pendingRotate = {
@@ -1088,6 +1093,15 @@
   }
 
   // モーション中に受けた回転を、モーションが終わったところで反映する（行動の順番を決める前）
+  // こうげき中（技の名前が出てからダメージの数字が出るまで）はメンバーサークルを回せない。1 tick = 50 ms
+  function lockRotate(e, ms) {
+    e.rotLockUntil = Math.max(e.rotLockUntil ?? 0, e.tick + Math.ceil(ms / 50))
+  }
+
+  function rotLocked(e) {
+    return e.tick < (e.rotLockUntil ?? 0)
+  }
+
   function rotateFlush(e, t, a) {
     let n = e.players[t],
       q = n.pendingRotate;
@@ -1178,7 +1192,7 @@
       quality: u,
       charge: n,
       auto: s
-    }), e.busyUntil = Math.max(e.busyUntil, e.tick) + fc, $h(e, t, d, i.grand, l, o, a)
+    }), e.busyUntil = Math.max(e.busyUntil, e.tick) + fc, lockRotate(e, ULT_HIT_MS), $h(e, t, d, i.grand, l, o, a)
   }
 
   function $h(e, t, a, r, i, n, s) {
@@ -1391,7 +1405,7 @@
       })
     }
     for (let q of e.players) q.acts = (q.acts ?? 0) + 1;
-    e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), statusOnAction(e, t), Yh(e), e.busyUntil = e.tick + pc[s]
+    e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), statusOnAction(e, t), Yh(e), e.busyUntil = e.tick + pc[s], (s === "attack" || s === "skill") && lockRotate(e, ATK_HIT_MS)
   }
 
   function Qh(e) {
@@ -1573,7 +1587,8 @@
   }
 
   // ツボの場所（妖怪ごとに決まっている）。一撃の出る割合・HPダメージの量は本家では公表されていないので、このゲームで決めた
-  var pokeKoPermil = 50,
+  // 一撃（999 ダメージ）は出さない（割合 0）
+  var pokeKoPermil = 0,
     pokeHpPermil = 200;
   function pokeSpots(u) {
     let sd = ct[u.defIndex].seed,
@@ -1586,7 +1601,7 @@
   }
 
   // つつくのゲージが満タン（本家：通信対戦では「HPダメージ」「妖気を吸収」「一撃（999 ダメージ）」の 3 つ）。
-  // 多く当てたツボの効果が出る。まれに一撃
+  // 多く当てたツボの効果が出る（一撃は割合 0 なので出ない）
   function a0(e, t, a, r, i, st) {
     let h = e.poke.hits,
       kind = gt(e.pokeRng, 1e3) < pokeKoPermil ? "ko" : h.sg > h.hp ? "sg" : "hp",
@@ -19721,7 +19736,7 @@ void main() {
   }
 
   function Un(e, t) {
-    e.state.players[0].rotateCooldown > 0 || e.state.players[0].poke || e.state.players[0].pendingRotate || (e.preview = Math.max(-5, Math.min(5, e.preview + t)), e.previewTimer !== null && clearTimeout(e.previewTimer), e.previewTimer = window.setTimeout(() => wheelRelease(e, e.preview * Math.PI / 3), 220))
+    e.state.players[0].rotateCooldown > 0 || e.state.players[0].poke || e.state.players[0].pendingRotate || rotLocked(e.state) || (e.preview = Math.max(-5, Math.min(5, e.preview + t)), e.previewTimer !== null && clearTimeout(e.previewTimer), e.previewTimer = window.setTimeout(() => wheelRelease(e, e.preview * Math.PI / 3), 220))
   }
 
   function Ld(e) {
@@ -19749,7 +19764,7 @@ void main() {
       };
     t.addEventListener("pointerdown", l => {
       let u = t.getBoundingClientRect();
-      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.mode !== "none", e.wheelResist = !noSpin && (e.state.players[0].rotateCooldown > 0 || !!e.state.players[0].poke || !!e.state.players[0].pendingRotate), noSpin || (e.svg.rotor.setAttribute("data-drag", "1"), e.wheelHold = null), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
+      Math.hypot(l.clientX - (u.left + u.width / 2), l.clientY - (u.top + u.height / 2)) < u.width / 2 * (60 / 160) || (a = !0, noSpin = e.mode !== "none", e.wheelResist = !noSpin && (e.state.players[0].rotateCooldown > 0 || !!e.state.players[0].poke || !!e.state.players[0].pendingRotate || rotLocked(e.state)), noSpin || (e.svg.rotor.setAttribute("data-drag", "1"), e.wheelHold = null), r = n(l), i = 0, t.setPointerCapture(l.pointerId))
     }), t.addEventListener("pointermove", l => {
       if (!a || noSpin) return;
       let u = n(l),
@@ -19861,7 +19876,7 @@ void main() {
   function playEvents(e, r) {
     let i = 0;
     for (let n of r) {
-      n.t === "action" && (n.action === "attack" || n.action === "skill") && (i = 480), n.t === "ult" && (i = 1700);
+      n.t === "action" && (n.action === "attack" || n.action === "skill") && (i = ATK_HIT_MS), n.t === "ult" && (i = ULT_HIT_MS);
       let s = i;
       // 遅らせて見せる出来事の相手は、見せるまで HP・生死を止めておく
       s > 0 && (n.t === "damage" || n.t === "heal" || n.t === "ko" || n.t === "curse" || n.t === "doll" || n.t === "endure") ? (viewHold(e, n), setTimeout(() => {
@@ -20136,7 +20151,7 @@ void main() {
 
   function Z2(e) {
     let t = e.state.players[0];
-    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をメンバーサークルで選ぶ` : e.mode === "item" ? "アイテムを選ぶ" : e.mode === "ult" ? e.zero ? "Gわざを使う前衛を選ぶ（自分と両どなりの妖気が満タン）" : "ひっさつわざを使う前衛を選ぶ（妖気が満タン・とりつかれていない）" : e.mode === "purify" ? "おはらいする後衛（とりつかれた妖怪）を選ぶ" : t.pendingRotate ? "行動のモーションが終わったら回る" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "零式：光っている敵をタップでつつく" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "メンバーサークルをなぞって回す・敵をタップでねらう"
+    return e.mode === "itemTarget" ? `${battleItem(t.bag[e.itemSlot])?.name ?? "アイテム"} を使う妖怪をメンバーサークルで選ぶ` : e.mode === "item" ? "アイテムを選ぶ" : e.mode === "ult" ? e.zero ? "Gわざを使う前衛を選ぶ（自分と両どなりの妖気が満タン）" : "ひっさつわざを使う前衛を選ぶ（妖気が満タン・とりつかれていない）" : e.mode === "purify" ? "おはらいする後衛（とりつかれた妖怪）を選ぶ" : t.pendingRotate ? "行動のモーションが終わったら回る" : rotLocked(e.state) ? "こうげき中は回せない" : e.preview !== 0 ? `${Math.abs(e.preview)} つ分${e.preview>0?"時計回り":"反時計回り"}に回す` : e.zero ? "零式：光っている敵をタップでつつく" : t.rotateCooldown > 0 ? `回転まで ${Ti(t.rotateCooldown)} 秒` : "メンバーサークルをなぞって回す・敵をタップでねらう"
   }
 
   /*@@include ext/battle_ui.js@@*/

@@ -316,6 +316,40 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`poison/regen: once per action (${acted} actions in ${steps} ticks, poison ${poisonHits}, regen ${regenHeals})`);
 }
 
+// こうげき中は回せない：こうげき・ようじゅつは 480 ms（10 tick）、ひっさつわざは 1700 ms（34 tick）。そのあとは回せる
+{
+  let atk = 0, ult = 0, refused = 0;
+  for (let g = 0; g < 10 && (atk < 5 || ult < 1); g++) {
+    const seed = (g * 7919 + 5) >>> 0;
+    const st = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+    const cpus = [E.newCpu(0, seed ^ 3, levels[2]), E.newCpu(1, seed ^ 4, levels[2])];
+    while (!st.outcome && st.tick < 4000) {
+      const inputs = [];
+      for (const p of [0, 1]) for (const input of E.cpuInputs(cpus[p], st)) inputs.push({ player: p, input });
+      const t = st.tick, lockedBefore = st.tick < st.rotLockUntil, p0 = st.players[0], ev = [];
+      if (inputs.some(x => x.input.t === "rotate" && lockedBefore)) throw new Error("CPU tried to rotate during an attack");
+      const tryRot = lockedBefore && p0.rotateCooldown === 0 && !p0.pendingRotate && !p0.poke;
+      if (tryRot) inputs.push({ player: 0, input: { t: "rotate", dir: "cw", steps: 1 } });
+      E.step(st, inputs, ev);
+      if (tryRot) {
+        if (!ev.some(e => e.t === "dropped" && e.player === 0 && e.input.t === "rotate")) throw new Error("rotate input accepted during an attack");
+        refused++;
+      }
+      // 同じ tick の中では、回転（rotateFlush）が行動より先。こうげきの前に回ったのはよい
+      if (lockedBefore && ev.some(e => e.t === "rotate")) throw new Error("rotated during an attack");
+      if (ev.some(e => e.t === "ult")) {
+        if (st.rotLockUntil < t + 34) throw new Error(`ult: rotate lock ${st.rotLockUntil - t} ticks`);
+        ult++;
+      } else if (ev.some(e => e.t === "action" && (e.action === "attack" || e.action === "skill"))) {
+        if (st.rotLockUntil !== t + 10) throw new Error(`attack: rotate lock ${st.rotLockUntil - t} ticks`);
+        atk++;
+      }
+    }
+  }
+  if (atk < 5 || ult < 1 || !refused) throw new Error(`rotate lock: too few attacks (${atk}) / ults (${ult}) / refused (${refused})`);
+  console.log(`rotate lock: attacks ${atk} (10 ticks), ults ${ult} (34 ticks), rotate refused ${refused}`);
+}
+
 // ブロッカー（本家）：前に出るときガードする。ただし後衛へ下がってから だれも行動しないうちに戻ったときはガードしない
 {
   const ids = ["ムリカベ", "ヨロイさん", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
@@ -364,7 +398,8 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
     n++, result === "success" && ok++;
     if (end?.effect) {
       effects[end.effect] = (effects[end.effect] ?? 0) + 1;
-      if (end.effect !== "ko" && end.effect !== want) throw new Error(`poke: aimed ${want}, got ${end.effect}`);
+      if (end.effect === "ko") throw new Error("poke: 一撃（999）は出ないはず");
+      if (end.effect !== want) throw new Error(`poke: aimed ${want}, got ${end.effect}`);
       if (end.effect === "sg" && (f.sg !== 0 || end.amount < 800)) throw new Error(`poke sg: foe sg ${f.sg}, took ${end.amount}`);
     }
   }
@@ -484,7 +519,7 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
 // メンバーサークルの回転は行動と同じ判定：行動のモーション中（tick < busyUntil）に回しても反映せず、
 // モーションが終わって次の行動が選ばれる前に回る
 {
-  let queued = 0, now = 0;
+  let queued = 0, now = 0, locks = 0;
   for (let g = 0; g < 20 && queued < 5; g++) {
     const seed = (g * 104729 + 11) >>> 0;
     const st = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
@@ -494,10 +529,15 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
       const p = st.players[0], inputs = [];
       for (const input of E.cpuInputs(cpu, st)) inputs.push({ player: 1, input });
       if (!sent && st.tick > 40 && p.rotateCooldown === 0 && !p.pendingRotate) inputs.push({ player: 0, input: { t: "rotate", dir: "cw", steps: 1 } }), sent = true;
-      const busy = st.tick < st.busyUntil, before = p.wheel.join(), ev = [];
+      const busy = st.tick < st.busyUntil, locked = st.tick < st.rotLockUntil, before = p.wheel.join(), ev = [];
       E.step(st, inputs, ev);
       const rot = ev.find(e => e.t === "rotate" && e.player === 0);
-      if (sent && busy && inputs.some(x => x.player === 0)) {
+      if (sent && locked && inputs.some(x => x.player === 0)) {
+        // こうげき中（技の名前が出てからダメージが出るまで）は回せない：受けつけず、予約もしない
+        if (rot || st.players[0].wheel.join() !== before || st.players[0].pendingRotate) throw new Error("rotated during an attack");
+        if (!ev.some(e => e.t === "dropped" && e.player === 0)) throw new Error("rotation during an attack was not dropped");
+        locks++, sent = false;
+      } else if (sent && busy && inputs.some(x => x.player === 0)) {
         if (rot || st.players[0].wheel.join() !== before) throw new Error("rotated during a motion");
         if (!st.players[0].pendingRotate) throw new Error("rotation during a motion was not queued");
         queued++;
@@ -509,7 +549,7 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
     }
   }
   if (!queued) throw new Error("no rotation was queued");
-  console.log(`rotate during a motion: queued ${queued}, applied at once ${now}`);
+  console.log(`rotate during a motion: queued ${queued}, applied at once ${now}, refused during an attack ${locks}`);
 }
 
 // 妖怪は本家の妖怪だけ（id は本家の No）。能力値 Lv60・ランク・スキルが本家どおり。赤鬼・青鬼・黒鬼はあわせて 1 体まで

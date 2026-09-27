@@ -26,16 +26,28 @@ await page.waitForTimeout(2800);
 // メンバーサークルの回転は妖怪の行動と同じ判定：だれかの行動のモーション中に回しても、そのあいだは並びが変わらない。
 // 回した角度で待ち（光る）、モーションが終わったら回る
 const st = () => page.evaluate(() => { const g = __yokaiDebug.ga(), s = g.state, p = s.players[0];
-  return { tick: s.tick, busy: s.busyUntil, wheel: p.wheel.join(), pending: p.pendingRotate, cd: p.rotateCooldown,
+  return { tick: s.tick, busy: s.busyUntil, lock: s.rotLockUntil, wheel: p.wheel.join(), pending: p.pendingRotate, cd: p.rotateCooldown, poke: !!p.poke, stance: !!p.stance,
     rotor: g.svg.rotor.style.transform, queued: g.svg.wheel.classList.contains("queued"), hint: document.body.innerText.includes("モーションが終わったら回る") }; });
-// 行動のモーション中になるまで待つ（回転の待ち時間も明ける）
-let s0;
-for (let i = 0; i < 200; i++) { s0 = await st(); if (s0.busy - s0.tick > 40 && s0.cd === 0) break; await page.waitForTimeout(30); }
 const wb = await (await page.$(".wheel3d")).boundingBox();
 const cx = wb.x + wb.width / 2, cy = wb.y + wb.height / 2, R = wb.width * 0.4;
-await page.mouse.move(cx + R, cy); await page.mouse.down();
-for (let i = 1; i <= 12; i++) { const a = i * (Math.PI / 3) / 12 * 1.05; await page.mouse.move(cx + Math.cos(a) * R, cy + Math.sin(a) * R); }
-await page.mouse.up();
+const drag = async () => {
+  await page.mouse.move(cx + R, cy); await page.mouse.down();
+  for (let i = 1; i <= 12; i++) { const a = i * (Math.PI / 3) / 12 * 1.05; await page.mouse.move(cx + Math.cos(a) * R, cy + Math.sin(a) * R); }
+  await page.mouse.up();
+};
+// こうげき中（技の名前が出てからダメージの数字が出るまで）は回せない：はじかれて、予約もされない
+let sl;
+for (let i = 0; i < 400; i++) { sl = await st(); if (sl.lock - sl.tick >= 7 && sl.cd === 0 && !sl.pending && !sl.poke && !sl.stance) break; await page.waitForTimeout(10); }
+if (!(sl.lock - sl.tick >= 7)) fail("no attack to test the rotate lock");
+await drag();
+await page.waitForTimeout(120);
+const sl2 = await st();
+console.log("during attack:", JSON.stringify(sl2));
+if (sl2.pending || sl2.wheel !== sl.wheel) fail("rotated (or queued) during an attack");
+// 行動のモーション中（ダメージが出たあと）になるまで待つ（回転の待ち時間も明ける）
+let s0;
+for (let i = 0; i < 300; i++) { s0 = await st(); if (s0.tick >= s0.lock && s0.busy - s0.tick > 20 && s0.cd === 0 && !s0.pending && !s0.poke && !s0.stance) break; await page.waitForTimeout(20); }
+await drag();
 let s1;
 for (let i = 0; i < 40; i++) { s1 = await st(); if (s1.pending || s1.wheel !== s0.wheel) break; await page.waitForTimeout(15); }
 console.log("during motion:", JSON.stringify(s1));
