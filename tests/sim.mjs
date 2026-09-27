@@ -384,6 +384,21 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (g1.turn - g0.turn !== 20) throw new Error(`enra should not be multiplied by the gather blessing: ${g0.turn} -> ${g1.turn}`);
   const seal = u => { u.curse = { kind: "seal", tier: 0, elapsed: 0, remaining: 1e9 }; };
   if (withEnra("ブシニャン", 1, seal).turn !== 0) throw new Error("a sealed yokai should not recover sg from enra");
+  // 後衛にも効く：前衛 3 番目にえんら魂 → となりの後衛（wheel 3）は毎ターン +20、となりでない後衛（wheel 4）は 0
+  {
+    const t = [id("ブシニャン"), id("ヨロイさん"), { ...id("ムリカベ"), equipment: "soul:" + E.units.find(u => u.name === "えんらえんら").id }, id("トオセンボン"), id("ふじのやま"), id("すもうどん")];
+    const st = E.newBattle(3, t, t, { noItems: true });
+    const p = st.players[0], near = p.units[p.wheel[3]], far = p.units[p.wheel[4]];
+    if (E.smokeSg(p, near) !== 20 || E.smokeSg(p, far) !== 0) throw new Error(`back-row enra amount: near ${E.smokeSg(p, near)}, far ${E.smokeSg(p, far)}`);
+    let turns = 0;
+    for (let i = 0; i < 3000 && turns < 3; i++) {
+      const ev = [];
+      E.step(st, [], ev);
+      if (ev.some(e => e.t === "action")) turns++;
+    }
+    if (turns < 3) throw new Error("no actions happened");
+    if (near.sg !== 60 || far.sg !== 0) throw new Error(`enra should charge the adjacent back-row yokai: near ${near.sg} (want 60), far ${far.sg} (want 0)`);
+  }
   console.log(`enra soul: ${JSON.stringify(res)}`);
 }
 
