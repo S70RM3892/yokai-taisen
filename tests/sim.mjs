@@ -772,6 +772,35 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`soul conqueror: ${kills} kills -> skill ${me.conquests} + soul ${me.soulConquests} (no cap), atk ${a0} -> ${a1}`);
 }
 
+// 超クリティカル：実際のこうげきで、クリティカルのダメージが ×1.5 になる（クリティカルでないときは変わらない）
+{
+  const id = n => E.units.find(u => u.name === n).id;
+  const team = ["ブシニャン", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん", "赤鬼"].map(n => ({ unit: id(n) }));
+  const hitOnce = (seed, skill, crit) => {
+    const s = E.newBattle(seed, team, team, { noItems: true });
+    const [p, q] = s.players, me = p.units[0], foe = q.units[1];
+    if (!skill) delete me.fx.critSkill;
+    if (crit) me.fx.critEye = 64; // 64 分の 64 → かならずクリティカル（ないときは ふつうの 64 分の 3）
+    foe.fx.evade = 0; foe.fx.noCritTaken = undefined;
+    const ev = [];
+    E.hit(s, ev, p, me, q, foe, { power: 132, stat: "atk", element: null, source: "attack", canCrit: true, ignoreGuard: false, chargeMult: 1e3, qualityMult: 1e3, grandMult: 1e3 });
+    const d = ev.find(e => e.t === "damage" && e.dst === foe.uid);
+    return d ? { amount: d.amount, crit: d.crit } : null;
+  };
+  let n = 0, sumA = 0, sumB = 0, same = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const a = hitOnce(seed, true, true), b = hitOnce(seed, false, true);
+    if (!a || !b) continue;
+    if (!a.crit || !b.crit) throw new Error(`seed ${seed}: should crit`);
+    if (Math.abs(a.amount - b.amount * 1.5) > 2) throw new Error(`seed ${seed}: 超クリティカル ${b.amount} -> ${a.amount} (want x1.5)`);
+    n++; sumA += a.amount; sumB += b.amount;
+    const c = hitOnce(seed, true, false), d = hitOnce(seed, false, false);
+    if (c && d && !c.crit && !d.crit) { if (c.amount !== d.amount) throw new Error(`seed ${seed}: no crit should be same ${d.amount} / ${c.amount}`); same++; }
+  }
+  if (n < 100 || same < 100) throw new Error(`too few hits ${n} / ${same}`);
+  console.log(`超クリティカル in battle: crit dmg x${(sumA / sumB).toFixed(3)} over ${n} hits, non-crit unchanged ${same}`);
+}
+
 // 魂の効果（本家）：RC「同じ効果の魂を2つ以上つけた時に効果が重複する魂まとめ」の実測
 //   となりの能力アップ 1 つにつき +20%（全ステータスは +10%）・まん中の能力アップ +30%・くさなぎの魂でクリティカル率 約 33%。
 //   自分の妖気回復魂は たまり方の倍率ではなく 毎ターン足す量（えんら魂と同じ）
