@@ -428,6 +428,7 @@
           firstStrikeUsed: !1,
           flashArmed: !1,
           conquests: 0,
+          soulConquests: 0,
           pendingAction: null,
           rng: ni(e, c)
         }
@@ -882,7 +883,7 @@
     let d = r.fx.grudge ?? 0;
     if (a.koWait = Math.max(a.koWait ?? 0, e.tick + (s === "ult" ? KO_WAIT_ULT : KO_WAIT)), Vh(e, t, a, r), onDeathFx(e, t, a, r), n === null || n === r.uid) return;
     let c = zh(e, n);
-    if (Se(c) && (tt(c, "devour") && $a(t, c, Math.floor(c.maxHp * c.fx.devour / 1e3), c.uid), tt(c, "conqueror") && (c.conquests = Math.min(lh, c.conquests + 1)), c.fx.killSg && gainSg(c, c.fx.killSg), d)) {
+    if (Se(c) && (tt(c, "devour") && $a(t, c, Math.floor(c.maxHp * c.fx.devour / 1e3), c.uid), tt(c, "conqueror") && (c.conquests = Math.min(lh, c.conquests + 1)), tt(c, "soulConqueror") && (c.soulConquests = (c.soulConquests ?? 0) + 1), c.fx.killSg && gainSg(c, c.fx.killSg), d)) {
       let h = e.players[c.owner];
       Xa(e, t, h, c, Math.floor(c.maxHp * d / 1e3), r.uid, "trait", !1)
     }

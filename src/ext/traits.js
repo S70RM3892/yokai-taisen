@@ -36,6 +36,7 @@ function fxLine(k, v) {
     case "prayer": return `となりの味方が行動すると その味方の HP を ${pct(v)} 回復`;
     case "benchHeal": return `後衛にいると 行動した前衛の味方の HP を ${pct(v)} 回復`;
     case "conqueror": return `相手をたおすたび ちから+${pct(v)}（3 回まで）`;
+    case "soulConqueror": return `相手をたおすたび ちから+${pct(v)}（上限なし）`;
     case "critEye": return `クリティカル率アップ（${Math.round(v * 100 / 64)}%）`;
     case "ultEvade": return v >= 1000 ? "相手のひっさつわざを必ずかわす" : `相手のひっさつわざを ${pct(v)} でかわす`;
     case "scapegoat": return "ねらわれると となりの前衛の味方に代わってもらう";
@@ -96,6 +97,7 @@ function fxLine(k, v) {
     case "autoPurify": return `行動すると ${pct(v)} で味方 1 体の悪いとりつきをはらう`;
     case "friendlyFire": return `${pct(v)} で味方をこうげきしてしまう`;
     case "conqSpa": return "相手をたおすたび ようりょくも上がる";
+    case "soulConqSpa": return "相手をたおすたび ようりょくも上がる";
     case "pinchHeal": return `HP が 25% 以下になると 1 度だけ HP を ${pct(v)} 回復`;
     case "bigHealPinch": return "回復の術で HP 25% 以下の味方を 2 倍回復";
     case "healPurify": return `回復の術で ${pct(v)} で おはらいもする`;

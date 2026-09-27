@@ -11,6 +11,7 @@ function fxStatBonus(e, u, stat) {
   if (stat === "def" && fx.keystone && si(e, u.index) === 1) r += fx.keystone;
   if (stat === "atk" && fx.rage && u.hp * 1e3 <= u.maxHp * (fx.rageAt ?? Jc)) r += fx.rage;
   if (stat === "atk" && fx.conqueror) r += fx.conqueror * u.conquests;
+  if (stat === "atk" && fx.soulConqueror) r += fx.soulConqueror * (u.soulConquests ?? 0);
   if (stat === "def" && fx.lowDef && u.hp * 2 <= u.maxHp) r += fx.lowDef;
   if (stat === "spd" && fx.spdLow && u.hp * 2 <= u.maxHp) r += fx.spdLow;
   if (stat === "spd" && Vt(e, u.index)) {
@@ -40,6 +41,7 @@ function honkeStatBonus(e, u, stat) {
   }
   if (u.blessing?.kind === "taunt" && stat === "def" && u.blessing.defUp !== void 0) r += lu[u.blessing.defUp];
   if (stat === "spa" && fx.conqSpa && fx.conqueror) r += fx.conqueror * u.conquests;
+  if (stat === "spa" && fx.soulConqSpa && fx.soulConqueror) r += fx.soulConqueror * (u.soulConquests ?? 0);
   if ((stat === "atk" || stat === "spa") && fx.sgPower) r += Math.floor(fx.sgPower * u.sg / 1e3);
   if (u.dyn?.[stat]) r += u.dyn[stat];
   if (fx.night && F.tick >= mu / 2) r += fx.night;
