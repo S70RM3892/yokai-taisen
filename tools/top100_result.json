@@ -1,0 +1,6410 @@
+{
+ "gens": 60,
+ "pop": 200,
+ "per": 6,
+ "seed": 1,
+ "searched": 9515,
+ "games": 59400,
+ "results": [
+  {
+   "rank": 1,
+   "rate": 85.7,
+   "w": 1018,
+   "l": 170,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・ちょうはつ魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（情け深い・伝説のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "ボー坊（ずのう的・吹雪魂）",
+    "オオツノノ神（ずのう的・えんらえんらの魂）"
+   ],
+   "best": {
+    "rank": 9,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 4,
+    "rec": "5-7"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "rsoul_chouhatsu",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y307",
+     "zunouteki",
+     "rsoul_fubuki",
+     null
+    ],
+    [
+     "y116",
+     "zunouteki",
+     "soul:y062",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 2,
+   "rate": 83.7,
+   "w": 994,
+   "l": 194,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（非道・ちょうはつ魂）",
+    "にんぎょ・怪（情け深い・いん石魂）",
+    "はらわシェル（ずのう的・雷神魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "青鬼（ずのう的・ブリー隊長の魂）",
+    "つられたろう丸（ずのう的・雷神魂）"
+   ],
+   "best": {
+    "rank": 17,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 4,
+    "rec": "2-10"
+   },
+   "team": [
+    [
+     "y338",
+     "hidou",
+     "rsoul_chouhatsu",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "soul:y023",
+     null
+    ],
+    [
+     "y316",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 3,
+   "rate": 82.6,
+   "w": 981,
+   "l": 206,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "黒鬼（荒くれ・伝説のバッジ）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（協力的・てっぺきのおまもり）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "ボー坊（ずのう的・吹雪魂）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 12,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 18,
+    "rec": "3-9"
+   },
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y307",
+     "zunouteki",
+     "rsoul_fubuki",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 4,
+   "rate": 81.6,
+   "w": 969,
+   "l": 218,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "黒鬼（荒くれ・伝説のバッジ）",
+    "にんぎょ・怪（情け深い・いん石魂）",
+    "にんぎょ・怪（協力的・伝説のうでわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "にんぎょ・怪（協力的・アライ魔将の魂）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 32,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 21,
+    "rec": "3-9"
+   },
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 5,
+   "rate": 76.4,
+   "w": 908,
+   "l": 280,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・鬼神のうでわ）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "はらわシェル（ずのう的・雷神魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "ワルニャン（非道・てっぺきのおまもり）",
+    "青鬼（ずのう的・鬼神のゆびわ）"
+   ],
+   "best": {
+    "rank": 29,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 21,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y137",
+     "hidou",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 6,
+   "rate": 75.8,
+   "w": 900,
+   "l": 287,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・ちょうはつ魂）",
+    "にんぎょ・怪（情け深い・いん石魂）",
+    "にんぎょ・怪（協力的・サファイニャンの魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "青鬼（短気・鬼神のゆびわ）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 45,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 21,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "rsoul_chouhatsu",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y439",
+     "tanki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 7,
+   "rate": 74.4,
+   "w": 883,
+   "l": 304,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "ブドウニャン（非道・ちょうはつ魂）",
+    "にんぎょ・怪（情け深い・吹雪魂）",
+    "にんぎょ・怪（協力的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "にんぎょ・怪（協力的・サファイニャンの魂）",
+    "つられたろう丸（ずのう的・雷神魂）"
+   ],
+   "best": {
+    "rank": 32,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "1-11"
+   },
+   "team": [
+    [
+     "y338",
+     "hidou",
+     "rsoul_chouhatsu",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_fubuki",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y316",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 8,
+   "rate": 73.5,
+   "w": 873,
+   "l": 315,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "にんぎょ・怪（情け深い・えんらえんらの魂）",
+    "はらわシェル（ずのう的・モテモテ魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "にんぎょ・怪（情け深い・雷の魂）",
+    "ザンバラ刀（協力的・嵐魂）"
+   ],
+   "best": {
+    "rank": 35,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 5,
+    "rec": "1-11"
+   },
+   "team": [
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "soul:y062",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_motemote",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_kaminari",
+     null
+    ],
+    [
+     "y005",
+     "kyouryokuteki",
+     "rsoul_arashi",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 9,
+   "rate": 72.6,
+   "w": 862,
+   "l": 326,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "トーシロザメ（荒くれ・無の魂）",
+    "にんぎょ・怪（協力的・呪言の杖）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "back": [
+    "青鬼（ずのう的・ミカンニャンの魂）",
+    "にんぎょ・怪（協力的・てっぺきのおまもり）",
+    "コマじろうS（れいせい・鬼神のバッジ）"
+   ],
+   "best": {
+    "rank": 18,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y310",
+     "arakure",
+     "rsoul_mu",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "jugon_tsue",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "soul:y336",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y435",
+     "reisei",
+     "kishin_badge",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 10,
+   "rate": 71.7,
+   "w": 851,
+   "l": 336,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "黒鬼（荒くれ・伝説のバッジ）",
+    "ブドウニャン（協力的・壺ガード魂）",
+    "にんぎょ・怪（協力的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "だっせんしゃ（協力的・かんつう魂）"
+   ],
+   "best": {
+    "rank": 45,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 21,
+    "rec": "2-10"
+   },
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y338",
+     "kyouryokuteki",
+     "rsoul_tsubo_guard",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y091",
+     "kyouryokuteki",
+     "rsoul_kantsuu",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 11,
+   "rate": 69.5,
+   "w": 826,
+   "l": 362,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ヒライ神（協力的・黄泉魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "はらわシェル（ずのう的・雷神魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "モテヌス（協力的・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "1-11"
+   },
+   "team": [
+    [
+     "y106",
+     "kyouryokuteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y058",
+     "kyouryokuteki",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 12,
+   "rate": 68.8,
+   "w": 817,
+   "l": 371,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・アライ魔将の魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（情け深い・いん石魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "からくりベンケイ（荒くれ・極楽玉）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 34,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y032",
+     "arakure",
+     "gokuraku_dama",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 13,
+   "rate": 67,
+   "w": 795,
+   "l": 390,
+   "d": 3,
+   "preset": null,
+   "front": [
+    "黒鬼（荒くれ・伝説のバッジ）",
+    "ブドウニャン（協力的・風の魂）",
+    "にんぎょ・怪（協力的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "つられたろう丸（ずのう的・アライ魔将の魂）",
+    "あそっ火山（動じない・どんどろの魂）"
+   ],
+   "best": {
+    "rank": 45,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 21,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y338",
+     "kyouryokuteki",
+     "rsoul_kaze",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y316",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y385",
+     "doujinai",
+     "soul:y243",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 14,
+   "rate": 66.7,
+   "w": 792,
+   "l": 395,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "ヒライ神（協力的・黄泉魂）",
+    "にんぎょ・怪（情け深い・いん石魂）",
+    "はらわシェル（ずのう的・雷神魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "虫歯伯爵（動じない・伝説のバッジ）",
+    "つられたろう丸（やさしい・アライ魔将の魂）"
+   ],
+   "best": {
+    "rank": 37,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y106",
+     "kyouryokuteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y238",
+     "doujinai",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y316",
+     "yasashii",
+     "soul:y008",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 15,
+   "rate": 66.2,
+   "w": 787,
+   "l": 401,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・メゾン・ドワスレの魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（協力的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "モテヌス（れいせい・エメラルニャンの魂）",
+    "はらわシェル（協力的・ダラケ刀の魂）"
+   ],
+   "best": {
+    "rank": 37,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "2-10"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ],
+    [
+     "y312",
+     "kyouryokuteki",
+     "soul:y004",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 16,
+   "rate": 66,
+   "w": 784,
+   "l": 403,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "ブドウニャン（動じない・鬼神のうでわ）",
+    "にんぎょ・怪（ずのう的・いん石魂）",
+    "はらわシェル（ずのう的・雷神魂）"
+   ],
+   "back": [
+    "とらじろう（協力的・ダイヤニャンの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "コマじろうS（れいせい・鬼神のバッジ）"
+   ],
+   "best": {
+    "rank": 63,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "1-11"
+   },
+   "team": [
+    [
+     "y338",
+     "doujinai",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y145",
+     "kyouryokuteki",
+     "soul:y334",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y435",
+     "reisei",
+     "kishin_badge",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 17,
+   "rate": 64.8,
+   "w": 769,
+   "l": 418,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・アライ魔将の魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（情け深い・いん石魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "にんぎょ・怪（ずのう的・サファイニャンの魂）",
+    "えんらえんら（いやらしい・れんごく魂）"
+   ],
+   "best": {
+    "rank": 34,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y062",
+     "iyarashii",
+     "rsoul_rengoku",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 18,
+   "rate": 64.7,
+   "w": 769,
+   "l": 419,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ヒライ神（ずのう的・伝説のバッジ）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・フユニャンの魂）",
+    "青鬼（ずのう的・ダイヤニャンの魂）",
+    "あかなめ・怪（動じない・呪言の盾）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 9,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y106",
+     "zunouteki",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "soul:y351",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "soul:y334",
+     null
+    ],
+    [
+     "y360",
+     "doujinai",
+     "jugon_tate",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 19,
+   "rate": 64.1,
+   "w": 761,
+   "l": 427,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・伝説のおまもり）",
+    "にんぎょ・怪（情け深い・いん石魂）",
+    "にんぎょ・怪（情け深い・いん石魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "百鬼姫（協力的・本家はちまき）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 31,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "densetsu_omamori",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y157",
+     "kyouryokuteki",
+     "honke_hachimaki",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 20,
+   "rate": 63.9,
+   "w": 758,
+   "l": 428,
+   "d": 2,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・鬼神のうでわ）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（協力的・風の魂）"
+   ],
+   "back": [
+    "大ガマ（協力的・フユニャンの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 54,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 21,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_kaze",
+     null
+    ],
+    [
+     "y121",
+     "kyouryokuteki",
+     "soul:y351",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 21,
+   "rate": 63.6,
+   "w": 756,
+   "l": 432,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "でんぱく小僧（ずのう的・メゾン・ドワスレの魂）",
+    "風魔猿（ずのう的・鬼神のゆびわ）",
+    "でんじん（ずのう的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・メゾン・ドワスレの魂）",
+    "破怪（協力的・モテモテ魂）",
+    "ふくろじじい（情け深い・呪言の袴）"
+   ],
+   "best": {
+    "rank": 5,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 11,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y063",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y083",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y064",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y359",
+     "kyouryokuteki",
+     "rsoul_motemote",
+     null
+    ],
+    [
+     "y193",
+     "nasakebukai",
+     "jugon_hakama",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 22,
+   "rate": 63.1,
+   "w": 750,
+   "l": 438,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・ミカンニャンの魂）",
+    "ヒョウヘンナ（荒くれ・えんらえんらの魂）",
+    "はらわシェル（ずのう的・雷神魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ザンバラ刀（協力的・嵐魂）"
+   ],
+   "best": {
+    "rank": 63,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "1-11"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "soul:y336",
+     null
+    ],
+    [
+     "y191",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y005",
+     "kyouryokuteki",
+     "rsoul_arashi",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 23,
+   "rate": 62.9,
+   "w": 747,
+   "l": 440,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "ブドウニャン（動じない・いん石魂）",
+    "にんぎょ・怪（ずのう的・サファイニャンの魂）",
+    "にんぎょ・怪（協力的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "さとりちゃん（ずのう的・呪言の刀）"
+   ],
+   "best": {
+    "rank": 75,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "doujinai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y075",
+     "zunouteki",
+     "jugon_katana",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 24,
+   "rate": 61.9,
+   "w": 734,
+   "l": 452,
+   "d": 2,
+   "preset": null,
+   "front": [
+    "ブドウニャン（非道・かんつう魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（いやらしい・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "ふさふさん（ずのう的・大滝魂）",
+    "マスターニャーダ（ずのう的・かゆかゆの魂）"
+   ],
+   "best": {
+    "rank": 49,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 21,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "hidou",
+     "rsoul_kantsuu",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "iyarashii",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y263",
+     "zunouteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y160",
+     "zunouteki",
+     "soul:y213",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 25,
+   "rate": 61.2,
+   "w": 727,
+   "l": 461,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・鬼神のうでわ）",
+    "さいの目入道（動じない・ジバコマの魂）",
+    "にんぎょ・怪（情け深い・伝説のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "ボー坊（ずのう的・吹雪魂）",
+    "モテヌス（協力的・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 85,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "2-10"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y194",
+     "doujinai",
+     "soul:y353",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y307",
+     "zunouteki",
+     "rsoul_fubuki",
+     null
+    ],
+    [
+     "y058",
+     "kyouryokuteki",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 26,
+   "rate": 61.2,
+   "w": 727,
+   "l": 461,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・鬼神のうでわ）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（協力的・風の魂）"
+   ],
+   "back": [
+    "ルビーニャン（情け深い・ガード魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "風魔猿（ずのう的・サファイニャンの魂）"
+   ],
+   "best": {
+    "rank": 51,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_kaze",
+     null
+    ],
+    [
+     "y332",
+     "nasakebukai",
+     "rsoul_guard",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y083",
+     "zunouteki",
+     "soul:y330",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 27,
+   "rate": 60.9,
+   "w": 724,
+   "l": 464,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ノー砂ン丘入道（動じない・かんつう魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（情け深い・いん石魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "青鬼（ずのう的・こえんらの魂）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 90,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 11,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y381",
+     "doujinai",
+     "rsoul_kantsuu",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "soul:y061",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 28,
+   "rate": 60.4,
+   "w": 718,
+   "l": 470,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "呪野花子（ずのう的・エメラルニャンの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "モテマクール（いやらしい・えんらえんらの魂）",
+    "あかなめ・怪（荒くれ・呪言の盾）"
+   ],
+   "best": {
+    "rank": 55,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "1-11"
+   },
+   "team": [
+    [
+     "y273",
+     "zunouteki",
+     "soul:y331",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y057",
+     "iyarashii",
+     "soul:y062",
+     null
+    ],
+    [
+     "y360",
+     "arakure",
+     "jugon_tate",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 29,
+   "rate": 60.4,
+   "w": 717,
+   "l": 471,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・アライ魔将の魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "たらりん（ずのう的・ダイヤニャンの魂）",
+    "青鬼（ずのう的・鬼神のおまもり）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 31,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 5,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y250",
+     "zunouteki",
+     "soul:y334",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_omamori",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 30,
+   "rate": 59.8,
+   "w": 710,
+   "l": 478,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・鬼神のうでわ）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（いやらしい・鬼神のゆびわ）"
+   ],
+   "back": [
+    "かおベロス（やさしい・れんごく魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "はらわシェル（ずのう的・無の魂）"
+   ],
+   "best": {
+    "rank": 45,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "1-11"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "iyarashii",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y260",
+     "yasashii",
+     "rsoul_rengoku",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_mu",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 31,
+   "rate": 58,
+   "w": 689,
+   "l": 498,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "むりだ城（非道・ダイヤニャンの魂）",
+    "あかなめ・怪（荒くれ・呪言の盾）"
+   ],
+   "best": {
+    "rank": 55,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 19,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y093",
+     "hidou",
+     "soul:y334",
+     null
+    ],
+    [
+     "y360",
+     "arakure",
+     "jugon_tate",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 32,
+   "rate": 56.8,
+   "w": 675,
+   "l": 513,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（やさしい・スパルタ魂）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "ブシニャン（荒くれ・エメラルニャンの魂）"
+   ],
+   "back": [
+    "呪野花子（情け深い・ぴかぴかバッジ）",
+    "ヒライ神（動じない・エメラルニャンの魂）",
+    "青鬼（ずのう的・八百比丘尼の魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 4,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "yasashii",
+     "rsoul_sparta",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y331",
+     null
+    ],
+    [
+     "y273",
+     "nasakebukai",
+     "pikapika_badge",
+     null
+    ],
+    [
+     "y106",
+     "doujinai",
+     "soul:y331",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "soul:y304",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 33,
+   "rate": 56.5,
+   "w": 670,
+   "l": 516,
+   "d": 2,
+   "preset": null,
+   "front": [
+    "ミカンニャン（いやらしい・マジカルベル）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（いやらしい・月光のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "晴れ男（荒くれ・無の魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）"
+   ],
+   "best": {
+    "rank": 36,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 18,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y336",
+     "iyarashii",
+     "magical_bell",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "iyarashii",
+     "gekkou_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y188",
+     "arakure",
+     "rsoul_mu",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 34,
+   "rate": 55.6,
+   "w": 660,
+   "l": 528,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "青鬼（ずのう的・呪言の盾）",
+    "はらわシェル（ずのう的・メゾン・ドワスレの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（ずのう的・えんらえんらの魂）",
+    "のらりくらり（動じない・ボロボロなおまもり）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 66,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "jugon_tate",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "soul:y062",
+     null
+    ],
+    [
+     "y269",
+     "doujinai",
+     "boroboro_omamori",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 35,
+   "rate": 55.1,
+   "w": 655,
+   "l": 533,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "赤鬼（荒くれ・伝説のうでわ）",
+    "ひとまか仙人（協力的・ルビーニャンの魂）",
+    "ワルニャン（情け深い・ヤミ魂）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・アライ魔将の魂）",
+    "でんじん（ずのう的・鬼神のゆびわ）",
+    "U.S.O.（動じない・メゾン・ドワスレの魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 8,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y438",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y226",
+     "kyouryokuteki",
+     "soul:y332",
+     null
+    ],
+    [
+     "y137",
+     "nasakebukai",
+     "rsoul_yami",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y064",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y067",
+     "doujinai",
+     "soul:y048",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 36,
+   "rate": 54.8,
+   "w": 651,
+   "l": 537,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・水の魂＋メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "にんぎょ・怪（ずのう的・サファイニャンの魂）",
+    "ロボノコ（ずのう的・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 59,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_mizu",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y345",
+     "zunouteki",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 37,
+   "rate": 54.5,
+   "w": 648,
+   "l": 540,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・アライ魔将の魂）",
+    "にんぎょ・怪（情け深い・いん石魂）",
+    "はらわシェル（ずのう的・雷神魂）"
+   ],
+   "back": [
+    "しどろもどろ（動じない・嵐魂）",
+    "青鬼（ずのう的・土の魂）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 63,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 5,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y308",
+     "doujinai",
+     "rsoul_arashi",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "rsoul_tsuchi",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 38,
+   "rate": 54.3,
+   "w": 645,
+   "l": 543,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（やさしい・メゾン・ドワスレの魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（情け深い・大滝魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "花子さん（ずのう的・ミカンニャンの魂）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 68,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "1-11"
+   },
+   "team": [
+    [
+     "y316",
+     "yasashii",
+     "soul:y048",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y272",
+     "zunouteki",
+     "soul:y336",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 39,
+   "rate": 54.3,
+   "w": 644,
+   "l": 543,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（情け深い・大滝魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "あかなめ・怪（動じない・呪言の盾）"
+   ],
+   "best": {
+    "rank": 63,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y360",
+     "doujinai",
+     "jugon_tate",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 40,
+   "rate": 54.1,
+   "w": 642,
+   "l": 545,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・アライ魔将の魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（情け深い・いん石魂）"
+   ],
+   "back": [
+    "ひも爺（協力的・メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のおまもり）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 36,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y167",
+     "kyouryokuteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_omamori",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 41,
+   "rate": 53.9,
+   "w": 640,
+   "l": 548,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・鬼神のうでわ）",
+    "にんぎょ・怪（情け深い・いん石魂）",
+    "はらわシェル（ずのう的・雷神魂）"
+   ],
+   "back": [
+    "ひとまか仙人（動じない・なめらかオイル魂）",
+    "ワルニャン（非道・てっぺきのおまもり）",
+    "青鬼（ずのう的・鬼神のゆびわ）"
+   ],
+   "best": {
+    "rank": 32,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y226",
+     "doujinai",
+     "rsoul_oil",
+     null
+    ],
+    [
+     "y137",
+     "hidou",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 42,
+   "rate": 53.9,
+   "w": 640,
+   "l": 548,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "黒鬼（荒くれ・伝説のバッジ）",
+    "はらわシェル（ずのう的・無の魂）",
+    "にんぎょ・怪（協力的・れんごく魂）"
+   ],
+   "back": [
+    "女郎蜘蛛（しんちょう・てっぺきのおまもり）",
+    "にんぎょ・怪（協力的・サファイニャンの魂）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 80,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_mu",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_rengoku",
+     null
+    ],
+    [
+     "y283",
+     "shinchou",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 43,
+   "rate": 53.8,
+   "w": 638,
+   "l": 548,
+   "d": 2,
+   "preset": null,
+   "front": [
+    "雨女（非道・てっぺきのおまもり）",
+    "青鬼（ずのう的・エメラルニャンの魂）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "back": [
+    "むらまさ（けんしん的・ミカンニャンの魂）",
+    "にんぎょ・怪（ずのう的・黄泉魂）",
+    "大ガマ（協力的・閃光魂）"
+   ],
+   "best": {
+    "rank": 70,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y149",
+     "hidou",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "soul:y331",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y029",
+     "kenshinteki",
+     "soul:y336",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y121",
+     "kyouryokuteki",
+     "rsoul_senkou",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 44,
+   "rate": 53.3,
+   "w": 633,
+   "l": 555,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・アライ魔将の魂）",
+    "はらわシェル（いやらしい・雷神魂）",
+    "ナガバナ（荒くれ・あまのじゃくの魂）"
+   ],
+   "back": [
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "ブシニャン（荒くれ・メゾン・ドワスレの魂）"
+   ],
+   "best": {
+    "rank": 69,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y312",
+     "iyarashii",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y313",
+     "arakure",
+     "soul:y219",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y048",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 45,
+   "rate": 52.4,
+   "w": 623,
+   "l": 565,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "雨女（非道・てっぺきのおまもり）",
+    "青鬼（ずのう的・伝説のおまもり）",
+    "河童・怪（ずのう的・無の魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（荒くれ・伝説のうでわ）",
+    "雨ふらし（ずのう的・ブロッカー魂）",
+    "大ガマ（協力的・ブロッカー魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y149",
+     "hidou",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "densetsu_omamori",
+     null
+    ],
+    [
+     "y363",
+     "zunouteki",
+     "rsoul_mu",
+     null
+    ],
+    [
+     "y368",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y247",
+     "zunouteki",
+     "rsoul_blocker",
+     null
+    ],
+    [
+     "y121",
+     "kyouryokuteki",
+     "rsoul_blocker",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 46,
+   "rate": 51.9,
+   "w": 617,
+   "l": 571,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "雨女（非道・てっぺきのおまもり）",
+    "はらわシェル（ずのう的・えんらえんらの魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "雨ふらし（ずのう的・ブロッカー魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 88,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y149",
+     "hidou",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "soul:y062",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y247",
+     "zunouteki",
+     "rsoul_blocker",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 47,
+   "rate": 50.4,
+   "w": 599,
+   "l": 589,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "花さか爺（協力的・サファイニャンの魂）",
+    "はらわシェル（ずのう的・雷神魂）",
+    "にんぎょ・怪（協力的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "はらわシェル（ずのう的・ゾウオの魂）",
+    "だっせんしゃ（協力的・かんつう魂）"
+   ],
+   "best": {
+    "rank": 90,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 3,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y326",
+     "kyouryokuteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "soul:y294",
+     null
+    ],
+    [
+     "y091",
+     "kyouryokuteki",
+     "rsoul_kantsuu",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 48,
+   "rate": 50.1,
+   "w": 594,
+   "l": 592,
+   "d": 2,
+   "preset": null,
+   "front": [
+    "ヒライ神（ずのう的・伝説のバッジ）",
+    "ワルニャン（荒くれ・化けあられの魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "にんぎょ・怪（やさしい・伝説のバッジ）",
+    "あかなめ・怪（荒くれ・呪言の盾）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 8,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y106",
+     "zunouteki",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y137",
+     "arakure",
+     "soul:y249",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y368",
+     "yasashii",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y360",
+     "arakure",
+     "jugon_tate",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 49,
+   "rate": 49.7,
+   "w": 591,
+   "l": 597,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "くろがねセンボン（しんちょう・びきゃくの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（ずのう的・鬼神のゆびわ）",
+    "にんぎょ・怪（ずのう的・黄泉魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 48,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y101",
+     "shinchou",
+     "soul:y123",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 50,
+   "rate": 48.9,
+   "w": 581,
+   "l": 607,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "赤鬼（荒くれ・伝説のうでわ）",
+    "ひとまか仙人（協力的・ルビーニャンの魂）",
+    "ブシニャン（荒くれ・鬼神のうでわ）"
+   ],
+   "back": [
+    "あまのじゃく（いやらしい・てっぺきのおまもり）",
+    "ガマンモス（協力的・サファイニャンの魂）",
+    "むりだ城（動じない・ルビーニャンの魂）"
+   ],
+   "best": {
+    "rank": 64,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 92,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y438",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y226",
+     "kyouryokuteki",
+     "soul:y332",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y219",
+     "iyarashii",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y104",
+     "kyouryokuteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y093",
+     "doujinai",
+     "soul:y332",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 51,
+   "rate": 48.5,
+   "w": 576,
+   "l": 612,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（やさしい・ダサいゆびわ）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "化けあられ（ずのう的・てっぺきのおまもり）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "青鬼（ずのう的・伝説のバッジ）",
+    "モテヌス（荒くれ・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 31,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "yasashii",
+     "dasai_yubiwa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y249",
+     "zunouteki",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y058",
+     "arakure",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 52,
+   "rate": 48.5,
+   "w": 576,
+   "l": 612,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "破怪（情け深い・パワフルなうでわ）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "にんぎょ・怪（ずのう的・本家はちまき）",
+    "こえんら（動じない・呪言の杖）"
+   ],
+   "best": {
+    "rank": 59,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y359",
+     "nasakebukai",
+     "powerful_udewa",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "honke_hachimaki",
+     null
+    ],
+    [
+     "y061",
+     "doujinai",
+     "jugon_tsue",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 53,
+   "rate": 48.2,
+   "w": 573,
+   "l": 615,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "でんぱく小僧（ずのう的・壺ガード魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "破怪（荒くれ・黄泉魂）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・メゾン・ドワスレの魂）",
+    "あまのじゃく（非道・豪怪の魂）",
+    "アニ鬼（情け深い・大滝魂）"
+   ],
+   "best": {
+    "rank": 42,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 5,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y063",
+     "zunouteki",
+     "rsoul_tsubo_guard",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y359",
+     "arakure",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y219",
+     "hidou",
+     "soul:y357",
+     null
+    ],
+    [
+     "y097",
+     "nasakebukai",
+     "rsoul_ootaki",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 54,
+   "rate": 47.3,
+   "w": 562,
+   "l": 626,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ヒライ神（ずのう的・伝説のバッジ）",
+    "ヒキコウモリ（しんちょう・雷の魂）",
+    "ブシニャン（荒くれ・おんみつ魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "青鬼（ずのう的・ダイヤニャンの魂）",
+    "焼きおに斬り（荒くれ・黄泉魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 20,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y106",
+     "zunouteki",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y220",
+     "shinchou",
+     "rsoul_kaminari",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "rsoul_onmitsu",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "soul:y334",
+     null
+    ],
+    [
+     "y018",
+     "arakure",
+     "rsoul_yomi",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 55,
+   "rate": 46.7,
+   "w": 555,
+   "l": 633,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "赤鬼（荒くれ・伝説のうでわ）",
+    "ひとまか仙人（協力的・ルビーニャンの魂）",
+    "ブシニャン（荒くれ・鬼神のうでわ）"
+   ],
+   "back": [
+    "むりだ城（動じない・ルビーニャンの魂）",
+    "あせっか鬼（協力的・てっぺきのおまもり＋てっぺきのおまもり）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 64,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 28,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y438",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y226",
+     "kyouryokuteki",
+     "soul:y332",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y093",
+     "doujinai",
+     "soul:y332",
+     null
+    ],
+    [
+     "y107",
+     "kyouryokuteki",
+     "teppeki_omamori",
+     "teppeki_omamori"
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 56,
+   "rate": 46.5,
+   "w": 552,
+   "l": 636,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・かんつう魂）",
+    "はらわシェル（けんしん的・雷神魂）",
+    "にんぎょ・怪（いやらしい・鬼神のゆびわ）"
+   ],
+   "back": [
+    "お金ナイダー（けんしん的・黄泉魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ぎしんあん鬼（協力的・大滝魂＋エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 86,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "rsoul_kantsuu",
+     null
+    ],
+    [
+     "y312",
+     "kenshinteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y368",
+     "iyarashii",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y177",
+     "kenshinteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y217",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     "soul:y331"
+    ]
+   ]
+  },
+  {
+   "rank": 57,
+   "rate": 46,
+   "w": 546,
+   "l": 641,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "back": [
+    "むらまさ（けんしん的・ミカンニャンの魂）",
+    "にんぎょ・怪（協力的・てっぺきのおまもり）",
+    "老いらん（ずのう的・おんみつ魂）"
+   ],
+   "best": {
+    "rank": 93,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 8,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y029",
+     "kenshinteki",
+     "soul:y336",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y278",
+     "zunouteki",
+     "rsoul_onmitsu",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 58,
+   "rate": 45.9,
+   "w": 545,
+   "l": 643,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "風魔猿（ずのう的・鬼神のゆびわ）",
+    "でんじん（ずのう的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "ヤドコウモリ（ずのう的・てっぺきのおまもり）",
+    "にんぎょ・怪（ずのう的・本家はちまき）",
+    "U.S.O.（動じない・えんらえんらの魂）"
+   ],
+   "best": {
+    "rank": 33,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y083",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y064",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y222",
+     "zunouteki",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "honke_hachimaki",
+     null
+    ],
+    [
+     "y067",
+     "doujinai",
+     "soul:y062",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 59,
+   "rate": 45.8,
+   "w": 544,
+   "l": 644,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "赤鬼（荒くれ・伝説のうでわ）",
+    "ひとまか仙人（協力的・ルビーニャンの魂）",
+    "ブシニャン（荒くれ・鬼神のうでわ）"
+   ],
+   "back": [
+    "リー夫人（動じない・吹雪魂）",
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 64,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y438",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y226",
+     "kyouryokuteki",
+     "soul:y332",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y231",
+     "doujinai",
+     "rsoul_fubuki",
+     null
+    ],
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 60,
+   "rate": 45.3,
+   "w": 538,
+   "l": 650,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "破怪（情け深い・パワフルなうでわ）",
+    "青鬼（ずのう的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "むりだ城（いやらしい・なめらかオイル魂）",
+    "にんぎょ・怪（ずのう的・本家はちまき）",
+    "こえんら（動じない・大ヤモリの魂）"
+   ],
+   "best": {
+    "rank": 83,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y359",
+     "nasakebukai",
+     "powerful_udewa",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y093",
+     "iyarashii",
+     "rsoul_oil",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "honke_hachimaki",
+     null
+    ],
+    [
+     "y061",
+     "doujinai",
+     "soul:y122",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 61,
+   "rate": 44.1,
+   "w": 524,
+   "l": 663,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "黒鬼（荒くれ・伝説のバッジ）",
+    "ブドウニャン（協力的・風の魂）",
+    "にんぎょ・怪（協力的・鬼神のゆびわ）"
+   ],
+   "back": [
+    "死神鳥（協力的・土の魂）",
+    "はらわシェル（協力的・雷神魂）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 64,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 4,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y338",
+     "kyouryokuteki",
+     "rsoul_kaze",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y258",
+     "kyouryokuteki",
+     "rsoul_tsuchi",
+     null
+    ],
+    [
+     "y312",
+     "kyouryokuteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 62,
+   "rate": 43.9,
+   "w": 521,
+   "l": 667,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（やさしい・心オバアの魂）",
+    "はらわシェル（ずのう的・伝説のゆびわ）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "けうけげん（やさしい・いん石魂）",
+    "ぶんぶん鳥（いやらしい・スイカニャンの魂）"
+   ],
+   "best": {
+    "rank": 69,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "yasashii",
+     "soul:y199",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y262",
+     "yasashii",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y252",
+     "iyarashii",
+     "soul:y340",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 63,
+   "rate": 43.7,
+   "w": 519,
+   "l": 669,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・えんらえんらの魂）",
+    "河童・怪（協力的・伝説のゆびわ）"
+   ],
+   "back": [
+    "にんぎょ・怪（荒くれ・本家はちまき）",
+    "にんぎょ・怪（ずのう的・黄泉魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 66,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "soul:y062",
+     null
+    ],
+    [
+     "y363",
+     "kyouryokuteki",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y368",
+     "arakure",
+     "honke_hachimaki",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 64,
+   "rate": 43.2,
+   "w": 513,
+   "l": 675,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "まぼ老師（動じない・ちょうはつ魂）",
+    "青鬼（ずのう的・雷神魂）",
+    "バク（ずのう的・よびよせ魂）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・鬼神のおまもり）",
+    "にんぎょ・怪（ずのう的・黄泉魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 58,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y072",
+     "doujinai",
+     "rsoul_chouhatsu",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y146",
+     "zunouteki",
+     "rsoul_yobiyose",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "kishin_omamori",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 65,
+   "rate": 43,
+   "w": 511,
+   "l": 677,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "でんぱく小僧（ずのう的・伝説のうでわ）",
+    "風魔猿（ずのう的・鬼神のゆびわ）",
+    "ワルニャン（情け深い・ヤミ魂）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・アライ魔将の魂）",
+    "でんじん（ずのう的・鬼神のゆびわ）",
+    "U.S.O.（動じない・鬼神のゆびわ）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 9,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y063",
+     "zunouteki",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y083",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y137",
+     "nasakebukai",
+     "rsoul_yami",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y064",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y067",
+     "doujinai",
+     "kishin_yubiwa",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 66,
+   "rate": 42,
+   "w": 499,
+   "l": 688,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "ヒライ神（ずのう的・伝説のバッジ）",
+    "河童・怪（ずのう的・伝説のゆびわ）",
+    "青鬼（ずのう的・閃光魂）"
+   ],
+   "back": [
+    "メゾン・ドワスレ（ずのう的・鬼神のおまもり）",
+    "にんぎょ・怪（ずのう的・黄泉魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y106",
+     "zunouteki",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y363",
+     "zunouteki",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "rsoul_senkou",
+     null
+    ],
+    [
+     "y048",
+     "zunouteki",
+     "kishin_omamori",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 67,
+   "rate": 41.8,
+   "w": 496,
+   "l": 691,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "雨女（非道・てっぺきのおまもり）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "河童・怪（ずのう的・無の魂）"
+   ],
+   "back": [
+    "むらまさ（非道・ミカンニャンの魂）",
+    "にんぎょ・怪（ずのう的・てっぺきのおまもり）",
+    "あせっか鬼（ずのう的・伝説のおまもり＋鬼神のゆびわ）"
+   ],
+   "best": {
+    "rank": 44,
+    "rec": "11-1"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y149",
+     "hidou",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y363",
+     "zunouteki",
+     "rsoul_mu",
+     null
+    ],
+    [
+     "y029",
+     "hidou",
+     "soul:y336",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y107",
+     "zunouteki",
+     "densetsu_omamori",
+     "kishin_yubiwa"
+    ]
+   ]
+  },
+  {
+   "rank": 68,
+   "rate": 41.4,
+   "w": 492,
+   "l": 696,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "でんぱく小僧（ずのう的・メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（ずのう的・黄泉魂）",
+    "ヒライ神（ずのう的・メゾン・ドワスレの魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 35,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y063",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 69,
+   "rate": 41.1,
+   "w": 488,
+   "l": 700,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ブシニャン（荒くれ・鬼神のうでわ）"
+   ],
+   "back": [
+    "むりだ城（いやらしい・ルビーニャンの魂）",
+    "つられたろう丸（ずのう的・化けあられの魂）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 99,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y093",
+     "iyarashii",
+     "soul:y332",
+     null
+    ],
+    [
+     "y316",
+     "zunouteki",
+     "soul:y249",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 70,
+   "rate": 41,
+   "w": 487,
+   "l": 701,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・壺ガード魂）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "オオクワノ神（れいせい・雷の魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "グレるりん（荒くれ・鬼神のうでわ）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 62,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "rsoul_tsubo_guard",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y037",
+     "reisei",
+     "rsoul_kaminari",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y095",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 71,
+   "rate": 40.7,
+   "w": 483,
+   "l": 705,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "赤鬼（荒くれ・伝説のうでわ）",
+    "厄怪（協力的・キウイニャンの魂）",
+    "ネガティブーン（情け深い・こじらせ魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（ずのう的・こじらせ魂）",
+    "アニ鬼（協力的・ダサいゆびわ）",
+    "トオセンボン（動じない・えんらえんらの魂）"
+   ],
+   "best": {
+    "rank": 73,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y438",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y355",
+     "kyouryokuteki",
+     "soul:y337",
+     null
+    ],
+    [
+     "y211",
+     "nasakebukai",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y097",
+     "kyouryokuteki",
+     "dasai_yubiwa",
+     null
+    ],
+    [
+     "y100",
+     "doujinai",
+     "soul:y062",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 72,
+   "rate": 40.2,
+   "w": 478,
+   "l": 710,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "さむガリ（協力的・呪言の杖）",
+    "あかなめ・怪（動じない・嵐魂）"
+   ],
+   "best": {
+    "rank": 76,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y130",
+     "kyouryokuteki",
+     "jugon_tsue",
+     null
+    ],
+    [
+     "y360",
+     "doujinai",
+     "rsoul_arashi",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 73,
+   "rate": 40.2,
+   "w": 478,
+   "l": 710,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・水の魂）",
+    "さむガリ（ずのう的・伝説のバッジ）",
+    "KANTETSU（ずのう的・スパルタ魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・アライ魔将の魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "モテヌス（れいせい・大滝魂）"
+   ],
+   "best": {
+    "rank": 33,
+    "rec": "11-1"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "rsoul_mizu",
+     null
+    ],
+    [
+     "y130",
+     "zunouteki",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y208",
+     "zunouteki",
+     "rsoul_sparta",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y008",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "rsoul_ootaki",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 74,
+   "rate": 39.5,
+   "w": 469,
+   "l": 719,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ねぶた（しんちょう・雨女の魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "大山砂夫（短気・ヨコドリの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "にんぎょ・怪（ずのう的・本家はちまき）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 51,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y373",
+     "shinchou",
+     "soul:y149",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y173",
+     "tanki",
+     "soul:y251",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "honke_hachimaki",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 75,
+   "rate": 39.1,
+   "w": 464,
+   "l": 723,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "つられたろう丸（やさしい・スパルタ魂）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "にんぎょ・怪（協力的・大滝魂）"
+   ],
+   "back": [
+    "呪野花子（情け深い・ぴかぴかバッジ）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "あかなめ・怪（動じない・呪言の盾）"
+   ],
+   "best": {
+    "rank": 66,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "yasashii",
+     "rsoul_sparta",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y273",
+     "nasakebukai",
+     "pikapika_badge",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y360",
+     "doujinai",
+     "jugon_tate",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 76,
+   "rate": 37.3,
+   "w": 443,
+   "l": 745,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "あっそう山（非道・鬼神のゆびわ）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）"
+   ],
+   "back": [
+    "むらまさ（非道・ミカンニャンの魂）",
+    "にんぎょ・怪（ずのう的・ダイヤニャンの魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 83,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y384",
+     "hidou",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y029",
+     "hidou",
+     "soul:y336",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "soul:y334",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 77,
+   "rate": 36.2,
+   "w": 430,
+   "l": 758,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ヤミキュウビ（荒くれ・鬼神のうでわ）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "あせっか鬼（協力的・スパルタ魂＋ちょうはつ魂）",
+    "カブトさん（れいせい・なめらかオイル魂）"
+   ],
+   "best": {
+    "rank": 76,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y436",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y107",
+     "kyouryokuteki",
+     "rsoul_sparta",
+     "rsoul_chouhatsu"
+    ],
+    [
+     "y019",
+     "reisei",
+     "rsoul_oil",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 78,
+   "rate": 35.9,
+   "w": 426,
+   "l": 762,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "雨女（動じない・てっぺきのおまもり）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・メゾン・ドワスレの魂）",
+    "雨ふらし（ずのう的・サファイニャンの魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y149",
+     "doujinai",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y247",
+     "zunouteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 79,
+   "rate": 35.6,
+   "w": 423,
+   "l": 765,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ズルズルづる（協力的・大滝魂＋メゾン・ドワスレの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（情け深い・大滝魂）",
+    "ねぶた（荒くれ・ダイヤニャンの魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 89,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y042",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y373",
+     "arakure",
+     "soul:y334",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 80,
+   "rate": 35.5,
+   "w": 421,
+   "l": 765,
+   "d": 2,
+   "preset": null,
+   "front": [
+    "チクチクウニ（ずのう的・ダイヤニャンの魂）",
+    "にんぎょ・怪（ずのう的・えんらえんらの魂）",
+    "ブシニャン（荒くれ・えんらえんらの魂）"
+   ],
+   "back": [
+    "じめりんぼう（やさしい・ジコチュウの魂）",
+    "つられたろう丸（ずのう的・アライ魔将の魂）",
+    "大ガマ（荒くれ・ミカンニャンの魂）"
+   ],
+   "best": {
+    "rank": 77,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 4,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y245",
+     "zunouteki",
+     "soul:y334",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "soul:y062",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y246",
+     "yasashii",
+     "soul:y228",
+     null
+    ],
+    [
+     "y316",
+     "zunouteki",
+     "soul:y008",
+     null
+    ],
+    [
+     "y121",
+     "arakure",
+     "soul:y336",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 81,
+   "rate": 34.9,
+   "w": 415,
+   "l": 773,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "トホホギス（ずのう的・れんごく魂＋ほむら天狗の魂）",
+    "風魔猿（ずのう的・鬼神のゆびわ）",
+    "破怪（協力的・伝説のゆびわ）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・メゾン・ドワスレの魂）",
+    "でんじん（ずのう的・鬼神のバッジ）",
+    "U.S.O.（動じない・メゾン・ドワスレの魂）"
+   ],
+   "best": {
+    "rank": 58,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y256",
+     "zunouteki",
+     "rsoul_rengoku",
+     "soul:y079"
+    ],
+    [
+     "y083",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y359",
+     "kyouryokuteki",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y064",
+     "zunouteki",
+     "kishin_badge",
+     null
+    ],
+    [
+     "y067",
+     "doujinai",
+     "soul:y048",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 82,
+   "rate": 34.8,
+   "w": 413,
+   "l": 774,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "メゾン・ドワスレ（荒くれ・氷の魂）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "にんぎょ・怪（情け深い・いん石魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・えんらえんらの魂）",
+    "青鬼（ずのう的・なめらかオイル魂）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 92,
+    "rec": "11-1"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y048",
+     "arakure",
+     "rsoul_koori",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y368",
+     "nasakebukai",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "rsoul_oil",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 83,
+   "rate": 34.8,
+   "w": 413,
+   "l": 775,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "赤鬼（荒くれ・伝説のうでわ）",
+    "ひとまか仙人（協力的・なめらかオイル魂）",
+    "ブシニャン（荒くれ・鬼神のうでわ）"
+   ],
+   "back": [
+    "むりだ城（動じない・壺ガード魂）",
+    "かりパックン（やさしい・よびよせ魂）",
+    "むりだ城（動じない・てっぺきのおまもり）"
+   ],
+   "best": {
+    "rank": 51,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y438",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y226",
+     "kyouryokuteki",
+     "rsoul_oil",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y093",
+     "doujinai",
+     "rsoul_tsubo_guard",
+     null
+    ],
+    [
+     "y223",
+     "yasashii",
+     "rsoul_yobiyose",
+     null
+    ],
+    [
+     "y093",
+     "doujinai",
+     "teppeki_omamori",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 84,
+   "rate": 34.2,
+   "w": 406,
+   "l": 781,
+   "d": 1,
+   "preset": null,
+   "front": [
+    "さくらのじま（荒くれ・伝説のゆびわ）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ブシニャン（荒くれ・閃光魂）"
+   ],
+   "back": [
+    "かげ老師（ずのう的・鬼神のゆびわ）",
+    "つられたろう丸（協力的・ししコマの魂）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 96,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y109",
+     "arakure",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "rsoul_senkou",
+     null
+    ],
+    [
+     "y073",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y316",
+     "kyouryokuteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 85,
+   "rate": 32.7,
+   "w": 388,
+   "l": 800,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "青鬼（やさしい・鬼神のゆびわ）",
+    "メゾン・ドワスレ（ずのう的・黄泉魂）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・メゾン・ドワスレの魂）",
+    "にんぎょ・怪（ずのう的・黄泉魂）",
+    "おねむの精（協力的・鬼神のバッジ）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "yasashii",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y048",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y281",
+     "kyouryokuteki",
+     "kishin_badge",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 86,
+   "rate": 32.6,
+   "w": 387,
+   "l": 801,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "さくらのじま（荒くれ・モノマネキンの魂）",
+    "青鬼（やさしい・鬼神のゆびわ）",
+    "メゾン・ドワスレ（ずのう的・黄泉魂）"
+   ],
+   "back": [
+    "おねむの精（協力的・鬼神のバッジ）",
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "ヒライ神（ずのう的・いん石魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 8,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y109",
+     "arakure",
+     "soul:y099",
+     null
+    ],
+    [
+     "y439",
+     "yasashii",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y048",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y281",
+     "kyouryokuteki",
+     "kishin_badge",
+     null
+    ],
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "rsoul_inseki",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 87,
+   "rate": 32.5,
+   "w": 386,
+   "l": 802,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "マスクドニャーン（動じない・ルビーニャンの魂）",
+    "厄怪（協力的・キウイニャンの魂）",
+    "ネガティブーン（情け深い・こじらせ魂）"
+   ],
+   "back": [
+    "トオセンボン（動じない・エメラルニャンの魂）",
+    "赤鬼（荒くれ・伝説のうでわ）",
+    "ぎっくり男（荒くれ・火の魂）"
+   ],
+   "best": {
+    "rank": 54,
+    "rec": "11-1"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y350",
+     "doujinai",
+     "soul:y332",
+     null
+    ],
+    [
+     "y355",
+     "kyouryokuteki",
+     "soul:y337",
+     null
+    ],
+    [
+     "y211",
+     "nasakebukai",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y100",
+     "doujinai",
+     "soul:y331",
+     null
+    ],
+    [
+     "y438",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y206",
+     "arakure",
+     "rsoul_hi",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 88,
+   "rate": 32.1,
+   "w": 381,
+   "l": 807,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（協力的・鬼神のうでわ）",
+    "はらわシェル（ずのう的・こじらせ魂）",
+    "ガマンモス（動じない・ガード魂）"
+   ],
+   "back": [
+    "ブシニャン（荒くれ・彗星のうでわ）",
+    "青鬼（ずのう的・伝説のバッジ）",
+    "モテヌス（れいせい・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 92,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "kyouryokuteki",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y104",
+     "doujinai",
+     "rsoul_guard",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "suisei_udewa",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y058",
+     "reisei",
+     "soul:y331",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 89,
+   "rate": 32,
+   "w": 380,
+   "l": 808,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "赤鬼（荒くれ・伝説のうでわ）",
+    "キュウビ（ずのう的・鬼神のゆびわ）",
+    "えんらえんら（ずのう的・メゾン・ドワスレの魂）"
+   ],
+   "back": [
+    "むりだ城（動じない・壺ガード魂）",
+    "ミツマタノヅチ（ずのう的・鬼神のゆびわ）",
+    "トオセンボン（動じない・えんらえんらの魂）"
+   ],
+   "best": {
+    "rank": 86,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y438",
+     "arakure",
+     "densetsu_udewa",
+     null
+    ],
+    [
+     "y080",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y062",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y093",
+     "doujinai",
+     "rsoul_tsubo_guard",
+     null
+    ],
+    [
+     "y232",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y100",
+     "doujinai",
+     "soul:y062",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 90,
+   "rate": 31.4,
+   "w": 373,
+   "l": 815,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "さきがけの助（ずのう的・吹雪魂＋いん石魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ブシニャン（荒くれ・鬼神のうでわ）"
+   ],
+   "back": [
+    "にんぎょ・怪（ずのう的・いん石魂）",
+    "雨ふらし（ずのう的・てっぺきのおまもり）",
+    "わらえ姉（ずのう的・イッカクの魂）"
+   ],
+   "best": {
+    "rank": 99,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y003",
+     "zunouteki",
+     "rsoul_fubuki",
+     "rsoul_inseki"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y247",
+     "zunouteki",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y051",
+     "zunouteki",
+     "soul:y201",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 91,
+   "rate": 30,
+   "w": 356,
+   "l": 832,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "雨女（動じない・てっぺきのおまもり）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ネガティブーン（情け深い・こじらせ魂）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・メゾン・ドワスレの魂）",
+    "雨ふらし（協力的・サファイニャンの魂）",
+    "トオセンボン（動じない・えんらえんらの魂）"
+   ],
+   "best": {
+    "rank": 21,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y149",
+     "doujinai",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y211",
+     "nasakebukai",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y247",
+     "kyouryokuteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y100",
+     "doujinai",
+     "soul:y062",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 92,
+   "rate": 29.9,
+   "w": 355,
+   "l": 833,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "河童・怪（ずのう的・伝説のゆびわ）",
+    "青鬼（ずのう的・閃光魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（ずのう的・大滝魂）",
+    "不怪（ずのう的・れんごく魂）",
+    "ロボコマ（ずのう的・ちょうはつ魂）"
+   ],
+   "best": {
+    "rank": 50,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 2,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y363",
+     "zunouteki",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "rsoul_senkou",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y356",
+     "zunouteki",
+     "rsoul_rengoku",
+     null
+    ],
+    [
+     "y342",
+     "zunouteki",
+     "rsoul_chouhatsu",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 93,
+   "rate": 29.7,
+   "w": 353,
+   "l": 835,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "河童・怪（協力的・イチゴニャンの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（ずのう的・大滝魂）",
+    "大くだん（やさしい・アライ魔将の魂）",
+    "雨女（非道・てっぺきのおまもり）"
+   ],
+   "best": {
+    "rank": 83,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y363",
+     "kyouryokuteki",
+     "soul:y339",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y186",
+     "yasashii",
+     "soul:y008",
+     null
+    ],
+    [
+     "y149",
+     "hidou",
+     "teppeki_omamori",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 94,
+   "rate": 28.5,
+   "w": 339,
+   "l": 849,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ズルズルづる（ずのう的・大滝魂＋メゾン・ドワスレの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ズルズルづる（協力的・大滝魂＋メゾン・ドワスレの魂）"
+   ],
+   "back": [
+    "にんぎょ・怪（協力的・大滝魂）",
+    "にんぎょ・怪（ずのう的・本家はちまき）",
+    "カブトさん（れいせい・なめらかオイル魂）"
+   ],
+   "best": {
+    "rank": 55,
+    "rec": "10-2"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y042",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     "soul:y048"
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "rsoul_ootaki",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "honke_hachimaki",
+     null
+    ],
+    [
+     "y019",
+     "reisei",
+     "rsoul_oil",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 95,
+   "rate": 28.1,
+   "w": 334,
+   "l": 854,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "カゲロー（協力的・雷神魂）",
+    "青鬼（ずのう的・伝説のおまもり）",
+    "河童・怪（ずのう的・無の魂）"
+   ],
+   "back": [
+    "かゆかゆ（ずのう的・えんらえんらの魂）",
+    "雨ふらし（ずのう的・呪言の盾）",
+    "大ガマ（協力的・ブロッカー魂）"
+   ],
+   "best": {
+    "rank": 29,
+    "rec": "10-2"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y215",
+     "kyouryokuteki",
+     "rsoul_raijin",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "densetsu_omamori",
+     null
+    ],
+    [
+     "y363",
+     "zunouteki",
+     "rsoul_mu",
+     null
+    ],
+    [
+     "y213",
+     "zunouteki",
+     "soul:y062",
+     null
+    ],
+    [
+     "y247",
+     "zunouteki",
+     "jugon_tate",
+     null
+    ],
+    [
+     "y121",
+     "kyouryokuteki",
+     "rsoul_blocker",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 96,
+   "rate": 27.8,
+   "w": 330,
+   "l": 858,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "つられたろう丸（ずのう的・ししコマの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ブシニャン（荒くれ・鬼神のうでわ）"
+   ],
+   "back": [
+    "むりだ城（いやらしい・スパルタ魂）",
+    "雨女（動じない・てっぺきのおまもり）",
+    "さきがけの助（荒くれ・さびたゆびわ＋モテモテ魂）"
+   ],
+   "best": {
+    "rank": 97,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y316",
+     "zunouteki",
+     "soul:y143",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y322",
+     "arakure",
+     "kishin_udewa",
+     null
+    ],
+    [
+     "y093",
+     "iyarashii",
+     "rsoul_sparta",
+     null
+    ],
+    [
+     "y149",
+     "doujinai",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y003",
+     "arakure",
+     "sabita_yubiwa",
+     "rsoul_motemote"
+    ]
+   ]
+  },
+  {
+   "rank": 97,
+   "rate": 24.4,
+   "w": 290,
+   "l": 898,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "うみぼうず（動じない・サファイニャンの魂）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "ズルズルづる（ずのう的・大滝魂＋いん石魂）"
+   ],
+   "back": [
+    "ヒライ神（ずのう的・伝説のバッジ）",
+    "にんぎょ・怪（ずのう的・黄泉魂）",
+    "はらわシェル（ずのう的・こじらせ魂）"
+   ],
+   "best": {
+    "rank": 58,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y120",
+     "doujinai",
+     "soul:y330",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y042",
+     "zunouteki",
+     "rsoul_ootaki",
+     "rsoul_inseki"
+    ],
+    [
+     "y106",
+     "zunouteki",
+     "densetsu_badge",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_yomi",
+     null
+    ],
+    [
+     "y312",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 98,
+   "rate": 24.1,
+   "w": 286,
+   "l": 902,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "ブドウニャン（しんちょう・ツチノコパンダの魂）",
+    "青鬼（ずのう的・閃光魂）",
+    "河童・怪（ずのう的・伝説のゆびわ）"
+   ],
+   "back": [
+    "にんぎょ・怪（ずのう的・メゾン・ドワスレの魂）",
+    "雨ふらし（ずのう的・サファイニャンの魂）",
+    "ロボコマ（ずのう的・ちょうはつ魂）"
+   ],
+   "best": {
+    "rank": 89,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y338",
+     "shinchou",
+     "soul:y287",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "rsoul_senkou",
+     null
+    ],
+    [
+     "y363",
+     "zunouteki",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "soul:y048",
+     null
+    ],
+    [
+     "y247",
+     "zunouteki",
+     "soul:y330",
+     null
+    ],
+    [
+     "y342",
+     "zunouteki",
+     "rsoul_chouhatsu",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 99,
+   "rate": 23.7,
+   "w": 282,
+   "l": 906,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "雨女（動じない・てっぺきのおまもり）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "コマじろうS（ずのう的・こじらせ魂）"
+   ],
+   "back": [
+    "むりだ城（動じない・ルビーニャンの魂）",
+    "あせっか鬼（協力的・てっぺきのおまもり＋てっぺきのおまもり）",
+    "あっそう山（短気・呪言の刀）"
+   ],
+   "best": {
+    "rank": 81,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y149",
+     "doujinai",
+     "teppeki_omamori",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y435",
+     "zunouteki",
+     "rsoul_kojirase",
+     null
+    ],
+    [
+     "y093",
+     "doujinai",
+     "soul:y332",
+     null
+    ],
+    [
+     "y107",
+     "kyouryokuteki",
+     "teppeki_omamori",
+     "teppeki_omamori"
+    ],
+    [
+     "y384",
+     "tanki",
+     "jugon_katana",
+     null
+    ]
+   ]
+  },
+  {
+   "rank": 100,
+   "rate": 20.4,
+   "w": 242,
+   "l": 946,
+   "d": 0,
+   "preset": null,
+   "front": [
+    "うみぼうず（動じない・伝説のゆびわ）",
+    "青鬼（ずのう的・鬼神のゆびわ）",
+    "かたのり親方（短気・エメラルニャンの魂）"
+   ],
+   "back": [
+    "トパニャン（協力的・れんごく魂）",
+    "河童・怪（協力的・いん石魂）",
+    "かたのり親方（荒くれ・エメラルニャンの魂）"
+   ],
+   "best": {
+    "rank": 73,
+    "rec": "12-0"
+   },
+   "worst": {
+    "rank": 1,
+    "rec": "0-12"
+   },
+   "team": [
+    [
+     "y120",
+     "doujinai",
+     "densetsu_yubiwa",
+     null
+    ],
+    [
+     "y439",
+     "zunouteki",
+     "kishin_yubiwa",
+     null
+    ],
+    [
+     "y205",
+     "tanki",
+     "soul:y331",
+     null
+    ],
+    [
+     "y333",
+     "kyouryokuteki",
+     "rsoul_rengoku",
+     null
+    ],
+    [
+     "y363",
+     "kyouryokuteki",
+     "rsoul_inseki",
+     null
+    ],
+    [
+     "y205",
+     "arakure",
+     "soul:y331",
+     null
+    ]
+   ]
+  }
+ ]
+}
