@@ -732,17 +732,20 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`honke replace ok; foe attack share: 肉食オーラ ${(meat * 100).toFixed(0)}% / 草食オーラ ${(grass * 100).toFixed(0)}%`);
 }
 
-// このゲームだけの調整：超クリティカルは威力 +75%（山吹鬼もほかの妖怪も）、いのちとりの魂はクリティカル率 30%
+// 超クリティカルは本家どおり クリティカルのダメージ ×1.5（持っている妖怪すべて）。いのちとりの魂はこのゲームだけの調整でクリティカル率 30%
 {
   const id = n => E.units.find(u => u.name === n).id;
   const soul = "soul:" + id("いのちとり");
   const team = ["山吹鬼", "ブシニャン", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"].map((n, i) => ({ unit: id(n), equipment: i === 1 ? soul : null }));
   const s = E.newBattle(1, team, team, { noItems: true });
   const [yama, bushi] = s.players[0].units;
-  if (yama.fx.critDmg !== 750) throw new Error(`山吹鬼 critDmg ${yama.fx.critDmg}`);
-  if (bushi.fx.critDmg !== 750) throw new Error(`ブシニャン critDmg ${bushi.fx.critDmg}`);
+  for (const n of ["かたのり小僧", "かたのり親方", "ぎっくり男", "虫歯伯爵", "ブシニャン", "山吹鬼", "豪怪", "ねぶた"]) {
+    const t = E.traitOf(E.units.find(u => u.name === n));
+    if (t.name !== "超クリティカル" || t.fx.critSkill !== 500 || t.fx.critDmg) throw new Error(`${n} ${t.name} ${JSON.stringify(t.fx)}`);
+  }
+  if (yama.fx.critSkill !== 500 || yama.fx.critDmg) throw new Error(`山吹鬼 ${JSON.stringify(yama.fx)}`);
   if (bushi.fx.critEye !== 19 || !E.equipById(soul).desc.includes("30%")) throw new Error(`いのちとりの魂 ${bushi.fx.critEye}`);
-  console.log(`tune: 超クリティカル crit +${yama.fx.critDmg / 10}% (山吹鬼・ブシニャン), いのちとりの魂 crit ${Math.round(bushi.fx.critEye * 100 / 64)}%`);
+  console.log(`超クリティカル crit x${1 + yama.fx.critSkill / 1000} (8 yokai), いのちとりの魂 crit ${Math.round(bushi.fx.critEye * 100 / 64)}%`);
 }
 
 // 敵をたおすと ちからが上がる魂もスキル（まえのめり など）も上限なし
