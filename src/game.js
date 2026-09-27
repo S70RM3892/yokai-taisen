@@ -18341,6 +18341,9 @@ void main() {
   })), typeof window < "u" && (window.__THREE__ ? console.warn("WARNING: Multiple instances of Three.js being imported.") : window.__THREE__ = "169");
   /*@@include ext/models3d.js@@*/
   /*@@include ext/honke_models.js@@*/
+  /*@@include ext/hires_kit.js@@*/
+  /*@@include ext/model_oni.js@@*/
+  /*@@include ext/hires_models.js@@*/
   var ALLY_YAW = Math.PI - 0.95;
   var Q1 = [-2.6, 0, 2.6],
     K1 = -2.2,
@@ -20364,5 +20367,5 @@ void main() {
     c.style.justifyContent = "center", r.append(c), a.append(r), document.body.append(a)
   }
   /*@@include ext/gallery.js@@*/
-  debugHook(), location.hash.startsWith("#gallery") ? showGallery() : (Sd(), pvpFromHash())
+  debugHook(), location.hash.startsWith("#gallery") ? showGallery() : location.hash.startsWith("#model=") ? showModelCloseup(decodeURIComponent(location.hash.slice(7))) : (Sd(), pvpFromHash())
 })();

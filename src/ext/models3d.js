@@ -56,13 +56,14 @@ class ModelKit {
     if (!Array.isArray(r)) r = [0, 0, 0];
     if (typeof s === "number") s = [s, s, s];
     o = o ?? {};
-    const m = new pt(geo()[g], this.mat(color, o));
+    const G = typeof g === "string" ? geo()[g] : g; // 黒鬼などは作ったジオメトリをそのまま渡す
+    const m = new pt(G, this.mat(color, o));
     m.position.set(p[0], p[1], p[2]);
     m.scale.set(s[0], s[1] ?? s[0], s[2] ?? s[0]);
     m.rotation.set(r[0], r[1], r[2]);
     (parent ?? this.root).add(m);
     if (o.outline) {
-      const ol = new pt(geo()[g], this.mat(0x14101c, { basic: true }));
+      const ol = new pt(G, this.mat(0x14101c, { basic: true }));
       ol.material.side = Lt;
       ol.scale.set(1.07, 1.07, 1.07);
       m.add(ol);

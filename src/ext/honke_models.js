@@ -85,7 +85,7 @@ var HONKE_NAME_MODEL = {
   ブシニャン: ["hum", { build: "child", skin: 0xd9483b, headSize: 0.42, ears: "cat", hat: "crown", torsoColor: 0x4a4a5a, sleeve: 0x4a4a5a, sash: 0x2a2a34, weapon: "sword", tail: "thin", tailN: 2, eyeStyle: "round" }],
   肉くいおとこ: ["hum", { build: "fat", skin: 0xd9a070, pelt: 0x8a4a2a, hair: "wild", hairColor: 0x2a1a14, weapon: "club", eyeStyle: "round", mouth: "open" }],
   オオクワノ神: ["quad", { skin: 0x2a1a14, belly: 0x4a3020, horns: "antler", long: !0, shortLegs: !0, snout: 0, ears: "none", eyeStyle: "glow", hat: "crown", size: 1.25 }],
-  赤鬼: ["hum", { build: "bulky", skin: 0xd9483b, horns: 2, hair: "wild", hairColor: 0x1c1820, weapon: "club", pelt: 0xf2d15c, eyeStyle: "angry", mouth: "fang" }],
+  赤鬼: ["oni", { skin: 0xc8392e, hairColor: 0x1c1820, weapon: "club", oni: { horns: 1, hornColor: 0xe8b83a, hornGlow: 0x2a1c00, marks: null, eye: 0xfff4d0, iris: 0x2a1408, lips: 0x6a3a8a, loin: 0x7a4a2a, stripes: false, pants: 0x1c1a22, club: 0x1c1a22, band: 0x3a3440 } }], // 超高精細（model_oni.js）
   さきがけの助: ["hum", { build: "slim", skin: 0xf1d9c4, hat: "kasa", hatColor: 0x8a6a3a, hair: "topknot", hairColor: 0x1c1820, torsoColor: 0xc8443a, sleeve: 0xc8443a, weapon: "spear", eyeStyle: "angry" }],
   ミツマタノヅチ: ["serpent", { skin: 0x6a8a3a, segments: 12, eyeStyle: "slit", mane: 0xd9b24a, stripe: 0.18 }],
   ばか頭巾: ["ghost", { skin: 0x5a3a6a, headColor: 0xe07a2a, hat: "hood", hatColor: 0xe07a2a, eyeStyle: "glow", mouth: "fang", alpha: 0.95 }],
@@ -94,7 +94,7 @@ var HONKE_NAME_MODEL = {
   ガマンモス: ["quad", { skin: 0x8a5a3a, trunk: !0, ears: "floppy", horns: "ox", mane: 0x5a3a2a, eyeStyle: "angry", size: 1.5, snout: 0.3 }],
   大ガマ: ["critter", { kind: "frog", skin: 0x7a6a3a, size: 1.3 }],
   から傘お化け: ["object", { thing: "umbrella", skin: 0x7a5bc4 }],
-  黒鬼: ["hum", { build: "bulky", skin: 0x2a2a34, horns: 2, hair: "wild", hairColor: 0xd8d8d8, weapon: "club", pelt: 0xd9483b, eyeStyle: "glow", mouth: "fang" }],
+  黒鬼: ["oni", { build: "bulky", skin: 0x2a2a34, horns: 2, hair: "wild", hairColor: 0xd8d8d8, weapon: "club", pelt: 0xd9483b, eyeStyle: "glow", mouth: "fang" }], // 超高精細（model_oni.js）
   ドケチング: ["hum", { build: "fat", skin: 0xe8c04a, hat: "crown", robe: !0, cloth: 0x6a3a8a, sash: 0xd9b24a, eyeStyle: "angry", mouth: "smile" }],
   しどろもどろ: ["blob", { skin: 0x7ab8e0, eyeStyle: "sleepy", mouth: "open", tall: 1.1 }],
   びきゃく: ["blob", { skin: 0xf2e6d0, eyeStyle: "round", mouth: "smile", size: 0.8, wide: 1.1 }],
