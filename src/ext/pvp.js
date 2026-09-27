@@ -12,7 +12,7 @@
 // 対人戦では回復などのアイテムはなし（エンジンの state.noItems。バッグも空）。そうびはそのまま効く。
 // ============================================================================
 
-var NET_VER = 4; // 4：ダメージの乱数・クリティカル・つつく・ホストの入力の遅れなど、対戦の計算が変わった版（3：妖怪が本家の 398 体だけになった版）
+var NET_VER = 5; // 5：魂の効果（えんら魂・となり／まん中の能力アップ・クリティカル・妖気回復）と、装備枠 2 つの妖怪が入った版（4：ダメージの乱数・クリティカル・つつく・ホストの入力の遅れなど、対戦の計算が変わった版（3：妖怪が本家の 398 体だけになった版））
 var NET_TICK_SNAP = 100; // 何 tick ごとに状態をまるごと送るか
 var NET_STUN = [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun.cloudflare.com:3478" }];
 var NET_INPUTS = new Set(["rotate", "target", "purify", "ultStart", "ultRelease", "ultCharge", "ultCancel", "purifyTap", "pokeStart", "pokeTap", "pokeStop"]);
@@ -480,7 +480,7 @@ function startPvpBattle(net, seed, teams) {
   if (net.link.rtt != null) Rt(Ga, `通信の往復 ${net.link.rtt}ms（入力の遅れは両者そろえる）`, "a");
   for (const pid of [1, 0]) {
     // 相手の魂は見せない（装備だけ出す）
-    const eqs = Ga.state.players[pid].units.map(u => { const eq = equipById(u.equipment ?? null); return eq && !hiddenSoul(u, eq) ? `${ct[u.defIndex].name}＝${eq.name}` : null; }).filter(Boolean);
+    const eqs = Ga.state.players[pid].units.map(u => { const n = eqLabel(u); return n ? `${ct[u.defIndex].name}＝${n}` : null; }).filter(Boolean);
     Rt(Ga, `${pid ? "相手" : "こちら"}のそうび：${eqs.length ? eqs.join("・") : "なし"}`, pid ? "f" : "a");
   }
   xd(), requestAnimationFrame(Ud);
@@ -606,10 +606,10 @@ function openPvpLobby(joinCode = "", room = "") {
   box.append(note);
   const faces = q("div", "pvp-team");
   for (const m of team) {
-    const d = ct.find(x => x.id === m.unit), eq = equipById(m.equipment ?? null), cell = q("div", "pvp-mem"), f = q("span", "cf-pic");
+    const d = ct.find(x => x.id === m.unit), eqs = [m.equipment, m.equipment2].map(id => equipById(id ?? null)).filter(Boolean), cell = q("div", "pvp-mem"), f = q("span", "cf-pic");
     f.style.background = Pi[d.tribe], f.innerHTML = da(d.id, d.name.slice(0, 1));
-    cell.title = eq ? `${d.name}：${eq.name}（${equipDesc(eq)}）` : `${d.name}：そうびなし`;
-    cell.append(f, q("b", "", d.name), q("small", eq ? "eq" : "eq none", eq ? eq.name : "そうびなし"));
+    cell.title = eqs.length ? `${d.name}：${eqs.map(eq => `${eq.name}（${equipDesc(eq)}）`).join("＋")}` : `${d.name}：そうびなし`;
+    cell.append(f, q("b", "", d.name), q("small", eqs.length ? "eq" : "eq none", eqs.length ? eqs.map(eq => eq.name).join("＋") : "そうびなし"));
     faces.append(cell);
   }
   box.append(faces);

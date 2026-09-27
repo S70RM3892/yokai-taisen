@@ -14,8 +14,7 @@ function inspLabel(names, kind, stat) {
 }
 // 名札に出す持ち物（装備）の名前
 function eqLabel(u) {
-  const eq = equipById(u.equipment ?? null);
-  return eq && !hiddenSoul(u, eq) ? eq.name : "";
+  return [u.equipment, u.equipment2].map(id => equipById(id ?? null)).filter(eq => eq && !hiddenSoul(u, eq)).map(eq => eq.name).join("＋");
 }
 // 「閃光」の文字：相手の閃光が魂から来ているときは出さない（スキルの閃光なら出す）
 function flashShown(e, uid) {
@@ -444,8 +443,8 @@ function debugHook() {
     ga: () => Ga, send: (i) => zt(Ga, i), lobby: () => openPvpLobby(),
     // パーティ保存：いまの編成・書き出しの文字列・読みこみ
     party: () => partyStore(), bt: () => bt.map(id => id && ct.find(x => x.id === id).name), loadout: () => SLOT_LOADOUT, bag: () => BAG,
-    partyCode: () => partyEncode(partyFromBuilder("test")), partyImport: code => partyApply(partyDecode(code)),
-    team: () => teamMembers().map(m => `${ct.find(x => x.id === m.unit).name}${m.equipment ? "(" + equipById(m.equipment).name + ")" : ""}`).join("・"),
+    partyCode: () => partyEncode(partyFromBuilder("test")), partyImport: code => { const lost = partyApply(partyDecode(code)); partySaveCurrent(); return lost; },
+    team: () => teamMembers().map(m => `${ct.find(x => x.id === m.unit).name}${m.equipment || m.equipment2 ? "(" + equipNames(m) + ")" : ""}`).join("・"),
     // 流行りの型：ルール違反・持ち物の付けそこね
     presets: () => PRESETS.map(p => { const ms = presetMembers(p); return { name: p.name, errs: ms ? Yn(ms) : ["妖怪が見つからない"], dropped: ms ? p.team.filter((t, i) => t[2] && !ms[i].equipment).map(t => `${t[0]}:${t[2]}`) : [] }; }),
     // 奥義の振り付けの数（全員）

@@ -8,7 +8,7 @@
 // bt（メンバーサークルの 6 枠の妖怪）と同じ並びで SLOT_LOADOUT（枠ごとの持ち物）を持つ。
 // ============================================================================
 
-function defaultLoadout() { return { nature: null, diligence: null, equipment: null }; }
+function defaultLoadout() { return { nature: null, diligence: null, equipment: null, equipment2: null }; }
 var SLOT_LOADOUT = loadStored("loadout", null)?.slice?.(0, 6) ?? [0, 1, 2, 3, 4, 5].map(defaultLoadout);
 while (SLOT_LOADOUT.length < 6) SLOT_LOADOUT.push(defaultLoadout());
 var BAG = validBag(loadStored("bag", ["ikuraonigiri", "cheeseburger", "tonkotsu", "nigai_kanpou", "coffeegyuunyuu", "chikara_ofuda"]));
@@ -30,6 +30,7 @@ function memberAt(i) {
   if (lo.nature) try { m.nature = natureId(lo.nature); } catch {}
   if (lo.diligence) m.diligence = diligenceOf(lo.diligence).id;
   if (lo.equipment && equipAllowed(d, lo.equipment)) m.equipment = lo.equipment;
+  if (lo.equipment2 && equipSlots(d) === 2 && equipAllowed(d, lo.equipment2)) m.equipment2 = lo.equipment2;
   return m;
 }
 function teamMembers() { return [0, 1, 2, 3, 4, 5].map(memberAt).filter(Boolean); }
@@ -38,7 +39,9 @@ function teamMembers() { return [0, 1, 2, 3, 4, 5].map(memberAt).filter(Boolean)
 function loRotate(step) { const old = SLOT_LOADOUT.slice(); SLOT_LOADOUT = old.map((_, i) => old[(i - step + 6) % 6]); saveLoadout(); }
 function loSwap(a, b) { [SLOT_LOADOUT[a], SLOT_LOADOUT[b]] = [SLOT_LOADOUT[b], SLOT_LOADOUT[a]]; saveLoadout(); }
 function loReset(i) { SLOT_LOADOUT[i] = defaultLoadout(); saveLoadout(); }
-function loFromMembers(members) { SLOT_LOADOUT = members.map(m => ({ nature: m.nature ?? null, diligence: m.diligence ?? null, equipment: m.equipment ?? null })); saveLoadout(); }
+function loFromMembers(members) { SLOT_LOADOUT = members.map(m => ({ nature: m.nature ?? null, diligence: m.diligence ?? null, equipment: m.equipment ?? null, equipment2: m.equipment2 ?? null })); saveLoadout(); }
+// 持ち物の名前（装備枠が 2 つなら「A＋B」）
+function equipNames(m, sep = "＋") { return [m.equipment, m.equipment2].map(id => equipById(id ?? null)).filter(Boolean).map(e => e.name).join(sep); }
 
 var STAT_ROWS = [["maxHp", "hp", "HP"], ["atk", "atk", "ちから"], ["spa", "spa", "ようりょく"], ["def", "def", "まもり"], ["spd", "spd", "すばやさ"]];
 
@@ -69,7 +72,7 @@ function renderDetail(host, slot, onChange) {
   const info = q("div", "dt-info");
   info.innerHTML = `<div class="dt-name"><b>${d.name}</b> <span class="rank ${d.rank}">${d.group ? d.rank + "・鬼（1 体まで）" : d.rank}</span></div>
     <div class="tag">${Hl[d.tribe]}${d.tribe === "maga" ? "" : "族"}・${st.camp ? CAMP_JA[st.camp] + "・" : ""}${st.favorite ? `好物「${FOOD_CATS[st.favorite]}」` : "好物なし"}</div>
-    <div class="tag">妖気ランク ${d.sgRank}・サボり ${Math.round(d.loafPermil / 10)}%</div>
+    <div class="tag">妖気ランク ${d.sgRank}・サボり ${Math.round(d.loafPermil / 10)}%${equipSlots(d) === 2 ? "・そうび 2 つ" : ""}</div>
     ${viewing ? '<div class="dt-note">リストで見ているところ。枠に入れるには、もう一度押す。</div>' : ""}`;
   top.append(info);
   host.append(top);
@@ -104,8 +107,12 @@ function renderDetail(host, slot, onChange) {
   pickRow("性格", natureFullName(st.nature, st.diligence) + (lo.nature ? "" : "（初めの性格）"),
     `${qn(st.nature).kind}・${natureBonusText(st.nature)}・${natureDesc(st.nature)}`,
     () => openNaturePicker(d, lo, (nat, dil) => { SLOT_LOADOUT[slot].nature = nat; SLOT_LOADOUT[slot].diligence = dil; saveLoadout(); onChange(); }));
-  pickRow("そうび", eq ? eq.name : "なし", eq ? equipDesc(eq) + (equipGameText(eq) ? `（このゲームでは：${equipGameText(eq)}）` : "") : "そうびなし",
-    () => openEquipPicker(d, lo.equipment, id => { SLOT_LOADOUT[slot].equipment = id; saveLoadout(); onChange(); }));
+  const two = equipSlots(d) === 2, eq2 = two ? equipById(member.equipment2 ?? null) : null;
+  pickRow(two ? "そうび 1" : "そうび", eq ? eq.name : "なし", eq ? equipDesc(eq) + (equipGameText(eq) ? `（このゲームでは：${equipGameText(eq)}）` : "") : "そうびなし",
+    () => openEquipPicker(d, lo.equipment, id => { SLOT_LOADOUT[slot].equipment = id; saveLoadout(); onChange(); }, two ? { equipment2: member.equipment2 ?? null } : {}));
+  // 本家で装備枠が 2 つある妖怪だけ
+  if (two) pickRow("そうび 2", eq2 ? eq2.name : "なし", eq2 ? equipDesc(eq2) + (equipGameText(eq2) ? `（このゲームでは：${equipGameText(eq2)}）` : "") : "そうびなし（この妖怪は本家どおり 2 つ持てる）",
+    () => openEquipPicker(d, lo.equipment2, id => { SLOT_LOADOUT[slot].equipment2 = id; saveLoadout(); onChange(); }, { equipment: member.equipment ?? null }, "equipment2"));
   host.append(form);
 }
 
@@ -353,13 +360,14 @@ function equipInfoHtml(e) {
   return `${equipDesc(e)}${game ? `<small class="pk-game">このゲームでは：${game}</small>` : ""}${e.recipe ? `<small class="pk-recipe">本家の合成：${e.recipe}</small>` : ""}`;
 }
 
-function openEquipPicker(d, cur, onPick) {
-  const slotMember = { unit: d.id };
+// other：もう一方の枠の持ち物（上がり方はそれをつけたままで比べる）。key：どちらの枠をえらぶか
+function openEquipPicker(d, cur, onPick, other = {}, key = "equipment") {
+  const slotMember = { unit: d.id, ...other };
   const base = memberStats(slotMember);
   const deltas = new Map();
   const deltaOf = e => {
     if (!deltas.has(e.id)) {
-      const st = memberStats({ ...slotMember, equipment: e.id });
+      const st = memberStats({ ...slotMember, [key]: e.id });
       deltas.set(e.id, Object.fromEntries(STAT_ROWS.map(([k]) => [k, st[k] - base[k]])));
     }
     return deltas.get(e.id);
@@ -371,7 +379,7 @@ function openEquipPicker(d, cur, onPick) {
   off.disabled = !now;
   off.onclick = () => { onPick(null); p.close(); };
   const p = openSortPicker({
-    key: "equip", title: `${d.name} のそうび`, items, tabs: EQUIP_TABS, actions: [off],
+    key: "equip", title: `${d.name} のそうび${key === "equipment2" ? "（2 つめ）" : ""}`, items, tabs: EQUIP_TABS, actions: [off],
     current: () => `<span class="dt-k">いま</span> ${now ? `<b>${now.name}</b><span class="pk-cat">${now.cat}</span><div class="pk-cur-d">${equipInfoHtml(now)}</div>` : "<b>なし</b>"}`,
     hide: { label: "対戦で効果のないものをかくす", test: equipNoEffect },
     sorts: [
@@ -472,7 +480,7 @@ function openConfirm(members, bag, onGo) {
     card.innerHTML = `<div class="cf-head"><span class="cf-pic" style="background:${Pi[d.tribe]}">${da(d.id, d.name.slice(0, 1))}</span><div><b>${d.name}</b> <span class="rank ${d.rank}">${d.rank}</span><div class="tag">${i < 3 ? "前衛" : "後衛"}・${natureFullName(st.nature, st.diligence)}${st.favorite ? `・好物 ${FOOD_CATS[st.favorite]}` : ""}</div></div></div>
       <div class="cf-stats num">HP ${st.maxHp}　ちから ${st.atk}　ようりょく ${st.spa}　まもり ${st.def}　すばやさ ${st.spd}</div>
       <div class="cf-line"><span class="dt-k">スキル</span> ${tr.name}</div>
-      <div class="cf-line"><span class="dt-k">そうび</span> ${eq ? `${eq.name}<small>（${equipDesc(eq)}）</small>` : "なし"}</div>`;
+      <div class="cf-line"><span class="dt-k">そうび</span> ${eq ? `${eq.name}<small>（${equipDesc(eq)}）</small>` : "なし"}</div>${equipSlots(d) === 2 ? (() => { const e2 = equipById(m.equipment2 ?? null); return `<div class="cf-line"><span class="dt-k">そうび 2</span> ${e2 ? `${e2.name}<small>（${equipDesc(e2)}）</small>` : "なし"}</div>`; })() : ""}`;
     grid.append(card);
   });
   box.append(grid);

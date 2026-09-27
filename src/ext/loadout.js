@@ -83,7 +83,29 @@ function mergeFx(...list) {
   return out;
 }
 
-// member: { unit, nature?, diligence?, equipment? }
+// 本家で装備枠が 2 つある妖怪（ほかは 1 つ）。ランクではなく妖怪ごとに決まっている
+//   出典：妖怪ウォッチ2攻略（元祖/本家/真打）「装備枠が2つの妖怪について」https://enjoi7.sakura.ne.jp/youkai-wach2/youkai_rea9.html
+//         妖怪ウォッチ2攻略魂 掲示板「装備２つ持てる妖怪ってこれ以外にいますか？」（獅子まるを足し、こおりんぼうは実機で 1 つ）
+var EQUIP2_NAMES = new Set(["寝ブタ", "獅子まる", "万尾獅子", "ちからモチ", "やきモチ", "さきがけの助", "ばか頭巾", "かぜカモ", "ズルズルづる",
+  "のっぺら坊", "アペリカン", "ドキ土器", "あせっか鬼", "びきゃく", "一つ目小僧", "みちび鬼", "ガ鬼", "ぎしんあん鬼", "ジコチュウ",
+  "トホホギス", "ホリュウ", "ツチノコパンダ"]);
+function equipSlots(def) { return def && EQUIP2_NAMES.has(def.name) ? 2 : 1; }
+
+// 装備 2 つの数値以外の効果を合わせる（倍率はかけ合わせ、量は足す、あるなしは どちらかにあれば）
+var SPECIAL_MUL = { loafMult: 1, critTaken: 1, allMult: 1e3, waterUp: 1e3, waterGuard: 1e3, mult: 1e3, vsMaga: 1e3, vsOther: 1e3 };
+var SPECIAL_ADD = new Set(["sgRate", "cursedAllDown"]);
+function mergeSpecial(a, b) {
+  if (!a || !b) return a ?? b ?? {};
+  const out = { ...a };
+  for (const [k, v] of Object.entries(b)) {
+    if (!(k in out)) out[k] = v;
+    else if (k in SPECIAL_MUL && typeof v === "number") out[k] = SPECIAL_MUL[k] === 1 ? out[k] * v : Math.floor(out[k] * v / SPECIAL_MUL[k]);
+    else if (SPECIAL_ADD.has(k)) out[k] += v;
+  }
+  return out;
+}
+
+// member: { unit, nature?, diligence?, equipment?, equipment2?（装備枠が 2 つの妖怪だけ） }
 // 能力の上乗せは本家と同じく性格ボーナスだけ（前の版の「育成」は本家にないのでなくした）
 function memberStats(member) {
   const d = ct.find(x => x.id === member.unit);
@@ -91,8 +113,10 @@ function memberStats(member) {
   const dil = diligenceOf(member.diligence);
   const r = natureBonus(nature);
   const e = equipById(member.equipment ?? null);
-  const mods = e?.mods ?? {};
-  const sp = e?.special ?? {};
+  const e2 = equipSlots(d) === 2 ? equipById(member.equipment2 ?? null) : null;
+  const mods = {};
+  for (const x of [e, e2]) for (const [k, v] of Object.entries(x?.mods ?? {})) mods[k] = (mods[k] ?? 0) + v;
+  const sp = mergeSpecial(e?.special ?? null, e2?.special ?? null);
   const base = {
     maxHp: d.hp + r.hp * wh + (mods.hp ?? 0),
     atk: d.atk + r.atk + (mods.atk ?? 0),
@@ -106,12 +130,13 @@ function memberStats(member) {
   if (sp.sgRate) eqFx.sgRate = sp.sgRate;
   if (sp.noLoaf) eqFx.noLoaf = 1000;
   if (sp.curseHalf) eqFx.curseShort = 500;
-  const fx = mergeFx(traitOf(d).fx, e?.fx, eqFx);
+  const fx = mergeFx(traitOf(d).fx, e?.fx, e2?.fx, eqFx);
   return {
     ...base,
     nature,
     diligence: dil.id,
     equipment: e ? e.id : null,
+    equipment2: e2 ? e2.id : null,
     eq: dil.mult === 1 ? sp : { ...sp, loafMult: (sp.loafMult ?? 1) * dil.mult },
     fx,
     favorite: favoriteOf(d),
@@ -147,7 +172,8 @@ function randomBag(rng) {
 }
 
 // CPU の装備えらび：本家の装備・魂からランダム（装備できるものだけ）
-function randomEquip(rng, def) {
+function randomEquip(rng, def, slot = 1) {
+  if (slot === 2 && equipSlots(def) !== 2) return null;
   const r = gt(rng, 10);
   if (r === 0) return null;
   if (r <= 2) { const s = soulChoices(); return s[gt(rng, s.length)].id; }

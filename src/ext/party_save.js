@@ -86,7 +86,7 @@ function partyFromBuilder(name = "") {
     members: [0, 1, 2, 3, 4, 5].map(i => {
       if (!bt[i]) return null;
       const lo = SLOT_LOADOUT[i] ?? defaultLoadout();
-      return { unit: unitRef(bt[i]), nature: lo.nature ?? null, diligence: lo.diligence ?? null, equip: equipRef(lo.equipment) };
+      return { unit: unitRef(bt[i]), nature: lo.nature ?? null, diligence: lo.diligence ?? null, equip: equipRef(lo.equipment), ...(lo.equipment2 ? { equip2: equipRef(lo.equipment2) } : {}) };
     }),
     bag: BAG.map(itemRef),
   };
@@ -108,6 +108,10 @@ function partyResolve(party) {
       if (m.equip) {
         const eq = findEquip(m.equip);
         if (eq && equipAllowed(d, eq)) l.equipment = eq; else lost.push(`${d.name}のそうび「${equipLabel(m.equip)}」`);
+      }
+      if (m.equip2) {
+        const eq = findEquip(m.equip2);
+        if (eq && equipSlots(d) === 2 && equipAllowed(d, eq)) l.equipment2 = eq; else lost.push(`${d.name}のそうび 2「${equipLabel(m.equip2)}」`);
       }
     }
     lo.push(l);
@@ -174,7 +178,7 @@ function partyRestoreCurrent() {
 
 // ---- 書き出し・読みこみ（文字列） ----
 function partyEncode(party) {
-  const json = JSON.stringify({ f: PARTY_FORMAT, n: party.name, m: party.members.map(m => m && [m.unit.no ?? m.unit.id, m.unit.name, m.nature, m.diligence, m.equip]), b: party.bag.map(b => b.id) });
+  const json = JSON.stringify({ f: PARTY_FORMAT, n: party.name, m: party.members.map(m => m && [m.unit.no ?? m.unit.id, m.unit.name, m.nature, m.diligence, m.equip, ...(m.equip2 ? [m.equip2] : [])]), b: party.bag.map(b => b.id) });
   return "YT1:" + btoa(String.fromCharCode(...new TextEncoder().encode(json)));
 }
 function partyDecode(code) {
@@ -185,7 +189,7 @@ function partyDecode(code) {
   if (!Array.isArray(o?.m)) throw new Error("パーティが入っていません");
   return {
     name: o.n ?? "", savedAt: Date.now(), app: "",
-    members: o.m.slice(0, 6).map(x => x && { unit: typeof x[0] === "number" ? { no: x[0], name: x[1] } : { id: x[0], name: x[1] }, nature: x[2], diligence: x[3], equip: x[4] }),
+    members: o.m.slice(0, 6).map(x => x && { unit: typeof x[0] === "number" ? { no: x[0], name: x[1] } : { id: x[0], name: x[1] }, nature: x[2], diligence: x[3], equip: x[4], equip2: x[5] ?? null }),
     bag: (o.b ?? []).map(id => ({ id })),
   };
 }
@@ -205,7 +209,7 @@ function partyBox(onChange) {
       const load = q("button", "b-mini ps-load");
       load.innerHTML = p ? `<b>${p.name || `セット ${i + 1}`}</b><span class="ps-faces">${faces}</span>${r.lost.length ? `<small class="ps-warn">${r.lost.length} つ読めない</small>` : ""}` : `<span class="ps-empty">${i + 1}：空き</span>`;
       load.disabled = !p;
-      load.title = p ? `${p.members.map((m, k) => m ? `${k < 3 ? "前" : "後"} ${refLabel(m.unit)}${m.equip ? `（${equipLabel(m.equip)}）` : ""}` : "").filter(Boolean).join("\n")}${p.savedAt ? `\n保存：${new Date(p.savedAt).toLocaleString()}` : ""}` : "";
+      load.title = p ? `${p.members.map((m, k) => m ? `${k < 3 ? "前" : "後"} ${refLabel(m.unit)}${m.equip ? `（${equipLabel(m.equip)}${m.equip2 ? "＋" + equipLabel(m.equip2) : ""}）` : ""}` : "").filter(Boolean).join("\n")}${p.savedAt ? `\n保存：${new Date(p.savedAt).toLocaleString()}` : ""}` : "";
       load.onclick = () => {
         const lost = partyApply(p);
         note.textContent = lost.length ? `読めなかったので外した：${lost.join("・")}` : `「${p.name || `セット ${i + 1}`}」を入れた`;

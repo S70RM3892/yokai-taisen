@@ -365,6 +365,7 @@
         t.push(`#${n}: 知らない性格 ${i.nature}`)
       }
       i.equipment != null && (equipById(i.equipment) ? equipAllowed(s, i.equipment) || t.push(`#${n}: ${s.name} は ${equipById(i.equipment).name} をそうびできない`) : t.push(`#${n}: 知らないそうび ${i.equipment}`));
+      i.equipment2 != null && (equipSlots(s) !== 2 ? t.push(`#${n}: ${s.name} はそうびを 1 つしか持てない`) : equipById(i.equipment2) ? equipAllowed(s, i.equipment2) || t.push(`#${n}: ${s.name} は ${equipById(i.equipment2).name} をそうびできない`) : t.push(`#${n}: 知らないそうび ${i.equipment2}`));
       let l = i.effort ?? xu,
         u = 0;
       for (let o of ["hp", "atk", "spa", "def", "spd"]) {
@@ -403,6 +404,7 @@
           defIndex: d.defIndex,
           nature: d.nature,
           equipment: d.equipment,
+          equipment2: d.equipment2,
           eq: d.eq,
           fx: d.fx,
           favorite: d.favorite,
@@ -1852,7 +1854,8 @@
         unit: i.id,
         nature: $n[gt(e, $n.length)].id,
         diligence: DILIGENCE[gt(e, DILIGENCE.length)].id,
-        equipment: l
+        equipment: l,
+        ...(equipSlots(i) === 2 ? { equipment2: randomEquip(e, i, 2) } : {})
       })
     }
     return r
@@ -19492,7 +19495,8 @@ void main() {
         unit: l.unit,
         nature: l.nature,
         diligence: l.diligence,
-        equipment: l.equipment
+        equipment: l.equipment,
+        equipment2: l.equipment2
       })),
       i = Rh(t, e, r, {
         bags: [bag, randomBag(ni(t, 9))]
