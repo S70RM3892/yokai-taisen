@@ -437,7 +437,7 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
       const a = ev.find(e => e.t === "action" && ["guard", "curse", "bless"].includes(e.action));
       if (!a || ev.some(e => e.t === "relay" || e.t === "ult")) continue;
       const u = st.players[a.uid < 6 ? 0 : 1].units[a.uid % 6];
-      if (u.sg >= 1000 || rate.get(u.uid) === 0) continue;
+      if (u.sg >= 1000 || before.get(u.uid) >= 1000 || rate.get(u.uid) === 0) continue; // 満タンからは増えない
       const got = u.sg - before.get(u.uid);
       if (got <= rate.get(u.uid)) throw new Error(`${a.action}: actor sg +${got}, rate ${rate.get(u.uid)}`);
       checked++;
@@ -793,4 +793,29 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   }
   if (styles.size < 16) throw new Error(`too few ult styles in use: ${[...styles]}`);
   console.log(`ult scripts: ${E.units.length} yokai, all unique (${styles.size} styles in use)`);
+}
+
+// 装備枠 2 つ（本家）：決まった妖怪だけ 2 つ持てる。同じ装備を 2 つでもよい（伝説のおまもり×2 で まもり+100）
+{
+  const byName = n => E.units.find(u => u.name === n);
+  const two = ["寝ブタ", "万尾獅子", "のっぺら坊", "あせっか鬼", "ホリュウ", "ツチノコパンダ", "トホホギス"], one = ["ジバニャン", "こおりんぼう", "赤鬼", "コマさん"];
+  for (const n of two) if (E.equipSlots(byName(n)) !== 2) throw new Error(`${n} should have 2 equip slots`);
+  for (const n of one) if (E.equipSlots(byName(n)) !== 1) throw new Error(`${n} should have 1 equip slot`);
+  if (E.units.filter(d => E.equipSlots(d) === 2).length !== 22) throw new Error("22 yokai should have 2 equip slots");
+  const nop = byName("のっぺら坊").id, base = E.memberStats({ unit: nop });
+  const st = E.memberStats({ unit: nop, equipment: "densetsu_omamori", equipment2: "densetsu_omamori" });
+  if (st.def - base.def !== 100 || st.atk - base.atk !== -50) throw new Error(`two 伝説のおまもり: def +${st.def - base.def}, atk ${st.atk - base.atk}`);
+  // 魂 2 つの効果も合わさる（えんら魂＋ルビーニャンの魂）
+  const s2 = E.memberStats({ unit: nop, equipment: "soul:" + byName("えんらえんら").id, equipment2: "soul:" + byName("ルビーニャン").id });
+  if (s2.fx.spiritSmoke !== 350 || s2.fx.aura_atk !== 200) throw new Error(`two souls: ${JSON.stringify(s2.fx)}`);
+  // 1 つしか持てない妖怪に 2 つめ → 編成エラー
+  const ids = ["ジバニャン", "コマさん", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"].map(n => ({ unit: byName(n).id }));
+  ids[0] = { ...ids[0], equipment: "densetsu_omamori", equipment2: "densetsu_omamori" };
+  if (!E.validateTeam(ids).some(e => e.includes("1 つしか"))) throw new Error("equipment2 on a 1-slot yokai should be rejected");
+  // 対戦でも 2 つとも効く
+  const t = ["のっぺら坊", "コマさん", "ムリカベ", "トオセンボン", "ふじのやま", "すもうどん"].map(n => ({ unit: byName(n).id }));
+  t[0] = { ...t[0], equipment: "densetsu_omamori", equipment2: "densetsu_omamori" };
+  const b = E.newBattle(1, t, t, { noItems: true });
+  if (b.players[0].units[0].def !== st.def || b.players[0].units[0].equipment2 !== "densetsu_omamori") throw new Error("equipment2 not applied in battle");
+  console.log(`equip slots: 22 yokai hold 2 (のっぺら坊 伝説のおまもり×2 def +100)`);
 }

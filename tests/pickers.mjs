@@ -40,7 +40,7 @@ const natLabel = await page.textContent('.dt-row:has(.dt-k:text-is("性格")) .d
 if (!natLabel.includes("超まじめで荒くれ")) fail(`nature label: ${natLabel}`);
 
 // 持ち物（装備）
-await page.click('.dt-row:has(.dt-k:text-is("そうび")) .dt-pick');
+await page.click('.dt-row:has(.dt-k:text-matches("^そうび( 1)?$")) .dt-pick');
 await chip("そうびすべて");
 await chip("ちからが上がる");
 const eqTop = (await names())[0];
@@ -49,7 +49,7 @@ await chip("ゆびわ");
 if ((await names()).length !== 10) fail("ring tab");
 await page.screenshot({ path: `${out}/6-equip-picker.png` });
 await page.click(".picker .pick-item >> nth=0");
-const eqLabel = await page.textContent('.dt-row:has(.dt-k:text-is("そうび")) .dt-pick');
+const eqLabel = await page.textContent('.dt-row:has(.dt-k:text-matches("^そうび( 1)?$")) .dt-pick');
 if (!eqLabel.includes("ゆびわ")) fail(`equip label: ${eqLabel}`);
 console.log("nature:", natLabel.replace("▾", ""), " equip:", eqLabel.replace("▾", ""), " str top:", eqTop);
 
