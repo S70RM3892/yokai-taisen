@@ -69,7 +69,6 @@
     Oc = [20, 26, 33],
     zc = [30, 40, 50],
     Vc = [500, 667, 833],
-    ou = 20,
     Hc = 40,
     du = 100,
     cu = 60,
@@ -1392,7 +1391,7 @@
       })
     }
     for (let q of e.players) q.acts = (q.acts ?? 0) + 1;
-    e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), Yh(e), e.busyUntil = e.tick + pc[s]
+    e.lastActor = act.uid, Se(r.u) && (r.u.ap = bu(n, r.u)), jh(n, r.u, t), afterAction(e, r.pid, act, t), blessTurnPassed(r.u, t), statusOnAction(e, t), Yh(e), e.busyUntil = e.tick + pc[s]
   }
 
   function Qh(e) {
@@ -1537,18 +1536,24 @@
       uid: i.uid
     }));
     for (let i of r.units) {
-      if (!Se(i) || (i.ultLockout > 0 && i.ultLockout--, !Vt(r, i.index))) continue;
-      let n = i.curse;
-      if (n) {
-        if (n.elapsed++, n.kind === "poison" && n.elapsed % ou === 0) {
+      Se(i) && i.ultLockout > 0 && i.ultLockout--
+      // 悪いとりつきは時間では消えない（おはらいするまで残る。本家）
+    }
+  }
+
+  // ダメージのとりつき（毒）と回復のとりつきは、時間ではなく だれかが 1 回行動するたびに 1 回はたらく
+  function statusOnAction(e, a) {
+    for (let r of e.players)
+      for (let i of r.units) {
+        if (!Se(i) || !Vt(r, i.index)) continue;
+        let n = i.curse;
+        if (n && (n.elapsed++, n.kind === "poison")) {
           let l = Math.max(1, Math.floor(Math.floor(i.maxHp * Oc[n.tier] / 1e3) * (1e3 + (FIELD ?? EMPTY_FIELD).poisonUp) / 1e3));
           if (Xa(e, a, r, i, l, null, "poison", !1), !Se(i)) continue
         }
-        // 悪いとりつきは時間では消えない（おはらいするまで残る。本家）
+        let s = i.blessing;
+        s && (s.elapsed++, s.kind === "regen" && $a(a, i, Math.max(1, Math.floor(i.maxHp * zc[s.tier] / 1e3)), null))
       }
-      let s = i.blessing;
-      s && (s.elapsed++, s.kind === "regen" && s.elapsed % ou === 0 && $a(a, i, Math.max(1, Math.floor(i.maxHp * zc[s.tier] / 1e3)), null))
-    }
   }
 
   function t0(e, t, a) {

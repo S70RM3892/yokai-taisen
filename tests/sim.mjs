@@ -290,6 +290,32 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`sudden death: attack only (${[...acts].join(",")}), no ult`);
 }
 
+// 毒（ダメージのとりつき）と回復のとりつきは、時間ではなく だれかが 1 回行動するたびに 1 回だけはたらく
+{
+  const seed = 11;
+  const s = E.newBattle(seed, E.randomTeam(E.seedRng(seed, 1)), E.randomTeam(E.seedRng(seed, 2)), { noItems: true });
+  const p = s.players[0], sick = p.units[p.wheel[0]], well = p.units[p.wheel[1]];
+  let steps = 0, acted = 0, poisonHits = 0, regenHeals = 0;
+  while (!s.outcome && steps < 2000) {
+    // 毎 tick 状態を作り直す（気絶・上書き・時間切れで条件が変わらないように）
+    sick.hp = sick.maxHp, sick.curse = { kind: "poison", tier: 0, elapsed: 0, remaining: 1e9 };
+    well.hp = 1 + (well.maxHp >> 1), well.blessing = { kind: "regen", tier: 0, turns: 1e9, fresh: false, elapsed: 0, wardCharges: 0, stat: null };
+    if (p.wheel.indexOf(sick.index) >= 3 || p.wheel.indexOf(well.index) >= 3) break;
+    const ev = [];
+    E.step(s, [], ev);
+    steps++;
+    const a = ev.filter(e => e.t === "action").length;
+    const ph = ev.filter(e => e.t === "damage" && e.source === "poison" && e.dst === sick.uid).length;
+    const rh = ev.filter(e => e.t === "heal" && e.src === null && e.dst === well.uid).length;
+    // 同じ行動のようじゅつで HP が満タンになったときは、回復のとりつきの回復は出ない
+    const rhOk = rh === (a ? 1 : 0) || (a && rh === 0 && well.hp === well.maxHp);
+    if (ph !== (a ? 1 : 0) || !rhOk) throw new Error(`tick ${s.tick}: actions ${a}, poison ${ph}, regen ${rh}`);
+    acted += a ? 1 : 0, poisonHits += ph, regenHeals += rh;
+  }
+  if (acted < 5) throw new Error(`too few actions to check poison/regen (${acted})`);
+  console.log(`poison/regen: once per action (${acted} actions in ${steps} ticks, poison ${poisonHits}, regen ${regenHeals})`);
+}
+
 // ブロッカー（本家）：前に出るときガードする。ただし後衛へ下がってから だれも行動しないうちに戻ったときはガードしない
 {
   const ids = ["ムリカベ", "ヨロイさん", "トオセンボン", "ふじのやま", "すもうどん", "むりだ城"].map(n => ({ unit: E.units.find(u => u.name === n).id }));
