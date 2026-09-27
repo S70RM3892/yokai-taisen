@@ -273,21 +273,25 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log("inspirit: ちからアップ raises only ちから (+10%), ようりょくアップ only ようりょく");
 }
 
-// サドンデス（本家）：ダメージはぜんぶ 999、こうげきしかしない・ひっさつわざも使えない
+// サドンデス（本家）：ダメージはぜんぶ 999、妖怪の行動はこうげきだけ。ひっさつわざは撃てる（note たくトンボ）
 {
   const s = E.newBattle(4, E.randomTeam(E.seedRng(4, 1)), E.randomTeam(E.seedRng(4, 2)), { noItems: true });
   s.tick = 5999; // すぐサドンデスにする
   const acts = new Set();
-  for (let i = 0; i < 400 && !s.outcome; i++) {
+  let ult = null;
+  for (let i = 0; i < 600 && !s.outcome; i++) {
     const p = s.players[0], u = p.units[p.wheel[0]];
-    u.sg = 1000, u.ultLockout = 0, u.curse = null;
+    if (!p.stance && !ult) u.sg = 1000, u.ultLockout = 0, u.curse = null;
     const ev = [];
-    E.step(s, [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], ev);
-    if (p.stance) throw new Error("ult started during sudden death");
+    E.step(s, ult ? [] : p.stance ? [{ player: 0, input: { t: "ultCharge", amount: 300 } }] : [{ player: 0, input: { t: "ultStart", allySlot: 0, grand: false } }], ev);
     for (const e of ev) if (e.t === "action" && s.tick > 6000) acts.add(e.action); // 最初の 1 tick（5999）はまだサドンデス前
+    const f = ev.find(e => e.t === "ult" && e.player === 0);
+    if (f && s.tick > 6000 && !ult) ult = ev.filter(e => e.t === "damage" && e.source === "ult" && e.src === f.uid).map(e => e.amount);
   }
   for (const a of acts) if (!["attack", "loaf", "stunned", "rest"].includes(a)) throw new Error(`sudden death action: ${a}`);
-  console.log(`sudden death: attack only (${[...acts].join(",")}), no ult`);
+  if (!ult) throw new Error("ult did not fire during sudden death");
+  if (ult.some(d => d !== 999)) throw new Error(`sudden death ult damage ${ult}`);
+  console.log(`sudden death: actions attack only (${[...acts].join(",")}), ult fires (damage ${ult.join(",") || "none"})`);
 }
 
 // 毒（ダメージのとりつき）と回復のとりつきは、時間ではなく だれかが 1 回行動するたびに 1 回だけはたらく
@@ -453,6 +457,23 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   });
   if (g1 < 3 || g2 < 3 || g3 < 3) throw new Error(`nature rules: too few checks ${g1}/${g2}/${g3}`);
   console.log(`nature rules: 動じない guard ${g1}, けんしん的 bless ${g2}, 荒くれ one-shot attack ${g3}`);
+}
+
+// 味方へのとりつきの相手（本家。note たくトンボ）：能力アップ・継続回復は よいとりつきのない妖怪を優先。
+// ちょうはつは HP＋まもりが いちばん高い妖怪、おんみつは いちばん低い妖怪（よいとりつきがあっても優先を変えない）
+{
+  const s = E.newBattle(8, E.randomTeam(E.seedRng(8, 1)), E.randomTeam(E.seedRng(8, 2)), { noItems: true });
+  const p = s.players[0], front = p.wheel.slice(0, 3).map(i => p.units[i]);
+  for (const u of front) u.hp = u.maxHp, u.blessing = null, u.curse = null;
+  const hd = u => u.hp + E.statOf(p, u, "def");
+  const byHd = [...front].sort((a, b) => hd(b) - hd(a));
+  // いちばん HP＋まもりが高い妖怪にだけ よいとりつき（すばやさアップ）が入っている
+  byHd[0].blessing = { kind: "haste", tier: 0, turns: 5, fresh: false, elapsed: 0, wardCharges: 0, stat: null };
+  const taunt = E.blessTarget(p, "taunt", null), hide = E.blessTarget(p, "hide", null), rally = E.blessTarget(p, "rally", null);
+  if (taunt !== byHd[0]) throw new Error("taunt should go to the highest HP+DEF even if it is already buffed");
+  if (hide !== byHd[2]) throw new Error("hide should go to the lowest HP+DEF");
+  if (rally === byHd[0]) throw new Error("stat buffs should prefer a yokai without a good inspirit");
+  console.log("bless targets: taunt → highest HP+DEF (even if buffed), hide → lowest, stat buffs prefer unbuffed");
 }
 
 // ブロッカー（本家）：前に出るときガードする。ただし後衛へ下がってから だれも行動しないうちに戻ったときはガードしない

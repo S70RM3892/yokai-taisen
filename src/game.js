@@ -571,7 +571,7 @@
       enemyUnit: u.index
     });
     let d = !1;
-    if (!a.stance && Ht(r).length > 0 && t.tick < fr) // サドンデス中は ひっさつわざを使えない
+    if (!a.stance && Ht(r).length > 0) // サドンデス中も ひっさつわざは撃てる（本家）
       for (let c = 0; c < 3; c++) {
         let h = a.units[a.wheel[c]];
         if (!Se(h) || h.sg < Nt || h.ultLockout > 0 || h.curse) continue;
@@ -717,8 +717,10 @@
   function Ih(e, t, a) {
     let r = Ht(e);
     if (t === "gather" && (r = r.filter(s => s.sg < Nt)), r.length === 0) return null;
+    // 本家（note たくトンボ「対戦の仕様」）：まだ よいとりつきがかかっていない妖怪を優先する。
+    // ただし ちょうはつ・おんみつは優先しない（前衛に よいとりつきのない妖怪がいても、バフの入った妖怪にとりつきうる）
     let i = r.filter(s => s.blessing === null);
-    if (i.length > 0 && (r = i), t === "regen") return a ? r[gt(a.rng, r.length)] : r[0];
+    if (t !== "taunt" && t !== "hide" && i.length > 0 && (r = i), t === "regen") return a ? r[gt(a.rng, r.length)] : r[0];
     let n = s => {
       switch (t) {
         case "rally":
@@ -733,10 +735,12 @@
           return (s.curse ? 0 : 1e4) + mr(s);
         case "allUp":
           return -["atk", "spa", "def", "spd"].reduce((l, u) => l + Jt(e, s, u), 0);
+        // 能力アップ：上がる能力（の合計）がいちばん高い妖怪（となりの強化・入っているとりつきをふくめた値）
+        // ちょうはつ：いまの HP ＋ まもり がいちばん高い妖怪、おんみつ：いちばん低い妖怪
         case "taunt":
           return -(s.hp + Jt(e, s, "def"));
         case "hide":
-          return mr(s)
+          return s.hp + Jt(e, s, "def")
       }
     };
     return r.map(s => ({
@@ -1037,7 +1041,7 @@
         }), !0)
       }
       case "ultStart": {
-        if (s || i.stance || !gr(a.allySlot, 0, 2) || e.tick >= fr) return !1; // サドンデス中は ひっさつわざも使えない（本家：こうげきだけ）
+        if (s || i.stance || !gr(a.allySlot, 0, 2)) return !1; // サドンデス中も撃てる（本家：サドンデスに入るときにチャージ完了にしておくのが定石。note たくトンボ）
         let l = i.units[i.wheel[a.allySlot]];
         if (!Se(l) || l.sg < Nt || l.ultLockout > 0 || l.curse) return !1; // 悪いとりつき中は奥義を撃てない（本家）
         let u = [];
@@ -1540,7 +1544,7 @@
       l === "guard" && !a.fx.guardOnly && (FIELD ?? EMPTY_FIELD).noGuardAll && (l = "attack"); // まもりわすれ
       l === "skill" && s.skillMode === "heal" && !Ht(i).some(x => x.hp < x.maxHp) && (l = "attack");
     }
-    e.tick >= fr && (l = "attack"); // サドンデス中は こうげきだけ（本家）
+    e.tick >= fr && (l = "attack"); // サドンデス中、妖怪が自分でする行動は こうげきだけ（本家。ひっさつわざは撃てる）
     let u = ui(i, n),
       o = null,
       heal = l === "skill" && s.skillMode === "heal";
@@ -1732,10 +1736,10 @@
 
   function n0(e, t) {
     if (e.outcome) return;
-    // サドンデス（本家：与ダメージがぜんぶ 999・こうげきだけ）。パワーチャージ中のひっさつわざは取りやめ
-    e.tick === fr && (t.push({
+    // サドンデス（本家：与ダメージがぜんぶ 999・妖怪の行動はこうげきだけ。ひっさつわざは撃てる）
+    e.tick === fr && t.push({
       t: "suddenDeath"
-    }), [0, 1].forEach(p => e.players[p].stance && Ii(e, p, t, "sudden")));
+    });
     let a = e.players.map(r => r.units.every(i => !Se(i)));
     if (a[0] || a[1]) e.outcome = {
       winner: a[0] && a[1] ? null : a[0] ? 1 : 0,
@@ -20050,7 +20054,7 @@ void main() {
         flashShown(e, t.uid) && (ma(e, t.uid, "閃光", "info"), Rt(e, t.skipped !== null ? `${la(e,t.uid)} が閃光で先に動いて、${la(e,t.skipped)} の番がとばされた` : `${la(e,t.uid)} が閃光で先に動いた`, a(t.uid)));
         break;
       case "suddenDeath":
-        yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999・こうげきだけ", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になり、こうげきしかできない", "f");
+        yd(), e.refs.top.classList.add("sudden-on"), We.fast = !0, Jr(e, "サドンデス", "sudden", "ダメージは全部 999・妖怪はこうげきだけ（ひっさつわざは撃てる）", 1600), Rt(e, "サドンデス！ ダメージが全部 999 になり、妖怪はこうげきしかしない（ひっさつわざは撃てる）", "f");
         break;
       case "pokeEnd":
         t.result === "success" ? (t.player === 0 && Jr(e, t.effect === "sg" ? "吸収！" : t.effect === "ko" ? "一撃！" : "ツボ！", "good", t.effect === "sg" ? `妖気を ${t.amount} 吸った` : `${t.amount} ダメージ`, 900), Rt(e, `${t.player === 0 ? "こちら" : "相手"}が ${la(e, t.target)} をつついて${t.effect === "sg" ? `妖気を ${t.amount} 吸った` : `${t.amount} ダメージ${t.effect === "ko" ? "（一撃）" : ""}`}`, t.player === 0 ? "a" : "f")) : t.player === 0 && Rt(e, "つつくのをやめた", "a");
