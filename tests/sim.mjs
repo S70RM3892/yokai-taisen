@@ -350,7 +350,7 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   console.log(`ult: waits for the motion (fired at ${firedAt}, motion ended ${busyEnd}), hits the face at completion (${hit.length} foes)`);
 }
 
-// えんら魂（本家）：となりの 2 体ぶん重なる。1 つにつき その妖怪の妖気の上限の 2%／ターン（上限 1000 のこのゲームでは どの妖怪にも +20）
+// えんら魂（本家）：となりの妖怪の妖気を毎ターン回復する。2 体ぶん重なる。1 つにつき その妖怪の妖気の上限の 2%／ターン（上限 1000 のこのゲームでは どの妖怪にも +20）
 {
   const id = n => ({ unit: E.units.find(u => u.name === n).id });
   const rateWith = (name, enra) => {
@@ -368,6 +368,22 @@ console.log(`traits: ${tNames.size} unique, equipment: ${E.equips.length} (${JSO
   if (!(b1 > b0 && b2 > b1)) throw new Error(`enra does not stack: ${JSON.stringify(res)}`);
   if (Math.abs(b1 - n0) > 3 || Math.abs(n1 - f0) > 4 || Math.abs(b2 - f0) > 4) throw new Error(`enra amounts off: ${JSON.stringify(res)}`);
   if (f1 - f0 !== 20 || b1 - b0 !== 20) throw new Error(`enra should add the same amount (+20) to every yokai: ${JSON.stringify(res)}`);
+  // 本家は「だんだん回復する」：毎ターンの自然回復に足すだけ。こうげきを当てたときの妖気は増えず、ようりょくアップの倍率もかからない
+  const withEnra = (name, enra, prep) => {
+    const t = [id(name), { ...id("ヨロイさん"), equipment: "soul:" + E.units.find(u => u.name === "えんらえんら").id }, id("ムリカベ"), id("トオセンボン"), id("ふじのやま"), id("すもうどん")];
+    if (!enra) t[1] = id("ヨロイさん");
+    const st = E.newBattle(1, t, t, { noItems: true });
+    const p = st.players[0], u = p.units[0];
+    prep?.(u);
+    return { turn: E.sgRate(p, u), hit: E.hitSg(p, u) };
+  };
+  const h0 = withEnra("ブシニャン", 0), h1 = withEnra("ブシニャン", 1);
+  if (h0.hit !== h1.hit) throw new Error(`enra should not change the sg gained on hits: ${h0.hit} -> ${h1.hit}`);
+  const gather = u => { u.blessing = { kind: "gather", tier: 2 }; };
+  const g0 = withEnra("ブシニャン", 0, gather), g1 = withEnra("ブシニャン", 1, gather);
+  if (g1.turn - g0.turn !== 20) throw new Error(`enra should not be multiplied by the gather blessing: ${g0.turn} -> ${g1.turn}`);
+  const seal = u => { u.curse = { kind: "seal", tier: 0, elapsed: 0, remaining: 1e9 }; };
+  if (withEnra("ブシニャン", 1, seal).turn !== 0) throw new Error("a sealed yokai should not recover sg from enra");
   console.log(`enra soul: ${JSON.stringify(res)}`);
 }
 

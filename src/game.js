@@ -41,7 +41,7 @@
     Nt = 1e3,
     bc = 0,
     xc = [29, 33, 40, 50, 59, 83],
-    SMOKE_SG = 20, // えんら魂（350）1 つで たまり方 +20（最速 83・のっぺら坊 59・ブシニャン 40）
+    SMOKE_SG = 20, // えんら魂（350）1 つで 毎ターン +20（最速 83・のっぺら坊 59・ブシニャン 40）
     Hn = [{
       maxTick: 9,
       mult: 1e3
@@ -815,17 +815,28 @@
     return e.players[t < ii ? 0 : 1].units[t % ii]
   }
 
+  // こうげき・ようじゅつを当てたとき・毎ターンにたまる妖気（妖気の速さの段・ようりょくアップ・自分の妖気回復魂）
   function oi(e, t) {
     if (t.curse?.kind === "seal") return 0;
     let a = xc[ct[t.defIndex].sgRank - 1],
-      r = 1e3,
-      sm = 0;
-    // えんら魂・妖気のけむり（本家）：となりの 2 体のぶん重なる。本家では 1 つにつき毎ターン「その妖怪の妖気の上限の 2%」が
-    // 足される（RC「妖怪ウォッチ2実験結果まとめ」）。上限を 1000 にそろえたこのゲームでは、どの妖怪にも同じ量（+20）を足すことになる。
-    // のっぺら坊は 1 つで最速並み、ブシニャンは 1 つでのっぺら坊並み・2 つで最速並み。最速組は少しだけ速くなる（15 → 13 → 10 ターン）
-    for (let i of jn(e, t)) tt(i, "spiritSmoke") && (sm += i.fx.spiritSmoke);
-    a += Math.floor(sm * SMOKE_SG / 350);
+      r = 1e3;
     return t.blessing?.kind === "gather" && (r += Vc[t.blessing.tier]), r += t.fx.sgRate ?? 0, Bt(a, r)
+  }
+
+  // えんら魂・妖気のけむり（本家）：となりの妖怪の妖気を「だんだん回復する」。たまり方の倍率ではなく、毎ターンの自然回復に足される量。
+  // RC「妖怪ウォッチ2実験結果まとめ」：本家の毎ターンの回復は 5、えんら魂 1 つにつき その妖怪の妖気の上限の 2%（1/50）が足され、
+  // となりの 2 体ぶん重なる。こうげきを当てたとき・行動したときの妖気は増えず、ようりょくアップや自分の妖気回復魂の倍率もかからない。
+  // 上限を 1000 にそろえたこのゲームでは、どの妖怪にも同じ量（+20）。のっぺら坊は 1 つで最速並み、ブシニャンは 1 つでのっぺら坊並み・2 つで最速並み
+  function smokeSg(e, t) {
+    if (t.curse?.kind === "seal") return 0;
+    let sm = 0;
+    for (let i of jn(e, t)) tt(i, "spiritSmoke") && (sm += i.fx.spiritSmoke);
+    return Math.floor(sm * SMOKE_SG / 350)
+  }
+
+  // 毎ターンたまる妖気（前衛）
+  function turnSg(e, t) {
+    return oi(e, t) + smokeSg(e, t)
   }
 
   // 行動したときに少しだけたまる妖気（こうげき・ようじゅつを当てたときの半分）
@@ -1390,7 +1401,7 @@
     for (let t of e.players)
       for (let a = 0; a < 3; a++) {
         let r = t.units[t.wheel[a]];
-        di(r, oi(t, r))
+        di(r, turnSg(t, r))
       }
   }
 
