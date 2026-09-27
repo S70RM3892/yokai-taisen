@@ -1,5 +1,8 @@
 // 本家の妖怪 398 体の組み合わせから強い編成を探し、上位 100 組を総当たりさせて勝率順に並べる。
-//   node tools/build.mjs --engine-only && node tools/top100.mjs [--gens 40] [--pop 200] [--final 100] [--per 4] [--seed 1]
+//   node tools/build.mjs --engine-only && node tools/top100.mjs [--gens 40] [--pop 200] [--final 100] [--per 4] [--seed 1] [--human] [--seed-from 結果.json]
+// --human：人どうしの対戦をまねる CPU（tools/human_cpu.mjs：メンバーサークル回し・ノーモーション・カウンター・人の反応）で戦わせる。
+//          結果は docs/TOP100_HUMAN.md と tools/top100_human_result.json
+// --seed-from：前の結果の上位 40 組も最初の候補に入れる
 // 6 体の組み合わせは C(398,6) ≒ 5×10^12 通りあって全部は戦わせられないので、
 //   1. 遺伝的アルゴリズムで探す（流行りの型・メタ候補とランダムな編成から始め、入れかえ・持ち物・性格・並びを変えて、
 //      流行りの型・メタ候補・その時点の上位と戦わせた勝率で残す）
@@ -10,12 +13,14 @@ import { createRequire } from "node:module";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Worker, isMainThread, parentPort } from "node:worker_threads";
+import { Worker, isMainThread, parentPort, workerData } from "node:worker_threads";
 import { availableParallelism } from "node:os";
+import { newHuman, humanInputs } from "./human_cpu.mjs";
 
 const require = createRequire(import.meta.url);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const E = require(join(root, "dist", "engine.cjs"));
+const HUMAN = isMainThread ? process.argv.includes("--human") : !!workerData?.human;
 const smart = { perfectPermil: 1000, pokeHitPermil: 950, grandPermil: 1000, smart: true, itemPermil: 0 };
 
 const toMembers = t => t.map(([unit, nature, eq, eq2]) => {
@@ -26,10 +31,11 @@ const toMembers = t => t.map(([unit, nature, eq, eq2]) => {
 });
 function play(a, b, seed) {
   const st = E.newBattle(seed, toMembers(a), toMembers(b), { noItems: true });
-  const cpus = [E.newCpu(0, seed ^ 11, smart), E.newCpu(1, seed ^ 22, smart)];
+  const cpus = HUMAN ? [newHuman(E, 0, seed ^ 11), newHuman(E, 1, seed ^ 22)] : [E.newCpu(0, seed ^ 11, smart), E.newCpu(1, seed ^ 22, smart)];
+  const think = HUMAN ? humanInputs : E.cpuInputs;
   for (let g = 0; !st.outcome && g < 30000; g++) {
     const inputs = [];
-    for (const p of [0, 1]) for (const input of E.cpuInputs(cpus[p], st)) inputs.push({ player: p, input });
+    for (const p of [0, 1]) for (const input of think(cpus[p], st)) inputs.push({ player: p, input });
     E.step(st, inputs, []);
   }
   return st.outcome?.winner ?? null;
@@ -52,7 +58,7 @@ async function main() {
 
   // ---- 戦わせる係（worker） ----
   const nW = Math.max(1, availableParallelism());
-  const workers = Array.from({ length: nW }, () => new Worker(fileURLToPath(import.meta.url)));
+  const workers = Array.from({ length: nW }, () => new Worker(fileURLToPath(import.meta.url), { workerData: { human: HUMAN } }));
   let jobId = 0;
   const pending = new Map();
   for (const w of workers) w.on("message", ({ id, res }) => { pending.get(id)(res); pending.delete(id); });
@@ -141,6 +147,8 @@ async function main() {
   const rec = (t, gen) => { const k = key(t); if (!archive.has(k)) archive.set(k, { t, w: 0, n: 0, gen }); return archive.get(k); };
   const score = a => (a.w + 1) / (a.n + 2);
   let pop = presets.map(p => p.t);
+  const fromI = args.indexOf("--seed-from");
+  if (fromI >= 0) for (const r of JSON.parse(readFileSync(args[fromI + 1], "utf8")).results.slice(0, 40)) if (valid(r.team) && !pop.some(t => key(t) === key(r.team))) pop.push(r.team);
   while (pop.length < POP) { const t = randomTeam(); if (t) pop.push(t); }
   let seedN = SEED * 1000003;
   const t0 = Date.now();
@@ -235,11 +243,11 @@ async function main() {
   const secs = ((Date.now() - t0) / 1000).toFixed(0);
   console.log(`round robin ${n} teams × ${PER * 2} games/pair = ${jobs.length} games, total ${secs} s`);
   for (const o of out.slice(0, 20)) console.log(`${String(o.rank).padStart(3)} ${o.rate}%  ${o.front.join("・")} / ${o.back.join("・")}`);
-  writeFileSync(join(root, "tools", "top100_result.json"), JSON.stringify({ gens: GENS, pop: POP, per: PER, seed: SEED, searched: archive.size, games: jobs.length, results: out }, null, 1));
+  writeFileSync(join(root, "tools", HUMAN ? "top100_human_result.json" : "top100_result.json"), JSON.stringify({ human: HUMAN, gens: GENS, pop: POP, per: PER, seed: SEED, searched: archive.size, games: jobs.length, results: out }, null, 1));
   const md = [
-    "# 妖怪の組み合わせ 上位 100 組（勝率順）",
+    HUMAN ? "# 妖怪の組み合わせ 上位 100 組（人どうしの対戦をまねた勝率順）" : "# 妖怪の組み合わせ 上位 100 組（勝率順）",
     "",
-    `\`node tools/build.mjs --engine-only && node tools/top100.mjs --gens ${GENS} --pop ${POP} --final ${FINAL} --per ${PER} --seed ${SEED}\` の結果（v${JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version}）。`,
+    `\`node tools/build.mjs --engine-only && node tools/top100.mjs ${args.join(" ")}\` の結果（v${JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version}）。`,
     "",
     "## やりかた",
     "",
@@ -248,7 +256,15 @@ async function main() {
     `  流行りの型・メタ候補・その時点の上位 24 編成と 1 編成 ${OPP * 2} 戦（左右入れかえ）させた勝率で上位 ${ELITE} を残した。調べた編成は ${archive.size} 通り。`,
     `- 見つかった編成から **妖怪が 2 体以上ちがうもの** だけを ${chosen.length} 組選び、同じ相手（流行りの型・メタ候補・上位 24）と ${gauntlet.length * 2} 戦ずつさせて上位 ${FINAL} 組にしぼった。`,
     `- ${FINAL} 組を **総当たり**（1 組 ${PER * 2} 戦・左右入れかえ、合計 ${jobs.length} 戦）させた勝率で並べた。`,
-    "- 戦うのは meta_sim.mjs と同じ いちばん強い CPU（アイテムなし＝対人戦と同じ・まじめさは超まじめ）。人どうしの対戦（メンバーサークル回し・パワーチャージの読み合い）では変わる。",
+    ...(HUMAN ? [
+      "- 戦うのは **人どうしの対戦をまねた CPU**（`tools/human_cpu.mjs`。アイテムなし＝対人戦と同じ・まじめさは超まじめ）。いちばん強い CPU の判断に、人がすることと できないことを足した：",
+      "  - **メンバーサークル回し**：妖気がたまった後衛を前に出してひっさつわざを撃つ・とりつかれた／HP が 25% より少ない前衛を下げて おはらい。回す向きと歩数（1〜5）は、回したあとの並びを点数にして いちばんよいものを選ぶ（ふつうの CPU は前衛が気絶・とりつかれたときだけ 1 歩回す）",
+      "  - **ノーモーション・カウンター**：妖気がたまったら、だれかのモーション中にパワーチャージを始める（2 秒待ってもモーションがなければ そのまま始める）",
+      "  - **人の限界**：判断は 0.2〜0.4 秒ごと（ふつうの CPU は 0.05 秒ごと）。パワーチャージの完璧は 75%（CPU 100%）・つつくの命中 70%（95%）・おはらいの連打は 8 割の速さ",
+      "  - 人の手の CPU は、いちばん強い CPU とランダムな編成で戦わせて 60 戦 31 勝（ほぼ互角：下手なぶんを回しで取り返す）",
+      "- 最初の候補には、いちばん強い CPU どうしで出した上位 100 組（[TOP100.md](TOP100.md)）の上位 40 組も入れた。",
+      "- 実際の人は相手を見て読み合う（相手のチャージに合わせたガード・回しの読み）ので、これも近似。",
+    ] : ["- 戦うのは meta_sim.mjs と同じ いちばん強い CPU（アイテムなし＝対人戦と同じ・まじめさは超まじめ）。人どうしの対戦（メンバーサークル回し・パワーチャージの読み合い）では変わる。人どうしをまねた結果は [TOP100_HUMAN.md](TOP100_HUMAN.md)。"]),
     "- 条件はゲームと同じ（S・A ランクは 2 体まで・グループの上限）。かっこの中は性格とそうび（「＋」は装備枠 2 つ）。得意・苦手は その編成から見た勝ち-負けと相手の順位。",
     "",
     "| 順位 | 勝率 | 勝-負-分 | 前衛（左・まん中・右） | 後衛 | 得意 | 苦手 |",
@@ -256,7 +272,7 @@ async function main() {
     ...out.map(o => `| ${o.rank} | ${o.rate}% | ${o.w}-${o.l}-${o.d} | ${o.preset ? `**${o.preset}**：` : ""}${o.front.join("・")} | ${o.back.join("・")} | ${o.best.rank} 位 ${o.best.rec} | ${o.worst.rank} 位 ${o.worst.rec} |`),
     "",
   ].join("\n");
-  writeFileSync(join(root, "docs", "TOP100.md"), md);
-  console.log("wrote docs/TOP100.md, tools/top100_result.json");
+  writeFileSync(join(root, "docs", HUMAN ? "TOP100_HUMAN.md" : "TOP100.md"), md);
+  console.log(`wrote docs/${HUMAN ? "TOP100_HUMAN.md" : "TOP100.md"}`);
   for (const w of workers) w.terminate();
 }
