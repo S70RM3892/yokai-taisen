@@ -76,6 +76,7 @@ node tests/ult_cutin.mjs   # ひっさつわざの 16 種の振り付けとカ�
 node tools/meta_sim.mjs 12 --random 12  # 流行りの型・メタ候補を いちばん強い CPU どうしで総当たりして勝率を出す
 node tools/top100.mjs --gens 60 --pop 200 --final 100 --per 6  # 全 398 体の組み合わせから強い編成を遺伝的アルゴリズムで探し、上位 100 組を総当たりさせて勝率順に（docs/TOP100.md）
 node tools/top100.mjs --human --gens 60 --pop 200 --final 100 --per 6 --seed-from tools/top100_result.json  # 同じことを人どうしの対戦をまねる CPU で（docs/TOP100_HUMAN.md）
+node tools/counter.mjs YT1:… --gens 40 --pop 120 --games 6 --adv 8  # 書き出した相手の編成に勝つ編成と操作（回し・ひっさつわざのタイミング・ねらう）をいっしょに進化させる。相手の操作も学習（docs/COUNTER.md）
 python3 tools/gen_honke.py # 本家の妖怪のデータ（tools/honke_data/）から src/ext/honke_roster_data.js を作り直す
 ```
 

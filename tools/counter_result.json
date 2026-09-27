@@ -1,0 +1,854 @@
+{
+ "target": [
+  [
+   "y226",
+   "hidou",
+   "soul:y197",
+   null,
+   "choumajime"
+  ],
+  [
+   "y438",
+   null,
+   "densetsu_udewa",
+   null,
+   "choumajime"
+  ],
+  [
+   "y023",
+   "kyouryokuteki",
+   "rsoul_senkou",
+   null,
+   "sunao"
+  ],
+  [
+   "y350",
+   "arakure",
+   "rsoul_chouhatsu",
+   null,
+   "choumajime"
+  ],
+  [
+   "y437",
+   "yasashii",
+   "rsoul_sparta",
+   null,
+   "sunao"
+  ],
+  [
+   "y369",
+   "nasakebukai",
+   "rsoul_chouhatsu",
+   null,
+   "sunao"
+  ]
+ ],
+ "opps": [
+  {
+   "name": "いちばん強い CPU",
+   "th": null
+  },
+  {
+   "name": "人のモデル",
+   "th": {
+    "base": 10,
+    "hp": 6,
+    "curse": 12,
+    "ult": 8,
+    "lowHp": 0.25,
+    "lowHpPen": 5,
+    "backCurse": 3,
+    "rotThresh": 6,
+    "stepCost": 0.5,
+    "ultWait": 40,
+    "think": 4,
+    "thinkJit": 4,
+    "skipImmune": 0,
+    "ownTarget": 0,
+    "tWeak": 300,
+    "tCurse": 300,
+    "tGuard": 150,
+    "tAtk": 0,
+    "tImmune": 0
+   }
+  },
+  {
+   "name": "人のモデル（手先が最強）",
+   "th": {
+    "base": 10,
+    "hp": 6,
+    "curse": 12,
+    "ult": 8,
+    "lowHp": 0.25,
+    "lowHpPen": 5,
+    "backCurse": 3,
+    "rotThresh": 6,
+    "stepCost": 0.5,
+    "ultWait": 40,
+    "think": 4,
+    "thinkJit": 4,
+    "skipImmune": 0,
+    "ownTarget": 0,
+    "tWeak": 300,
+    "tCurse": 300,
+    "tGuard": 150,
+    "tAtk": 0,
+    "tImmune": 0
+   }
+  },
+  {
+   "name": "相手の操作（学習 1）",
+   "th": {
+    "base": 6.23,
+    "hp": 6,
+    "curse": 12,
+    "ult": 13.39,
+    "lowHp": 0,
+    "lowHpPen": 3.32,
+    "backCurse": 3.96,
+    "rotThresh": 1.38,
+    "stepCost": 0,
+    "ultWait": 35,
+    "think": 4.21,
+    "thinkJit": 2.18,
+    "skipImmune": 0.22,
+    "ownTarget": 0,
+    "tWeak": 300,
+    "tCurse": 371.25,
+    "tGuard": 150,
+    "tAtk": 264.9,
+    "tImmune": 196.87
+   }
+  },
+  {
+   "name": "相手の操作（学習 2）",
+   "th": {
+    "base": 5.74,
+    "hp": 8.01,
+    "curse": 4.91,
+    "ult": 18.47,
+    "lowHp": 0,
+    "lowHpPen": 11.69,
+    "backCurse": 6.31,
+    "rotThresh": 0,
+    "stepCost": 0.52,
+    "ultWait": 35,
+    "think": 7.37,
+    "thinkJit": 2.18,
+    "skipImmune": 0.77,
+    "ownTarget": 0,
+    "tWeak": 0,
+    "tCurse": 383.57,
+    "tGuard": 348.71,
+    "tAtk": 67.4,
+    "tImmune": 196.87
+   }
+  },
+  {
+   "name": "相手の操作（学習 3）",
+   "th": {
+    "base": 5.73,
+    "hp": 5.62,
+    "curse": 12.06,
+    "ult": 5.13,
+    "lowHp": 0,
+    "lowHpPen": 0.31,
+    "backCurse": 0,
+    "rotThresh": 0,
+    "stepCost": 0,
+    "ultWait": 21.4,
+    "think": 2.33,
+    "thinkJit": 4.59,
+    "skipImmune": 0.11,
+    "ownTarget": 0,
+    "tWeak": 549.9,
+    "tCurse": 158.04,
+    "tGuard": 276.25,
+    "tAtk": 472.15,
+    "tImmune": 946.59
+   }
+  },
+  {
+   "name": "相手の操作（学習 4）",
+   "th": {
+    "base": 10.66,
+    "hp": 8.88,
+    "curse": 17.56,
+    "ult": 13.07,
+    "lowHp": 0,
+    "lowHpPen": 15,
+    "backCurse": 6.45,
+    "rotThresh": 2.2,
+    "stepCost": 0,
+    "ultWait": 28.12,
+    "think": 8,
+    "thinkJit": 2.61,
+    "skipImmune": 0.77,
+    "ownTarget": 0,
+    "tWeak": 0,
+    "tCurse": 685.35,
+    "tGuard": 387.81,
+    "tAtk": 492.07,
+    "tImmune": 196.87
+   }
+  }
+ ],
+ "results": [
+  {
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "rsoul_yobiyose",
+     null,
+     "choumajime"
+    ],
+    [
+     "y361",
+     "zunouteki",
+     "pretty_ring",
+     null,
+     "choumajime"
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null,
+     "choumajime"
+    ]
+   ],
+   "th": {
+    "base": 6.96,
+    "hp": 0,
+    "curse": 14.05,
+    "ult": 9.44,
+    "lowHp": 0.19,
+    "lowHpPen": 5.67,
+    "backCurse": 6.32,
+    "rotThresh": 6,
+    "stepCost": 0,
+    "ultWait": 34.53,
+    "think": 3.24,
+    "thinkJit": 1.55,
+    "skipImmune": 0,
+    "ownTarget": 0.33,
+    "tWeak": 0,
+    "tCurse": 459.15,
+    "tGuard": 448.13,
+    "tAtk": 657.12,
+    "tImmune": 0
+   },
+   "per": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "margin": 0.721377568791362,
+   "mean": 1,
+   "min": 1,
+   "baseMean": 1,
+   "humanHands": 1,
+   "code": "YT1:eyJmIjoxLCJuIjoi44Kr44Km44Oz44K/44O8MSIsIm0iOltbNDQwLCLpu5LprLwiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3NlbmtvdSIsIm5hbWUiOiLploPlhYnprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfc2Vua291IiwibmFtZSI6IumWg+WFiemtgiJ9XSxbMzYyLCLjgYjjgpPjgonjgYjjgpPjgonjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfeW9iaXlvc2UiLCJuYW1lIjoi44KI44Gz44KI44Gb6a2CIn1dLFszNjEsIuazpeeUsOWdiuODu+aAqiIsInp1bm91dGVraSIsImNob3VtYWppbWUiLHsiaWQiOiJwcmV0dHlfcmluZyIsIm5hbWUiOiLjg5fjg6rjg4bjgqPjg7zjg6rjg7PjgrAifV0sWzMyMiwi44OW44K344OL44Oj44OzIiwiYXJha3VyZSIsImNob3VtYWppbWUiLHsic291bCI6eyJubyI6NjIsIm5hbWUiOiLjgYjjgpPjgonjgYjjgpPjgokifX1dXSwiYiI6W119"
+  },
+  {
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "rsoul_yobiyose",
+     null,
+     "choumajime"
+    ],
+    [
+     "y361",
+     "zunouteki",
+     "jugon_katana",
+     null,
+     "choumajime"
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null,
+     "choumajime"
+    ]
+   ],
+   "th": {
+    "base": 7.94,
+    "hp": 1.98,
+    "curse": 9.31,
+    "ult": 12.13,
+    "lowHp": 0.29,
+    "lowHpPen": 3.62,
+    "backCurse": 4.22,
+    "rotThresh": 5.9,
+    "stepCost": 0.58,
+    "ultWait": 0,
+    "think": 2.77,
+    "thinkJit": 5.61,
+    "skipImmune": 0.13,
+    "ownTarget": 0.1,
+    "tWeak": 0,
+    "tCurse": 640.26,
+    "tGuard": 263.21,
+    "tAtk": 1167.5,
+    "tImmune": 529.9
+   },
+   "per": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "margin": 0.7210665771010598,
+   "mean": 1,
+   "min": 1,
+   "baseMean": 1,
+   "humanHands": 0.9976190476190476,
+   "code": "YT1:eyJmIjoxLCJuIjoi44Kr44Km44Oz44K/44O8MiIsIm0iOltbNDQwLCLpu5LprLwiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3NlbmtvdSIsIm5hbWUiOiLploPlhYnprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfc2Vua291IiwibmFtZSI6IumWg+WFiemtgiJ9XSxbMzYyLCLjgYjjgpPjgonjgYjjgpPjgonjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfeW9iaXlvc2UiLCJuYW1lIjoi44KI44Gz44KI44Gb6a2CIn1dLFszNjEsIuazpeeUsOWdiuODu+aAqiIsInp1bm91dGVraSIsImNob3VtYWppbWUiLHsiaWQiOiJqdWdvbl9rYXRhbmEiLCJuYW1lIjoi5ZGq6KiA44Gu5YiAIn1dLFszMjIsIuODluOCt+ODi+ODo+ODsyIsImFyYWt1cmUiLCJjaG91bWFqaW1lIix7InNvdWwiOnsibm8iOjYyLCJuYW1lIjoi44GI44KT44KJ44GI44KT44KJIn19XV0sImIiOltdfQ=="
+  },
+  {
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "rsoul_yobiyose",
+     null,
+     "choumajime"
+    ],
+    [
+     "y307",
+     "zunouteki",
+     "rsoul_fubuki",
+     null,
+     "choumajime"
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null,
+     "choumajime"
+    ]
+   ],
+   "th": {
+    "base": 9.29,
+    "hp": 0.87,
+    "curse": 9.31,
+    "ult": 8.5,
+    "lowHp": 0.22,
+    "lowHpPen": 5,
+    "backCurse": 4.7,
+    "rotThresh": 6,
+    "stepCost": 1.02,
+    "ultWait": 2.82,
+    "think": 1.87,
+    "thinkJit": 4.53,
+    "skipImmune": 0.13,
+    "ownTarget": 0.33,
+    "tWeak": 209.65,
+    "tCurse": 1017.48,
+    "tGuard": 554.2,
+    "tAtk": 568.42,
+    "tImmune": 0
+   },
+   "per": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "margin": 0.712102639220826,
+   "mean": 1,
+   "min": 1,
+   "baseMean": 0.9976190476190476,
+   "humanHands": 1,
+   "code": "YT1:eyJmIjoxLCJuIjoi44Kr44Km44Oz44K/44O8MyIsIm0iOltbNDQwLCLpu5LprLwiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3NlbmtvdSIsIm5hbWUiOiLploPlhYnprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfc2Vua291IiwibmFtZSI6IumWg+WFiemtgiJ9XSxbMzYyLCLjgYjjgpPjgonjgYjjgpPjgonjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfeW9iaXlvc2UiLCJuYW1lIjoi44KI44Gz44KI44Gb6a2CIn1dLFszMDcsIuODnOODvOWdiiIsInp1bm91dGVraSIsImNob3VtYWppbWUiLHsiaWQiOiJyc291bF9mdWJ1a2kiLCJuYW1lIjoi5ZC56Zuq6a2CIn1dLFszMjIsIuODluOCt+ODi+ODo+ODsyIsImFyYWt1cmUiLCJjaG91bWFqaW1lIix7InNvdWwiOnsibm8iOjYyLCJuYW1lIjoi44GI44KT44KJ44GI44KT44KJIn19XV0sImIiOltdfQ=="
+  },
+  {
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null,
+     "choumajime"
+    ],
+    [
+     "y307",
+     "zunouteki",
+     "rsoul_fubuki",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "rsoul_yobiyose",
+     null,
+     "choumajime"
+    ]
+   ],
+   "th": {
+    "base": 6.96,
+    "hp": 0,
+    "curse": 14.05,
+    "ult": 9.44,
+    "lowHp": 0.19,
+    "lowHpPen": 5.67,
+    "backCurse": 6.32,
+    "rotThresh": 6,
+    "stepCost": 0,
+    "ultWait": 34.53,
+    "think": 3.24,
+    "thinkJit": 1.55,
+    "skipImmune": 0,
+    "ownTarget": 0.33,
+    "tWeak": 0,
+    "tCurse": 459.15,
+    "tGuard": 448.13,
+    "tAtk": 657.12,
+    "tImmune": 0
+   },
+   "per": [
+    1,
+    1,
+    1,
+    1,
+    0.9833333333333333,
+    0.9833333333333333,
+    1
+   ],
+   "margin": 0.7163702301050842,
+   "mean": 0.9952380952380953,
+   "min": 0.9833333333333333,
+   "baseMean": 1,
+   "humanHands": 0.9976190476190476,
+   "code": "YT1:eyJmIjoxLCJuIjoi44Kr44Km44Oz44K/44O8NCIsIm0iOltbNDQwLCLpu5LprLwiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3NlbmtvdSIsIm5hbWUiOiLploPlhYnprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfc2Vua291IiwibmFtZSI6IumWg+WFiemtgiJ9XSxbMzIyLCLjg5bjgrfjg4vjg6Pjg7MiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo2MiwibmFtZSI6IuOBiOOCk+OCieOBiOOCk+OCiSJ9fV0sWzMwNywi44Oc44O85Z2KIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX2Z1YnVraSIsIm5hbWUiOiLlkLnpm6rprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3lvYml5b3NlIiwibmFtZSI6IuOCiOOBs+OCiOOBm+mtgiJ9XV0sImIiOltdfQ=="
+  },
+  {
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "kyouryokuteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y307",
+     "zunouteki",
+     "soul:y331",
+     null,
+     "choumajime"
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null,
+     "choumajime"
+    ]
+   ],
+   "th": {
+    "base": 6.96,
+    "hp": 0.82,
+    "curse": 10.36,
+    "ult": 0,
+    "lowHp": 0.15,
+    "lowHpPen": 2.95,
+    "backCurse": 8,
+    "rotThresh": 6.48,
+    "stepCost": 0.12,
+    "ultWait": 34.53,
+    "think": 4.83,
+    "thinkJit": 4.69,
+    "skipImmune": 0.24,
+    "ownTarget": 0.33,
+    "tWeak": 0,
+    "tCurse": 394.24,
+    "tGuard": 76.92,
+    "tAtk": 0,
+    "tImmune": 89.05
+   },
+   "per": [
+    1,
+    1,
+    1,
+    0.9833333333333333,
+    1,
+    1,
+    1
+   ],
+   "margin": 0.7042824304800561,
+   "mean": 0.9976190476190476,
+   "min": 0.9833333333333333,
+   "baseMean": 1,
+   "humanHands": 1,
+   "code": "YT1:eyJmIjoxLCJuIjoi44Kr44Km44Oz44K/44O8NSIsIm0iOltbNDQwLCLpu5LprLwiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3NlbmtvdSIsIm5hbWUiOiLploPlhYnprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfc2Vua291IiwibmFtZSI6IumWg+WFiemtgiJ9XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJreW91cnlva3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzA3LCLjg5zjg7zlnYoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7InNvdWwiOnsibm8iOjMzMSwibmFtZSI6IuOCqOODoeODqeODq+ODi+ODo+ODsyJ9fV0sWzMyMiwi44OW44K344OL44Oj44OzIiwiYXJha3VyZSIsImNob3VtYWppbWUiLHsic291bCI6eyJubyI6NjIsIm5hbWUiOiLjgYjjgpPjgonjgYjjgpPjgokifX1dXSwiYiI6W119"
+  },
+  {
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "rsoul_yobiyose",
+     null,
+     "choumajime"
+    ],
+    [
+     "y345",
+     "reisei",
+     "densetsu_udewa",
+     null,
+     "choumajime"
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null,
+     "choumajime"
+    ]
+   ],
+   "th": {
+    "base": 8.9,
+    "hp": 0,
+    "curse": 10.95,
+    "ult": 11.79,
+    "lowHp": 0.04,
+    "lowHpPen": 5,
+    "backCurse": 7.57,
+    "rotThresh": 6.48,
+    "stepCost": 0,
+    "ultWait": 1.71,
+    "think": 1.87,
+    "thinkJit": 4.17,
+    "skipImmune": 0,
+    "ownTarget": 0.27,
+    "tWeak": 209.65,
+    "tCurse": 807.96,
+    "tGuard": 448.13,
+    "tAtk": 0,
+    "tImmune": 0
+   },
+   "per": [
+    1,
+    1,
+    1,
+    0.9833333333333333,
+    1,
+    0.9833333333333333,
+    0.9833333333333333
+   ],
+   "margin": 0.7081842396929666,
+   "mean": 0.9928571428571429,
+   "min": 0.9833333333333333,
+   "baseMean": 0.9976190476190476,
+   "humanHands": 0.9976190476190476,
+   "code": "YT1:eyJmIjoxLCJuIjoi44Kr44Km44Oz44K/44O8NiIsIm0iOltbNDQwLCLpu5LprLwiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3NlbmtvdSIsIm5hbWUiOiLploPlhYnprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfc2Vua291IiwibmFtZSI6IumWg+WFiemtgiJ9XSxbMzYyLCLjgYjjgpPjgonjgYjjgpPjgonjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfeW9iaXlvc2UiLCJuYW1lIjoi44KI44Gz44KI44Gb6a2CIn1dLFszNDUsIuODreODnOODjuOCsyIsInJlaXNlaSIsImNob3VtYWppbWUiLHsiaWQiOiJkZW5zZXRzdV91ZGV3YSIsIm5hbWUiOiLkvJ3oqqzjga7jgYbjgafjgo8ifV0sWzMyMiwi44OW44K344OL44Oj44OzIiwiYXJha3VyZSIsImNob3VtYWppbWUiLHsic291bCI6eyJubyI6NjIsIm5hbWUiOiLjgYjjgpPjgonjgYjjgpPjgokifX1dXSwiYiI6W119"
+  },
+  {
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "kenshinteki",
+     "rsoul_kaze",
+     null,
+     "choumajime"
+    ],
+    [
+     "y361",
+     "zunouteki",
+     "jugon_katana",
+     null,
+     "choumajime"
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null,
+     "choumajime"
+    ]
+   ],
+   "th": {
+    "base": 8.41,
+    "hp": 1.98,
+    "curse": 9.31,
+    "ult": 10.5,
+    "lowHp": 0.29,
+    "lowHpPen": 3.62,
+    "backCurse": 4.22,
+    "rotThresh": 5.9,
+    "stepCost": 0.79,
+    "ultWait": 16.95,
+    "think": 2.77,
+    "thinkJit": 4.03,
+    "skipImmune": 0.13,
+    "ownTarget": 0.1,
+    "tWeak": 0,
+    "tCurse": 640.26,
+    "tGuard": 263.21,
+    "tAtk": 697.75,
+    "tImmune": 432.24
+   },
+   "per": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9666666666666667,
+    1
+   ],
+   "margin": 0.716802690739866,
+   "mean": 0.9952380952380953,
+   "min": 0.9666666666666667,
+   "baseMean": 1,
+   "humanHands": 1,
+   "code": "YT1:eyJmIjoxLCJuIjoi44Kr44Km44Oz44K/44O8NyIsIm0iOltbNDQwLCLpu5LprLwiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3NlbmtvdSIsIm5hbWUiOiLploPlhYnprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfc2Vua291IiwibmFtZSI6IumWg+WFiemtgiJ9XSxbMzYyLCLjgYjjgpPjgonjgYjjgpPjgonjg7vmgKoiLCJrZW5zaGludGVraSIsImNob3VtYWppbWUiLHsiaWQiOiJyc291bF9rYXplIiwibmFtZSI6IumiqOOBrumtgiJ9XSxbMzYxLCLms6XnlLDlnYrjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoianVnb25fa2F0YW5hIiwibmFtZSI6IuWRquiogOOBruWIgCJ9XSxbMzIyLCLjg5bjgrfjg4vjg6Pjg7MiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo2MiwibmFtZSI6IuOBiOOCk+OCieOBiOOCk+OCiSJ9fV1dLCJiIjpbXX0="
+  },
+  {
+   "team": [
+    [
+     "y440",
+     "arakure",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "zunouteki",
+     "soul:y008",
+     null,
+     "choumajime"
+    ],
+    [
+     "y368",
+     "zunouteki",
+     "rsoul_senkou",
+     null,
+     "choumajime"
+    ],
+    [
+     "y362",
+     "nasakebukai",
+     "rsoul_yobiyose",
+     null,
+     "choumajime"
+    ],
+    [
+     "y307",
+     "zunouteki",
+     "rsoul_fubuki",
+     null,
+     "choumajime"
+    ],
+    [
+     "y322",
+     "arakure",
+     "soul:y062",
+     null,
+     "choumajime"
+    ]
+   ],
+   "th": {
+    "base": 6.91,
+    "hp": 0.11,
+    "curse": 9.31,
+    "ult": 4.6,
+    "lowHp": 0.42,
+    "lowHpPen": 4.49,
+    "backCurse": 8,
+    "rotThresh": 6,
+    "stepCost": 0,
+    "ultWait": 9.95,
+    "think": 2.77,
+    "thinkJit": 3.79,
+    "skipImmune": 0.32,
+    "ownTarget": 0.33,
+    "tWeak": 0,
+    "tCurse": 549.97,
+    "tGuard": 182.9,
+    "tAtk": 657.12,
+    "tImmune": 166.3
+   },
+   "per": [
+    1,
+    1,
+    1,
+    0.9833333333333333,
+    1,
+    0.9666666666666667,
+    1
+   ],
+   "margin": 0.7087698274901076,
+   "mean": 0.9928571428571429,
+   "min": 0.9666666666666667,
+   "baseMean": 0.9976190476190476,
+   "humanHands": 1,
+   "code": "YT1:eyJmIjoxLCJuIjoi44Kr44Km44Oz44K/44O8OCIsIm0iOltbNDQwLCLpu5LprLwiLCJhcmFrdXJlIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX3NlbmtvdSIsIm5hbWUiOiLploPlhYnprYIifV0sWzM2Miwi44GI44KT44KJ44GI44KT44KJ44O75oCqIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJzb3VsIjp7Im5vIjo4LCJuYW1lIjoi44Ki44Op44Kk6a2U5bCGIn19XSxbMzY4LCLjgavjgpPjgY7jgofjg7vmgKoiLCJ6dW5vdXRla2kiLCJjaG91bWFqaW1lIix7ImlkIjoicnNvdWxfc2Vua291IiwibmFtZSI6IumWg+WFiemtgiJ9XSxbMzYyLCLjgYjjgpPjgonjgYjjgpPjgonjg7vmgKoiLCJuYXNha2VidWthaSIsImNob3VtYWppbWUiLHsiaWQiOiJyc291bF95b2JpeW9zZSIsIm5hbWUiOiLjgojjgbPjgojjgZvprYIifV0sWzMwNywi44Oc44O85Z2KIiwienVub3V0ZWtpIiwiY2hvdW1hamltZSIseyJpZCI6InJzb3VsX2Z1YnVraSIsIm5hbWUiOiLlkLnpm6rprYIifV0sWzMyMiwi44OW44K344OL44Oj44OzIiwiYXJha3VyZSIsImNob3VtYWppbWUiLHsic291bCI6eyJubyI6NjIsIm5hbWUiOiLjgYjjgpPjgonjgYjjgpPjgokifX1dXSwiYiI6W119"
+  }
+ ]
+}
