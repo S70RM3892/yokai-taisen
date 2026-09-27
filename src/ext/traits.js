@@ -56,6 +56,7 @@ function fxLine(k, v) {
     case "selfSg": return `自分の妖気が 毎ターン だんだん回復する（+${v}）`;
     case "sgSteal": return `こうげきが当たると 相手の妖気を ${v} うばう`;
     case "critDmg": return `クリティカルのダメージ+${pct(v)}`;
+    case "critSkill": return `クリティカルのダメージ ×${(1 + v / 1000).toFixed(1)}`;
     case "vsCursed": return `とりつかれ・サボり中の相手へのダメージ+${pct(v)}`;
     case "vsTribe": return `${TRIBE_JA[arg]}族へのダメージ+${pct(v)}`;
     case "inflict": return `こうげきが当たると ${pct(v)} で相手を${CURSE_JA[arg]}にする`;

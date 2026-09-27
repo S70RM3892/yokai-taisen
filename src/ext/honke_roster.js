@@ -75,7 +75,9 @@ var HONKE_SKILL_FX = {
   "どんどんフィールド": { allUpAll: 150 },
   "スパルタ": { teamNoLoaf: 700 },
   "超回復": { bigHealPinch: 1 },
-  "超クリティカル": { critDmg: 750 },
+  // 超クリティカル（本家）：クリティカルのダメージ ×1.5（切り捨て）。Mt. Wildwood「The user's Critical Hits deal 50% (floored) more damage」
+  //   https://mtwildwood.net/yokaiMedallium/yokaiShogunyan.html
+  "超クリティカル": { critSkill: 500 },
   "深夜テンション": { night: 250 },
   "きゅうけつ": { drain: 250 },
   "どろぼう": { stealItem: 200 }, "ものかくし": { stealItem: 200 },

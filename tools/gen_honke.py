@@ -234,9 +234,16 @@ def seed_of(name):
     return int(hashlib.md5(("honke:" + name).encode()).hexdigest()[:8], 16)
 
 
+# 攻略大百科のスキルがほかの出典とちがう妖怪（HRS・ゲームの匠「超クリティカル」・Yo-kai Watch Wiki・Mt. Wildwood は超クリティカル）
+#   https://youkai-gh.g-takumi.com/skill111.html
+SKILL_FIX = {"かたのり親方": "超クリティカル", "ねぶた": "超クリティカル"}
+SKILL_DESC = {x["skill"]: x["skill_d"] for x in gp}
+
 out, skills_used = [], {}
 for d in gp:
     h = hrs.get(d["name"])
+    if d["name"] in SKILL_FIX:
+        d = {**d, "skill": SKILL_FIX[d["name"]], "skill_d": SKILL_DESC[SKILL_FIX[d["name"]]]}
     no = h["no"] if h else d["gid"] - 137  # 怪魔（No.355〜369）は HRS にない
     tribe = TRIBE[d["tribe"]]
     st = d["stats"] if len(d["stats"]) == 5 else h["stats"]  # 攻略大百科に能力値がないときは HRS の Lv60

@@ -785,7 +785,7 @@
       d = Oh(u, pw, o),
       c = !1,
       h = kc; // サボっている相手でもクリティカルの出やすさは同じ（本家で出やすくなるという出典はない）
-    r.fx.critEye && (h = Math.max(h, r.fx.critEye)), s.critUlt && (h = Math.max(h, 24)), n.eq.critTaken && (h = Math.min(gc, h * n.eq.critTaken)), n.fx.critTaken && (h = Math.min(gc, h * n.fx.critTaken)), n.fx.noCritTaken && (h = 0), (s.canCrit || s.critUlt) && gt(r.rng, gc) < h && (c = !0, d += Bt(Math.floor((u + pw) / 2), vc - 1e3 + (r.fx.critDmg ?? 0))); // クリティカル（本家）：ふえた分のダメージはまもりを無視
+    r.fx.critEye && (h = Math.max(h, r.fx.critEye)), s.critUlt && (h = Math.max(h, 24)), n.eq.critTaken && (h = Math.min(gc, h * n.eq.critTaken)), n.fx.critTaken && (h = Math.min(gc, h * n.fx.critTaken)), n.fx.noCritTaken && (h = 0), (s.canCrit || s.critUlt) && gt(r.rng, gc) < h && (c = !0, d += Bt(Math.floor((u + pw) / 2), vc - 1e3 + (r.fx.critDmg ?? 0)), r.fx.critSkill && (d = Bt(d, 1e3 + r.fx.critSkill))); // クリティカル（本家）：ふえた分のダメージはまもりを無視。超クリティカルはそのダメージ ×1.5
     c && n.fx.critDefUp && addDyn(n, "def", n.fx.critDefUp, n.fx.critDefUp * 3); // もちはだ
     let f = ct[n.defIndex];
     s.element !== null && (s.element === f.weak ? n.guarding && n.fx.guardNoWeak || (d = Bt(d, Ec)) : s.element === f.resist && !r.fx.pierce && (d = Bt(d, yc)), d = Bt(d, elemMult(r, n, s.element)));
